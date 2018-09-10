@@ -73,19 +73,20 @@ func (m *POATxManager) NewTransaction(form account.IAccount,to account.IAccount,
 }
 
 func (m *POATxManager) CheckTx(tx tx.ITx) bool {
-	log.Info("poa CheckTx ...")
+	log.Info("POA CheckTx ...")
 	return true
 }
 
 func (m *POATxManager) ProcessTx(tx tx.ITx) {
-	log.Info("poa ProcessTx ...")
+	log.Info("POA ProcessTx ...")
 	//1.checkTx
 	if !m.CheckTx(tx) {
-		log.Error("poa checkTransaction failed")
+		log.Error("POA checkTransaction failed")
 		return
 	}
 	//2.push Tx into storage
 	m.AddTransaction(tx)
+	log.Info("POA Add Tranasaction Pool  ...")
 }
 
 func (m *POATxManager) SignTransaction(tx tx.ITx) error  {

@@ -5,6 +5,7 @@ import (
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/consensus/manager"
+	"github.com/linkchain/meta/block"
 )
 
 
@@ -45,6 +46,7 @@ func (bc *BlockChain)IsOnChain(checkNode POAChainNode) bool {
 	return false
 }
 
+//TODO maybe give up
 func (bc *BlockChain) FillChain(blockManager manager.BlockManager) error  {
 	currentHeight := uint32(bc.chain.Len()) - 1
 	if currentHeight == 0 {
@@ -54,9 +56,9 @@ func (bc *BlockChain) FillChain(blockManager manager.BlockManager) error  {
 
 	currentElement := bc.chain.Back()
 	prevElement := currentElement.Prev()
-	for !checkPrevElement(currentElement, prevElement) {
+	for !bc.CheckPrevElement(currentElement, prevElement) {
 
-		if checkPrevByHeight(currentElement, prevElement) {
+		if bc.CheckPrevByHeight(currentElement, prevElement) {
 			bc.chain.Remove(prevElement)
 		}
 
@@ -106,27 +108,44 @@ func (bc *BlockChain) CloneChainIndex(index []POAChainNode) []POAChainNode  {
 	return index
 }
 
+
+func (bc *BlockChain) GetLastElement() *list.Element{
+	return bc.chain.Back()
+}
+
+func (bc *BlockChain) GetFristElement() *list.Element{
+	return bc.chain.Front()
+}
+
+func (bc *BlockChain) RemoveElement(element *list.Element) {
+	bc.chain.Remove(element)
+}
+
+func (bc *BlockChain) InsertBeforeElement(insertBlock block.IBlock,element *list.Element) {
+	bc.chain.InsertBefore(NewPOAChainNode(insertBlock),element)
+}
 /**
 	checkChainElement
 	aim:if the currentE of prevpoint is prevE,then return true
  */
-func checkPrevElement(currentE *list.Element, prevE *list.Element) bool {
+func (bc *BlockChain) CheckPrevElement(currentE *list.Element, prevE *list.Element) bool {
 	currentNode := currentE.Value.(POAChainNode)
 	prevNode := prevE.Value.(POAChainNode)
 	return currentNode.CheckPrev(prevNode)
 }
 
-func checkPrevByHeight(currentE *list.Element, prevE *list.Element) bool {
+func (bc *BlockChain) CheckPrevByHeight(currentE *list.Element, prevE *list.Element) bool {
 	currentNode := currentE.Value.(POAChainNode)
 	prevNode := prevE.Value.(POAChainNode)
 	return currentNode.height == (prevNode.height + 1)
 }
 
+
 /**
 	checkEqualElement
 	aim:if the firstE of hash is equal secondE,then return true
  */
-func checkEqualElement(firstE *list.Element, secondE *list.Element) bool {
+func CheckEqualElement(firstE *list.Element, secondE *list.Element) bool {
 	firstNode := firstE.Value.(POAChainNode)
 	secondNode := secondE.Value.(POAChainNode)
 	return firstNode.IsEuqal(secondNode)

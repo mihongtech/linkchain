@@ -9,6 +9,8 @@ import (
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/meta/block"
+	"github.com/linkchain/meta/account"
+	"github.com/linkchain/common/util/log"
 )
 
 type POABlock struct{
@@ -86,6 +88,14 @@ func (b *POABlock)Serialize()(serialize.SerializeStream){
 func (b *POABlock)Deserialize(s serialize.SerializeStream){
 }
 
+func (b *POABlock) GetTxs() []tx.ITx  {
+	txs := make([]tx.ITx,0)
+	for _,tx := range b.TXs {
+		txs = append(txs,&tx)
+	}
+	return txs
+}
+
 //
 func (b *POABlock)ToString()(string){
 	data, err := json.Marshal(b);
@@ -95,9 +105,22 @@ func (b *POABlock)ToString()(string){
 	return string(data)
 }
 
-
-
 func (bh *POABlockHeader)GetBlockID() block.IBlockID{
 	first := sha256.Sum256(bh.PrevBlock.CloneBytes())
 	return math.Hash(sha256.Sum256(first[:]))
 }
+
+func (bh *POABlockHeader) GetMineAccount() account.IAccountID {
+	hash,e := math.NewHashFromStr(string(bh.Extra))
+	if e != nil {
+		log.Error("POABlockHeader","GetMineAccount","failed")
+	}
+
+	accountId := &POAAccountID{ID:*hash}
+	return accountId
+}
+
+func (bh *POABlockHeader) SetMineAccount(id account.IAccountID)  {
+	bh.Extra = append(bh.Extra,[]byte(id.GetString())...)
+}
+

@@ -2,7 +2,6 @@ package poamanager
 
 import (
 	"errors"
-	"container/list"
 
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/common/math"
@@ -28,12 +27,12 @@ func (m *POAChainManager) Init(i interface{}) bool{
 
 	gensisChainNode := poameta.NewPOAChainNode(gensisBlock)
 	m.mainChainIndex = make([]poameta.POAChainNode,0)
-	m.mainChainIndex = append(m.mainChainIndex,gensisChainNode)
+	//m.mainChainIndex = append(m.mainChainIndex,gensisChainNode)
 
 	m.mainChain = poameta.NewBlockChain(gensisChainNode)
-	longestChain,_ := m.GetLongestChain()
+	/*longestChain,_ := m.GetLongestChain()
 	bestBlock := longestChain.GetLastBlock()
-	m.mainChain.AddNode(poameta.NewPOAChainNode(bestBlock))
+	m.mainChain.AddNode(poameta.NewPOAChainNode(bestBlock))*/
 	//TODO need to load storage
 
 	//TODO BlockManager need inited
@@ -104,10 +103,12 @@ func (m *POAChainManager) GetBlockNodeByHeight(height uint32) (poameta.POAChainN
 }
 
 func (m *POAChainManager) GetBlockChainInfo() string  {
+
 	log.Info("POAChainManager","chains",len(m.chains))
 	for i,chain := range m.chains {
 		log.Info("POAChainManager chain","chainId",i,"chainHeight",chain.GetHeight(),"bestHash",chain.GetLastBlock().GetBlockID().GetString())
 	}
+
 	for _,block := range m.mainChainIndex {
 		log.Info("POAChainManager mainchain","chainHeight",block.GetNodeHeight(),"bestHash",block.GetNodeHash())
 	}
@@ -253,7 +254,80 @@ func (m *POAChainManager) sortChains(block poameta.POABlock) bool  {
 	TODO need to test
  */
 func (m *POAChainManager) updateChainIndex() bool  {
-	m.mainChainIndex = m.mainChain.CloneChainIndex(m.mainChainIndex)
+	forkNode := m.mainChain.GetLastElement()
+	forkPosition := len(m.mainChainIndex) - 1
+	defer GetManager().AccountManager.GetAllAccounts()
+	if forkPosition < 0 {
+		//init mainchain index
+		for e := m.mainChain.GetFristElement(); e != nil; e = e.Next(){
+			node := e.Value.(poameta.POAChainNode)
+			m.mainChainIndex = append(m.mainChainIndex,node)
+
+			//add indexs(block status)
+			block,error := GetManager().BlockManager.GetBlockByID(node.GetNodeHash())
+			if error != nil {
+				log.Error("POAChainManager","add new chain account failed. block hash",block.GetBlockID().GetString())
+				return false
+			}
+			errorStatus := m.updateStatus(block,true)
+			if errorStatus != nil {
+				log.Error("POAChainManager","add new chain account failed",errorStatus)
+				return false
+			}
+		}
+		return true
+	}
+
+	for ; forkNode != nil && forkPosition >= 0 ; forkNode = forkNode.Prev() {
+		node := forkNode.Value.(poameta.POAChainNode)
+		nodeHash := node.GetNodeHash().(math.Hash)
+		if node.GetNodeHeight() > uint32(forkPosition) {
+			continue
+		} else if int(node.GetNodeHeight()) < forkPosition{
+			forkPosition--
+			continue
+		}
+		checkIndexHash := m.mainChainIndex[forkPosition].GetNodeHash().(math.Hash)
+		if checkIndexHash.IsEqual(&nodeHash) {
+			break
+		}
+		forkPosition--
+	}
+
+	//delete indexs after forkpoint
+	//delete indexs(block status)
+	for i := len(m.mainChainIndex) - 1 ; i >= forkPosition+1; i-- {
+		block,error := GetManager().BlockManager.GetBlockByID(m.mainChainIndex[i].GetNodeHash())
+		if error != nil {
+			log.Error("POAChainManager","remove old chain account failed. block hash",block.GetBlockID().GetString())
+			return false
+		}
+		errorStatus := m.updateStatus(block,false)
+		if errorStatus != nil {
+			log.Error("POAChainManager","remove old chain account failed",errorStatus)
+			return false
+		}
+	}
+	m.mainChainIndex = m.mainChainIndex[:forkPosition+1]
+
+
+	//push index from the behind of forkNode which from mainChain
+	for forkNode = forkNode.Next(); forkNode != nil; forkNode = forkNode.Next() {
+		node := forkNode.Value.(poameta.POAChainNode)
+		m.mainChainIndex = append(m.mainChainIndex,node)
+
+		//add indexs(block status)
+		block,error := GetManager().BlockManager.GetBlockByID(node.GetNodeHash())
+		if error != nil {
+			log.Error("POAChainManager","add new chain account failed. block hash",block.GetBlockID().GetString())
+			return false
+		}
+		errorStatus := m.updateStatus(block,true)
+		if errorStatus != nil {
+			log.Error("POAChainManager","add new chain account failed",errorStatus)
+			return false
+		}
+	}
 	return true
 }
 
@@ -264,8 +338,10 @@ func (m *POAChainManager) updateChainIndex() bool  {
 	TODO need to test
 */
 func (m *POAChainManager) updateChain() bool  {
-	longestchain,_ := m.GetLongestChain()
-	m.mainChain.AddNode(poameta.NewPOAChainNode(longestchain.GetLastBlock()))
+	longestChain,_ := m.GetLongestChain()
+	bestBlock := longestChain.GetLastBlock()
+	m.mainChain.AddNode(poameta.NewPOAChainNode(bestBlock))
+
 	error := m.mainChain.FillChain(GetManager().BlockManager)
 	if error != nil {
 		log.Error("POAChainManager","updateChain failed",error)
@@ -274,14 +350,38 @@ func (m *POAChainManager) updateChain() bool  {
 	return true
 }
 
-/**
-	checkChainElement
-	aim:if the currentE of prevpoint is prevE,then return true
- */
-func checkChainElement(currentE *list.Element, prevE *list.Element) bool {
-	currentNode := currentE.Value.(poameta.POAChainNode)
-	prevNode := prevE.Value.(poameta.POAChainNode)
-	return currentNode.CheckPrev(prevNode)
+func (m *POAChainManager) updateStatus(block block.IBlock,isAdd bool) error {
+	//update mine account status
+	poablock := *block.(*poameta.POABlock)
+	mineAccountId := *poablock.Header.GetMineAccount().(*poameta.POAAccountID)
+	var mineAccount poameta.POAAccount
+
+	if isAdd {
+		mineAccount = poameta.POAAccount{AccountID:mineAccountId, Value:poameta.POAAmount{Value:50}}
+	} else {
+		mineAccount = poameta.POAAccount{AccountID:mineAccountId, Value:poameta.POAAmount{Value:-50}}
+	}
+
+	error := GetManager().AccountManager.UpdateAccount(&mineAccount)
+	if error != nil {
+		return error
+	}
+
+	//update normal account status
+	for _,tx := range block.GetTxs() {
+		var actualTx poameta.POATransaction
+		if isAdd {
+			actualTx = *tx.(*poameta.POATransaction)
+		} else {
+			actualTx = *tx.ChangeFromTo().(*poameta.POATransaction)
+		}
+		error := GetManager().AccountManager.UpdateAccountByTX(&actualTx)
+		if error != nil {
+			return error
+		}
+	}
+	return nil
 }
+
 
 

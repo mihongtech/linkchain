@@ -7,7 +7,6 @@ import (
 
 
 type ITxPeer interface{
-
 }
 
 type ITxID interface{
@@ -26,6 +25,8 @@ type ITx interface {
 	GetFrom() ITxPeer
 	GetTo() ITxPeer
 	GetAmount() meta.IAmount
+
+	ChangeFromTo() ITx
 
 	//signature
 	Sign()(math.ISignature, error)

@@ -58,6 +58,13 @@ func (tx *POATransaction) SetTo(to tx.ITxPeer)  {
 	tx.To = txout
 }
 
+func (tx *POATransaction) ChangeFromTo() tx.ITx  {
+	temp := tx.From
+	tx.From = tx.To
+	tx.To = temp
+	return tx
+}
+
 func (tx *POATransaction) SetAmount(iAmount meta.IAmount)  {
 	amount := *iAmount.(*POAAmount)
 	tx.Amount = amount

@@ -30,9 +30,11 @@ type POAManager struct {
 func (m *POAManager) Init(i interface{}) bool{
 	log.Info("POAManager init...");
 	//TODO Account init
-	m.ChainManager.Init(i)
+	m.AccountManager.Init(i)
 	m.BlockManager.Init(i)
+	m.ChainManager.Init(i)
 	m.TransactionManager.Init(i)
+
 	//TODO Transaction init
 	return true
 }

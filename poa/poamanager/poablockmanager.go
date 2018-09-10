@@ -16,6 +16,8 @@ const (
 	MaxMapSize = 1024 * 4
 )
 
+var minerAccountId = poameta.POAAccountID{ID:math.Hash(sha256.Sum256([]byte("lf")))}
+
 type POABlockManager struct {
 	sync.RWMutex
 	mapBlockIndexByHash map[math.Hash]poameta.POABlock
@@ -66,6 +68,7 @@ func (m *POABlockManager) NewBlock() block.IBlock{
 			Header: poameta.POABlockHeader{Version: 0, PrevBlock: bestHash, MerkleRoot: math.Hash{}, Timestamp: time.Now(), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: bestBlock.GetHeight() + 1},
 			TXs:    txs,
 		}
+		block.Header.SetMineAccount(&minerAccountId)
 		return block
 	}else {
 		return m.GetGensisBlock()
@@ -76,17 +79,11 @@ func (m *POABlockManager) NewBlock() block.IBlock{
 /** interface: BlockBaseManager **/
 func (m *POABlockManager) GetGensisBlock() block.IBlock{
 	txs := []poameta.POATransaction{}
-	fromAddress := math.Hash(sha256.Sum256([]byte("lf")))
-	toAddress := math.Hash(sha256.Sum256([]byte("lc")))
-	formAccount := &poameta.POAAccount{AccountID:poameta.POAAccountID{ID:fromAddress}}
-	toAccount := &poameta.POAAccount{AccountID:poameta.POAAccountID{ID:toAddress}}
-	amount := &poameta.POAAmount{Value:10}
-	tx := *GetManager().TransactionManager.NewTransaction(formAccount,toAccount,amount).(*poameta.POATransaction)
-	txs = append(txs, tx)
 	block := &poameta.POABlock{
-		Header:poameta.POABlockHeader{Version:0, PrevBlock:math.Hash{},MerkleRoot:math.Hash{},Timestamp:time.Now(),Difficulty:0x207fffff,Nonce:0,Extra:[]byte(string("hello,I am gensis block"))},
-		TXs:txs,
+		Header: poameta.POABlockHeader{Version: 0, PrevBlock: math.Hash{}, MerkleRoot: math.Hash{}, Timestamp: time.Unix(1487780010, 0), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: 0},
+		TXs:    txs,
 	}
+	block.Header.SetMineAccount(&minerAccountId)
 	return block
 }
 
