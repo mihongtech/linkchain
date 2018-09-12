@@ -36,9 +36,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 )
 
-const NodeIDBits = 512
-
-type NodeID [NodeIDBits / 8]byte
+type NodeID [32]byte
 
 // Bytes returns a byte slice representation of the NodeID
 func (n NodeID) Bytes() []byte {
@@ -82,6 +80,10 @@ func NewNode(id NodeID, ip net.IP, udpPort, tcpPort uint16) *Node {
 
 func (n *Node) addr() *net.UDPAddr {
 	return &net.UDPAddr{IP: n.IP, Port: int(n.UDP)}
+}
+
+func (n *Node) TcpAddr() *net.TCPAddr {
+	return &net.TCPAddr{IP: n.IP, Port: int(n.TCP)}
 }
 
 // Incomplete returns true for nodes with no IP address.

@@ -1,6 +1,7 @@
 package p2p
 
 import (
+	"crypto/sha256"
 	"errors"
 	"net"
 	"sync"
@@ -288,13 +289,16 @@ func (srv *Service) Self() *node.Node {
 func (srv *Service) makeSelf(listener net.Listener) *node.Node {
 	// Inbound connections disabled, use zero address.
 	if listener == nil {
-		return &node.Node{IP: net.ParseIP("0.0.0.0")}
+		// TODO use publikey to generate ID
+		return &node.Node{IP: net.ParseIP("0.0.0.0"), ID: sha256.Sum256([]byte((&net.TCPAddr{IP: net.ParseIP("0.0.0.0")}).String()))}
 	}
 	// Otherwise inject the listener address too
 	addr := listener.Addr().(*net.TCPAddr)
+	// TODO use publikey to generate ID
 	return &node.Node{
 		IP:  addr.IP,
 		TCP: uint16(addr.Port),
+		ID:  sha256.Sum256([]byte((&net.TCPAddr{IP: addr.IP, Port: int(addr.Port)}).String())),
 	}
 }
 
