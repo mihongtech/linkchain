@@ -70,6 +70,7 @@ func (m *POAAccountManager) UpdateAccountByTX(tx tx.ITx) error {
 
 	if error1 != nil {
 		log.Error("POAAccountManager","update account status","can not find the account of the tx's")
+		return error1
 	}
 
 	amount := tx.GetAmount()
@@ -100,6 +101,23 @@ func (m *POAAccountManager) UpdateAccount(iAccount account.IAccount) error {
 		m.AddAccount(iAccount)
 	}
 
+	return nil
+}
+
+func (m *POAAccountManager) CheckTxFromAccount(tx tx.ITx) error {
+	fromAccountId := tx.GetFrom().(*poameta.POATransactionPeer).AccountID
+	fromAccount,error1 := m.GetAccount(&fromAccountId)
+	amount := tx.GetAmount()
+
+	if error1 != nil {
+		log.Error("POAAccountManager","update account status","can not find the account of the tx's")
+		return error1
+	}
+
+	if fromAccount.GetAmount().IsLessThan(amount) {
+		log.Error("POAAccountManager","update account status","the from of tx doesn't have enough money to pay")
+		return errors.New("update account status the from of tx doesn't have enough money to pay")
+	}
 	return nil
 }
 

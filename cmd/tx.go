@@ -49,7 +49,7 @@ var sendTxCmd = &cobra.Command{
 	Short: "send a new tx to network",
 	Run: func(cmd *cobra.Command, args []string) {
 		println("Tx send out")
-		fromAddress := math.Hash(sha256.Sum256([]byte("lf")))
+		fromAddress := math.Hash(sha256.Sum256([]byte("ls")))
 		toAddress := math.Hash(sha256.Sum256([]byte("lc")))
 		formAccount := &meta.POAAccount{AccountID:meta.POAAccountID{ID:fromAddress}}
 		toAccount := &meta.POAAccount{AccountID:meta.POAAccountID{ID:toAddress}}

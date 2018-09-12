@@ -21,7 +21,11 @@ var mineCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		block := poamanager.GetManager().BlockManager.NewBlock()
 		txs := poamanager.GetManager().TransactionManager.GetAllTransaction()
+
 		block.SetTx(txs)
+		for _,tx := range txs {
+			poamanager.GetManager().TransactionManager.RemoveTransaction(tx.GetTxID())
+		}
 		poamanager.GetManager().BlockManager.ProcessBlock(block)
 	},
 }

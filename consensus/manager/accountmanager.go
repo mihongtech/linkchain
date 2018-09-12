@@ -20,6 +20,7 @@ type AccountPoolManager interface{
 	RemoveAccount(id account.IAccountID) error
 	UpdateAccount(iAccount account.IAccount) error
 	UpdateAccountByTX(tx tx.ITx) error
+	CheckTxFromAccount(tx tx.ITx) error
 
 	GetAllAccounts()
 }

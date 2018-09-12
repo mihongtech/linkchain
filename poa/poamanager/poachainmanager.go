@@ -144,7 +144,6 @@ func (m *POAChainManager) GetBlockAncestor(block block.IBlock,height uint32) blo
 				log.Error("POAChainManager","GetBlockAncestor error", "can not find ancestor")
 				return nil
 			}
-
 		}
 		return ancestor
 	}
@@ -256,12 +255,12 @@ func (m *POAChainManager) sortChains(block poameta.POABlock) bool  {
 func (m *POAChainManager) updateChainIndex() bool  {
 	forkNode := m.mainChain.GetLastElement()
 	forkPosition := len(m.mainChainIndex) - 1
+	endNode := forkNode.Value.(poameta.POAChainNode)
 	defer GetManager().AccountManager.GetAllAccounts()
 	if forkPosition < 0 {
 		//init mainchain index
 		for e := m.mainChain.GetFristElement(); e != nil; e = e.Next(){
 			node := e.Value.(poameta.POAChainNode)
-			m.mainChainIndex = append(m.mainChainIndex,node)
 
 			//add indexs(block status)
 			block,error := GetManager().BlockManager.GetBlockByID(node.GetNodeHash())
@@ -272,8 +271,11 @@ func (m *POAChainManager) updateChainIndex() bool  {
 			errorStatus := m.updateStatus(block,true)
 			if errorStatus != nil {
 				log.Error("POAChainManager","add new chain account failed",errorStatus)
+				m.removeErrorNode(endNode)
 				return false
 			}
+
+			m.mainChainIndex = append(m.mainChainIndex,node)
 		}
 		return true
 	}
@@ -305,6 +307,7 @@ func (m *POAChainManager) updateChainIndex() bool  {
 		errorStatus := m.updateStatus(block,false)
 		if errorStatus != nil {
 			log.Error("POAChainManager","remove old chain account failed",errorStatus)
+			m.removeErrorNode(endNode)
 			return false
 		}
 	}
@@ -314,7 +317,6 @@ func (m *POAChainManager) updateChainIndex() bool  {
 	//push index from the behind of forkNode which from mainChain
 	for forkNode = forkNode.Next(); forkNode != nil; forkNode = forkNode.Next() {
 		node := forkNode.Value.(poameta.POAChainNode)
-		m.mainChainIndex = append(m.mainChainIndex,node)
 
 		//add indexs(block status)
 		block,error := GetManager().BlockManager.GetBlockByID(node.GetNodeHash())
@@ -325,8 +327,11 @@ func (m *POAChainManager) updateChainIndex() bool  {
 		errorStatus := m.updateStatus(block,true)
 		if errorStatus != nil {
 			log.Error("POAChainManager","add new chain account failed",errorStatus)
+			m.removeErrorNode(endNode)
 			return false
 		}
+
+		m.mainChainIndex = append(m.mainChainIndex,node)
 	}
 	return true
 }
@@ -351,6 +356,13 @@ func (m *POAChainManager) updateChain() bool  {
 }
 
 func (m *POAChainManager) updateStatus(block block.IBlock,isAdd bool) error {
+	//check all from account
+	for _,tx := range block.GetTxs() {
+		error := GetManager().AccountManager.UpdateAccountByTX(tx)
+		if error != nil {
+			return error
+		}
+	}
 	//update mine account status
 	poablock := *block.(*poameta.POABlock)
 	mineAccountId := *poablock.Header.GetMineAccount().(*poameta.POAAccountID)
@@ -383,5 +395,26 @@ func (m *POAChainManager) updateStatus(block block.IBlock,isAdd bool) error {
 	return nil
 }
 
+func (m *POAChainManager) removeErrorNode(node poameta.POAChainNode)  {
+	deleteChain := -1
+	deleteNode := -1
+	for chainId,chain := range m.chains {
+		for index,checkNode := range chain.Blocks {
+			if node.IsEuqal(poameta.NewPOAChainNode(&checkNode)){
+				deleteChain = chainId
+				deleteNode = index
+				break
+			}
+		}
+		if deleteChain >= 0 && deleteNode >= 0 {
+			break
+		}
+	}
+
+	if deleteChain >= 0 && deleteNode >= 0 {
+		m.chains[deleteChain].Blocks = append(m.chains[deleteChain].Blocks[:deleteNode],m.chains[deleteChain].Blocks[deleteNode+1:]...)
+		return
+	}
+}
 
 
