@@ -229,14 +229,6 @@ func (srv *Service) startListening() error {
 	srv.listener = listener
 	srv.loopWG.Add(1)
 	go srv.listenLoop()
-	// Map the TCP listening port if NAT is configured.
-	//	if !laddr.IP.IsLoopback() && srv.NAT != nil {
-	//		srv.loopWG.Add(1)
-	//		go func() {
-	//			nat.Map(srv.NAT, srv.quit, "tcp", laddr.Port, laddr.Port, "ethereum p2p")
-	//			srv.loopWG.Done()
-	//		}()
-	//	}
 	return nil
 }
 
@@ -346,24 +338,12 @@ func (srv *Service) setupConn(c *peer.Conn, flags peer.ConnFlag, dialDest *node.
 	}
 	// Run the encryption handshake.
 	var err error
-	//	if c.id, err = c.doEncHandshake(srv.PrivateKey, dialDest); err != nil {
-	//		srv.log.Trace("Failed RLPx handshake", "addr", c.fd.RemoteAddr(), "conn", c.flags, "err", err)
-	//		return err
-	//	}
 	clog := srv.log.New("id", c.ID, "addr", c.FD.RemoteAddr(), "conn", c.Flags)
 	// For dialed connections, check that the remote public key matches.
 	if (dialDest != nil) && (c.ID == node.NodeID{}) {
 		c.ID = dialDest.ID
-		// clog.Trace("Dialed identity mismatch", "want", c, dialDest.ID)
-		// return peer_error.DiscUnexpectedIdentity
 	}
-	//	log.Trace("start to checkpoint of posthandshake")
-	//	err = srv.checkpoint(c, srv.posthandshake)
-	//	if err != nil {
-	//		clog.Trace("Rejected peer before protocol handshake", "err", err)
-	//		return err
-	//	}
-	// Run the protocol handshake
+
 	log.Trace("start to run  protocol handshake")
 	phs, err := c.DoProtoHandshake(srv.ourHandshake)
 	if err != nil {
