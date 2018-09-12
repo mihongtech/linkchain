@@ -66,13 +66,7 @@ func (b *POABlock)GetHeight() uint32{
 }
 
 func (b *POABlock)GetBlockID() block.IBlockID{
-	/*data := make([]byte, 0)
-	buf := bytes.NewBuffer(data)
-	binary.Write(buf, binary.BigEndian, b.Header.Version)
-
-	first := sha256.Sum256(buf.Bytes())*/
-	first := sha256.Sum256(b.Header.PrevBlock.CloneBytes())
-	return math.Hash(sha256.Sum256(first[:]))
+	return b.Header.GetBlockID()
 }
 
 func (b *POABlock)GetPrevBlockID() block.IBlockID{
@@ -85,14 +79,14 @@ func (b *POABlock)Verify()(error){
 
 //Serialize/Deserialize
 func (b *POABlock)Serialize()(serialize.SerializeStream){
-	header := b.Header.Serialize().(protobuf.POABlockHeader)
+	header := b.Header.Serialize().(*protobuf.POABlockHeader)
 	txs := make([]*protobuf.POATransaction,0)
 	for _,tx := range b.TXs {
 		txs = append(txs,tx.Serialize().(*protobuf.POATransaction))
 	}
 
 	block := protobuf.POABlock{
-		Header:&header,
+		Header:header,
 		Txs:txs,
 	}
 	return &block
@@ -151,19 +145,19 @@ func (bh *POABlockHeader) SetMineAccount(id account.IAccountID)  {
 
 //Serialize/Deserialize
 func (bh *POABlockHeader) Serialize()(serialize.SerializeStream){
-	prevHash := bh.PrevBlock.Serialize().(protobuf.Hash)
-	merkleRoot := bh.MerkleRoot.Serialize().(protobuf.Hash)
+	prevHash := bh.PrevBlock.Serialize().(*protobuf.Hash)
+	merkleRoot := bh.MerkleRoot.Serialize().(*protobuf.Hash)
 	header := protobuf.POABlockHeader{
 		Version:proto.Uint32(bh.Version),
-		PrevHash:&prevHash,
-		MerkleRoot:&merkleRoot,
+		PrevHash:prevHash,
+		MerkleRoot:merkleRoot,
 		Time:proto.Int64(bh.Timestamp.Unix()),
 		Difficulty:proto.Uint32(bh.Difficulty),
 		Nounce:proto.Uint32(bh.Nonce),
 		Height:proto.Uint32(bh.Height),
 		Extra:proto.NewBuffer(bh.Extra).Bytes(),
 	}
-	return header
+	return &header
 }
 
 func (bh *POABlockHeader) Deserialize(s serialize.SerializeStream){

@@ -137,7 +137,7 @@ func (hash *Hash) Serialize()(serialize.SerializeStream){
 	h := protobuf.Hash{
 		Data:proto.NewBuffer(hash.CloneBytes()).Bytes(),
 	}
-	return h
+	return &h
 }
 
 func (hash *Hash) Deserialize(s serialize.SerializeStream){
