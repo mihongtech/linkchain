@@ -2,7 +2,6 @@ package meta
 
 import (
 	"encoding/json"
-	"crypto/sha256"
 	"time"
 
 	"github.com/linkchain/meta/tx"
@@ -125,8 +124,7 @@ func (bh *POABlockHeader)GetBlockID() block.IBlockID{
 	if err != nil {
 		log.Error("header marshaling error: ", err)
 	}
-	first := sha256.Sum256(buffer)
-	return math.Hash(sha256.Sum256(first[:]))
+	return math.DoubleHashH(buffer)
 }
 
 func (bh *POABlockHeader) GetMineAccount() account.IAccountID {

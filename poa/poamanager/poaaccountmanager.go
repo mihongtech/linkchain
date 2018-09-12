@@ -1,14 +1,15 @@
 package poamanager
 
 import (
-	"github.com/linkchain/meta/account"
-	"github.com/linkchain/common/util/log"
-	poameta "github.com/linkchain/poa/meta"
-	"crypto/sha256"
-	"github.com/linkchain/common/math"
 	"time"
 	"errors"
+
+	"github.com/linkchain/meta/account"
+	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/common/math"
 	"github.com/linkchain/meta/tx"
+
+	poameta "github.com/linkchain/poa/meta"
 )
 
 type POAAccountManager struct {
@@ -35,7 +36,7 @@ func (m *POAAccountManager) Stop(){
 
 func (m *POAAccountManager) NewAccount() account.IAccount  {
 	t := time.Now()
-	accountID := math.Hash(sha256.Sum256([]byte(t.String())))
+	accountID := math.DoubleHashH([]byte(t.String()))
 	account := poameta.POAAccount{AccountID:poameta.POAAccountID{ID:accountID},Value:poameta.POAAmount{Value:int32(t.Day())}}
 	return &account
 }

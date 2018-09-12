@@ -1,14 +1,14 @@
 package meta
 
 import (
+	"encoding/json"
+	"time"
+
 	"github.com/linkchain/meta/account"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/tx"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/serialize"
-	"crypto/sha256"
-	"encoding/json"
-	"time"
 	"github.com/linkchain/poa/meta/protobuf"
 	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/util/log"
@@ -68,8 +68,7 @@ func (tx *POATransaction) GetTxID() tx.ITxID  {
 	if err != nil {
 		log.Error("header marshaling error: ", err)
 	}
-	first := sha256.Sum256(buffer)
-	return math.Hash(sha256.Sum256(first[:]))
+	return math.DoubleHashH(buffer)
 }
 
 func (tx *POATransaction) SetFrom(from tx.ITxPeer)  {
