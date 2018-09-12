@@ -3,6 +3,9 @@ package meta
 import (
 	"strconv"
 	"github.com/linkchain/meta"
+	"github.com/linkchain/common/serialize"
+	"github.com/linkchain/poa/meta/protobuf"
+	"github.com/golang/protobuf/proto"
 )
 
 type POAAmount struct {
@@ -31,6 +34,19 @@ func (a *POAAmount)Subtraction(otherAmount meta.IAmount)  {
 
 func (a *POAAmount)Addition(otherAmount meta.IAmount)  {
 	a.Value = int32(a.GetInt() + otherAmount.GetInt())
+}
+
+//Serialize/Deserialize
+func (a *POAAmount) Serialize()(serialize.SerializeStream){
+	amount := protobuf.POAAmount{
+		Value:proto.Int32(a.Value),
+	}
+	return &amount
+}
+
+func (a *POAAmount) Deserialize(s serialize.SerializeStream){
+	data := s.(*protobuf.POAAmount)
+	a.Value = *data.Value
 }
 
 

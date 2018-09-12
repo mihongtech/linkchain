@@ -6,6 +6,7 @@ import (
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/account"
 	"encoding/json"
+	"github.com/linkchain/poa/meta/protobuf"
 )
 
 
@@ -15,6 +16,20 @@ type POAAccountID struct {
 
 func (id *POAAccountID) GetString() string  {
 	return id.ID.GetString()
+}
+
+//Serialize/Deserialize
+func (a *POAAccountID)Serialize()(serialize.SerializeStream){
+	id := a.ID.Serialize().(*protobuf.Hash)
+	accountId := protobuf.POAAccountID{
+		Id:id,
+	}
+	return &accountId
+}
+
+func (a *POAAccountID)Deserialize(s serialize.SerializeStream){
+	data := s.(*protobuf.POAAccountID)
+	a.ID.Deserialize(data.Id)
 }
 
 type POAAccount struct {

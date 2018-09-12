@@ -9,6 +9,9 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"time"
+	"github.com/linkchain/poa/meta/protobuf"
+	"github.com/golang/protobuf/proto"
+	"github.com/linkchain/common/util/log"
 )
 
 type POATransactionPeer struct {
@@ -21,13 +24,30 @@ func GetPOATransactionPeer(iaccount account.IAccount, extra []byte) POATransacti
 	return POATransactionPeer{AccountID:id,Extra:extra}
 }
 
+//Serialize/Deserialize
+func (txpeer *POATransactionPeer) Serialize()(serialize.SerializeStream){
+	accountID := txpeer.AccountID.Serialize().(*protobuf.POAAccountID)
+	peer := protobuf.POATransactionPeer{
+		AccountID:accountID,
+		Extra:proto.NewBuffer(txpeer.Extra).Bytes(),
+	}
+	return &peer
+}
+
+func (txpeer *POATransactionPeer) Deserialize(s serialize.SerializeStream){
+	data := *s.(*protobuf.POATransactionPeer)
+	txpeer.AccountID.Deserialize(data.AccountID)
+	txpeer.Extra = data.Extra
+}
+
+
 type FromSign struct {
 	Code []byte
 }
 
 type POATransaction struct {
 	// Version of the Transaction.  This is not the same as the Blocks version.
-	Version int32
+	Version uint32
 
 	From POATransactionPeer
 
@@ -43,8 +63,12 @@ type POATransaction struct {
 }
 
 func (tx *POATransaction) GetTxID() tx.ITxID  {
-	time,_ := tx.Time.GobEncode()
-	first := sha256.Sum256(time)
+	newTx := tx.Serialize().(*protobuf.POATransaction)
+	buffer,err := proto.Marshal(newTx)
+	if err != nil {
+		log.Error("header marshaling error: ", err)
+	}
+	first := sha256.Sum256(buffer)
 	return math.Hash(sha256.Sum256(first[:]))
 }
 
@@ -97,10 +121,29 @@ func (tx *POATransaction) Verify()(error)  {
 
 //Serialize/Deserialize
 func (tx *POATransaction) Serialize()(serialize.SerializeStream){
-	return nil
+	from := tx.From.Serialize().(*protobuf.POATransactionPeer)
+	to := tx.To.Serialize().(*protobuf.POATransactionPeer)
+	amount := tx.Amount.Serialize().(*protobuf.POAAmount)
+
+	t := protobuf.POATransaction{
+		Version:proto.Uint32(tx.Version),
+		From:from,
+		To:to,
+		Time:proto.Int64(tx.Time.Unix()),
+		Amount:amount,
+		Extra:proto.NewBuffer(tx.Extra).Bytes(),
+	}
+	return &t
 }
 
 func (tx *POATransaction) Deserialize(s serialize.SerializeStream){
+	data := *s.(*protobuf.POATransaction)
+	tx.Version = *data.Version
+	tx.From.Deserialize(data.From)
+	tx.To.Deserialize(data.To)
+	tx.Time = time.Unix(*data.Time,0)
+	tx.Amount.Deserialize(data.Amount)
+	tx.Extra = data.Extra
 }
 
 func (tx *POATransaction) ToString()(string) {

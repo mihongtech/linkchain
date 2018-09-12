@@ -161,14 +161,14 @@ func (bh *POABlockHeader) Serialize()(serialize.SerializeStream){
 }
 
 func (bh *POABlockHeader) Deserialize(s serialize.SerializeStream){
-	header := s.(*protobuf.POABlockHeader)
-	bh.Version = *header.Version
-	bh.PrevBlock.Deserialize(header.PrevHash)
-	bh.MerkleRoot.Deserialize(header.MerkleRoot)
-	bh.Timestamp = time.Unix(*header.Time,0)
-	bh.Difficulty = *header.Difficulty
-	bh.Nonce = *header.Nounce
-	bh.Height = *header.Height
-	bh.Extra = header.Extra
+	data := s.(*protobuf.POABlockHeader)
+	bh.Version = *data.Version
+	bh.PrevBlock.Deserialize(data.PrevHash)
+	bh.MerkleRoot.Deserialize(data.MerkleRoot)
+	bh.Timestamp = time.Unix(*data.Time,0)
+	bh.Difficulty = *data.Difficulty
+	bh.Nonce = *data.Nounce
+	bh.Height = *data.Height
+	bh.Extra = data.Extra
 }
 

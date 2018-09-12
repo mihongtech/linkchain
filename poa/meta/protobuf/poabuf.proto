@@ -20,11 +20,11 @@ message POABlock {
 }
 
 message POATransaction {
-    required int32 version = 1;
+    required uint32 version = 1;
     required POATransactionPeer from = 2;
     required POATransactionPeer to = 3;
     required POAAmount amount = 4;
-    required uint32 time = 5;
+    required int64 time = 5;
     optional bytes extra = 6;
     optional bytes sign = 7;
 }
