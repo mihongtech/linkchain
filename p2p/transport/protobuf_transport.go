@@ -191,32 +191,36 @@ func newPBFrameRW(conn io.ReadWriter) *pbfFrameRW {
 func (rw *pbfFrameRW) WriteMsg(msg message.Msg) error {
 	var content []byte
 	if msg.Payload != nil {
-		content, err := ioutil.ReadAll(msg.Payload)
-		log.Trace("write msg", "content is", content)
+		var err error
+		content, err = ioutil.ReadAll(msg.Payload)
+		log.Trace("write msg", "content is", content, "code", msg.Code)
 		if err != nil {
+			log.Error("read msg paload error", "err", err)
 			return err
 		}
 	}
 
 	protobufMsg := &protobufmsg.Msg{Code: &msg.Code, Payload: content}
-
+	log.Trace("write msg", "protobufMsg.Code", protobufMsg.Code, "protobufMsg.Payload", protobufMsg.Payload)
 	data, err := proto.Marshal(protobufMsg)
 	if err != nil {
+		log.Error("Marshal msg paload error", "err", err)
 		return err
 	}
-
+	log.Trace("write msg", "data", data, "dataSize", len(data))
 	headbuf := make([]byte, 32)
 	dataSize := len(data)
 	if uint32(dataSize) > maxUint24 {
+		log.Error("message size overflows error", "dataSize", dataSize)
 		return errors.New("message size overflows uint24")
 	}
 
 	putInt24(uint32(dataSize), headbuf)
-
+	log.Trace("write msg", "dataSize", dataSize, "headbuf", headbuf)
 	if _, err := rw.conn.Write(headbuf); err != nil {
 		return err
 	}
-
+	log.Trace("write msg", "dataSize", dataSize, "data", data)
 	if _, err := rw.conn.Write(data); err != nil {
 		return err
 	}
@@ -231,14 +235,14 @@ func (rw *pbfFrameRW) ReadMsg() (msg message.Msg, err error) {
 	if _, err := io.ReadFull(rw.conn, headbuf); err != nil {
 		return msg, err
 	}
-
+	log.Trace("read msg", "headbuf is", headbuf)
 	dataSize := readInt24(headbuf)
 
 	framebuf := make([]byte, dataSize)
 	if _, err := io.ReadFull(rw.conn, framebuf); err != nil {
 		return msg, err
 	}
-
+	log.Trace("read msg", "framebuf is", framebuf)
 	protubufMsg := protobufmsg.Msg{}
 
 	if err := proto.Unmarshal(framebuf, &protubufMsg); err != nil {

@@ -175,17 +175,20 @@ func (srv *Service) Start() bool {
 	dynPeers := srv.maxDialedConns()
 	dialer := newDialState(srv.StaticNodes, srv.BootstrapNodes, nil, dynPeers, srv.NetRestrict)
 
-	// handshake
-	srv.ourHandshake = &message.ProtoHandshake{Version: peer.BaseProtocolVersion, Name: srv.Name}
-	for _, p := range srv.Protocols {
-		srv.ourHandshake.Caps = append(srv.ourHandshake.Caps, p.Cap())
-	}
 	// listen/dial
 	if srv.ListenAddr != "" {
 		if err := srv.startListening(); err != nil {
 			return false
 		}
 	}
+
+	// handshake
+	addr := srv.listener.Addr().(*net.TCPAddr)
+	srv.ourHandshake = &message.ProtoHandshake{Version: peer.BaseProtocolVersion, Name: srv.Name, ID: sha256.Sum256([]byte((&net.TCPAddr{IP: addr.IP, Port: int(addr.Port)}).String()))}
+	for _, p := range srv.Protocols {
+		srv.ourHandshake.Caps = append(srv.ourHandshake.Caps, p.Cap())
+	}
+
 	if srv.NoDial && srv.ListenAddr == "" {
 		srv.log.Warn("P2P server will be useless, neither dialing nor listening")
 	}
@@ -349,7 +352,7 @@ func (srv *Service) setupConn(c *peer.Conn, flags peer.ConnFlag, dialDest *node.
 	//	}
 	clog := srv.log.New("id", c.ID, "addr", c.FD.RemoteAddr(), "conn", c.Flags)
 	// For dialed connections, check that the remote public key matches.
-	if dialDest != nil {
+	if (dialDest != nil) && (c.ID == node.NodeID{}) {
 		c.ID = dialDest.ID
 		// clog.Trace("Dialed identity mismatch", "want", c, dialDest.ID)
 		// return peer_error.DiscUnexpectedIdentity
@@ -367,6 +370,11 @@ func (srv *Service) setupConn(c *peer.Conn, flags peer.ConnFlag, dialDest *node.
 		clog.Trace("Failed proto handshake", "err", err)
 		return err
 	}
+
+	if c.ID == (node.NodeID{}) {
+		c.ID = phs.ID
+	}
+
 	if phs.ID != c.ID {
 		clog.Trace("Wrong devp2p handshake identity", "err", phs.ID)
 		return peer_error.DiscUnexpectedIdentity

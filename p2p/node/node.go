@@ -22,18 +22,12 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"math/big"
-	"math/rand"
 	"net"
 	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 )
 
 type NodeID [32]byte
@@ -306,51 +300,6 @@ func PubkeyID(pub *ecdsa.PublicKey) NodeID {
 	return id
 }
 
-// Pubkey returns the public key represented by the node ID.
-// It returns an error if the ID is not a point on the curve.
-func (id NodeID) Pubkey() (*ecdsa.PublicKey, error) {
-	p := &ecdsa.PublicKey{Curve: crypto.S256(), X: new(big.Int), Y: new(big.Int)}
-	half := len(id) / 2
-	p.X.SetBytes(id[:half])
-	p.Y.SetBytes(id[half:])
-	if !p.Curve.IsOnCurve(p.X, p.Y) {
-		return nil, errors.New("id is invalid secp256k1 curve point")
-	}
-	return p, nil
-}
-
-// recoverNodeID computes the public key used to sign the
-// given hash from the signature.
-func recoverNodeID(hash, sig []byte) (id NodeID, err error) {
-	pubkey, err := secp256k1.RecoverPubkey(hash, sig)
-	if err != nil {
-		return id, err
-	}
-	if len(pubkey)-1 != len(id) {
-		return id, fmt.Errorf("recovered pubkey has %d bits, want %d bits", len(pubkey)*8, (len(id)+1)*8)
-	}
-	for i := range id {
-		id[i] = pubkey[i+1]
-	}
-	return id, nil
-}
-
-// distcmp compares the distances a->target and b->target.
-// Returns -1 if a is closer to target, 1 if b is closer to target
-// and 0 if they are equal.
-func distcmp(target, a, b common.Hash) int {
-	for i := range target {
-		da := a[i] ^ target[i]
-		db := b[i] ^ target[i]
-		if da > db {
-			return 1
-		} else if da < db {
-			return -1
-		}
-	}
-	return 0
-}
-
 // table of leading zero counts for bytes [0..255]
 var lzcount = [256]int{
 	8, 7, 6, 6, 5, 5, 5, 5,
@@ -385,39 +334,4 @@ var lzcount = [256]int{
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
-}
-
-// logdist returns the logarithmic distance between a and b, log2(a ^ b).
-func logdist(a, b common.Hash) int {
-	lz := 0
-	for i := range a {
-		x := a[i] ^ b[i]
-		if x == 0 {
-			lz += 8
-		} else {
-			lz += lzcount[x]
-			break
-		}
-	}
-	return len(a)*8 - lz
-}
-
-// hashAtDistance returns a random hash such that logdist(a, b) == n
-func hashAtDistance(a common.Hash, n int) (b common.Hash) {
-	if n == 0 {
-		return a
-	}
-	// flip bit at position n, fill the rest with random bits
-	b = a
-	pos := len(a) - n/8 - 1
-	bit := byte(0x01) << (byte(n%8) - 1)
-	if bit == 0 {
-		pos++
-		bit = 0x80
-	}
-	b[pos] = a[pos]&^bit | ^a[pos]&bit // TODO: randomize end bits
-	for i := pos + 1; i < len(a); i++ {
-		b[i] = byte(rand.Intn(255))
-	}
-	return b
 }
