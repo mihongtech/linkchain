@@ -354,12 +354,14 @@ func (srv *Service) setupConn(c *peer.Conn, flags peer.ConnFlag, dialDest *node.
 		// clog.Trace("Dialed identity mismatch", "want", c, dialDest.ID)
 		// return peer_error.DiscUnexpectedIdentity
 	}
-	err = srv.checkpoint(c, srv.posthandshake)
-	if err != nil {
-		clog.Trace("Rejected peer before protocol handshake", "err", err)
-		return err
-	}
+	//	log.Trace("start to checkpoint of posthandshake")
+	//	err = srv.checkpoint(c, srv.posthandshake)
+	//	if err != nil {
+	//		clog.Trace("Rejected peer before protocol handshake", "err", err)
+	//		return err
+	//	}
 	// Run the protocol handshake
+	log.Trace("start to run  protocol handshake")
 	phs, err := c.DoProtoHandshake(srv.ourHandshake)
 	if err != nil {
 		clog.Trace("Failed proto handshake", "err", err)

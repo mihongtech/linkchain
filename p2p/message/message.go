@@ -89,7 +89,7 @@ type MsgReadWriter interface {
 // data should encode as an RLP list.
 func Send(w MsgWriter, msgcode uint64, data proto.Message) error {
 	if data == nil {
-		return w.WriteMsg(Msg{Code: msgcode, Size: uint32(0)})
+		return w.WriteMsg(Msg{Code: msgcode, Size: uint32(0), Payload: nil})
 	}
 
 	r, err := proto.Marshal(data)
