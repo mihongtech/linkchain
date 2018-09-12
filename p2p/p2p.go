@@ -127,6 +127,8 @@ type peerDrop struct {
 
 func (srv *Service) Init(i interface{}) bool {
 	log.Info("p2p service init...")
+	// TODO: init config
+	srv.ListenAddr = "127.0.0.1:40000"
 	return true
 }
 
@@ -203,8 +205,10 @@ func (srv *Service) Stop() {
 
 func (srv *Service) startListening() error {
 	// Launch the TCP listener.
+	log.Info("Start tcp listenner", "srv.ListenAddr", srv.ListenAddr)
 	listener, err := net.Listen("tcp", srv.ListenAddr)
 	if err != nil {
+		log.Error("Failed to start tcp listenner", "srv.ListenAddr", srv.ListenAddr)
 		return err
 	}
 	laddr := listener.Addr().(*net.TCPAddr)
@@ -405,7 +409,7 @@ type tempError interface {
 // inbound connections.
 func (srv *Service) listenLoop() {
 	defer srv.loopWG.Done()
-	srv.log.Info("RLPx listener up", "self", srv.makeSelf(srv.listener))
+	srv.log.Info("Protobuf listener up", "self", srv.makeSelf(srv.listener))
 
 	tokens := peer.DefaultMaxPendingPeers
 	if srv.MaxPendingPeers > 0 {
