@@ -99,7 +99,13 @@ func (p *pbfmsg) DoProtoHandshake(our *message.ProtoHandshake) (their *message.P
 	p.rw = newPBFrameRW(p.fd)
 	werr := make(chan error, 1)
 	go func() {
-		werr <- message.Send(p.rw, message.HandshakeMsg, nil)
+		var caps []*protobufmsg.Cap
+		for _, cap := range our.Caps {
+			caps = append(caps, &protobufmsg.Cap{Name: &(cap.Name), Version: &(cap.Version)})
+		}
+
+		pbmsg := protobufmsg.ProtoHandshake{Version: &our.Version, Name: &our.Name, ListenPort: &our.ListenPort, Id: our.ID[:], Caps: caps, Rest: our.Rest}
+		werr <- message.Send(p.rw, message.HandshakeMsg, &pbmsg)
 	}()
 	if their, err = readProtocolHandshake(p.rw, our); err != nil {
 		<-werr // make sure the write terminates too
@@ -132,10 +138,27 @@ func readProtocolHandshake(rw message.MsgReader, our *message.ProtoHandshake) (*
 	if msg.Code != message.HandshakeMsg {
 		return nil, fmt.Errorf("expected handshake, got %x", msg.Code)
 	}
-	var hs message.ProtoHandshake
-	//	if err := msg.Decode(&hs); err != nil {
-	//		return nil, err
-	//	}
+
+	var pbmsg protobufmsg.ProtoHandshake
+	if err := msg.Decode(&pbmsg); err != nil {
+		return nil, err
+	}
+
+	nodeID := node.NodeID{}
+	if len(pbmsg.Id) > 0 {
+		copy(nodeID[:], pbmsg.Id[0:32])
+	}
+
+	var port uint64
+	var caps []message.Cap
+	for _, cap := range pbmsg.Caps {
+		caps = append(caps, message.Cap{Name: *cap.Name, Version: *cap.Version})
+	}
+	if pbmsg.ListenPort != nil {
+		port = *pbmsg.ListenPort
+	}
+
+	hs := message.ProtoHandshake{Version: *pbmsg.Version, Caps: caps, Name: *pbmsg.Name, ListenPort: port, ID: nodeID, Rest: pbmsg.Rest}
 	if (hs.ID == node.NodeID{}) {
 		return nil, peer_error.DiscInvalidIdentity
 	}

@@ -331,7 +331,7 @@ type ProtoHandshake struct {
 // Cap is the structure of a peer capability.
 type Cap struct {
 	Name    string
-	Version uint
+	Version uint64
 }
 
 func (cap Cap) RlpData() interface{} {

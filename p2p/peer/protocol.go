@@ -14,7 +14,7 @@ type Protocol struct {
 	Name string
 
 	// Version should contain the version number of the protocol.
-	Version uint
+	Version uint64
 
 	// Length should contain the number of message codes used
 	// by the protocol.
