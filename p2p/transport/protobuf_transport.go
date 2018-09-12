@@ -4,16 +4,18 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/golang/protobuf/proto"
-	"github.com/linkchain/p2p/message"
-	"github.com/linkchain/p2p/message/protobufmsg"
-	"github.com/linkchain/p2p/node"
-	"github.com/linkchain/p2p/peer_error"
 	"io"
 	"io/ioutil"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/p2p/message"
+	"github.com/linkchain/p2p/message/protobufmsg"
+	"github.com/linkchain/p2p/node"
+	"github.com/linkchain/p2p/peer_error"
 )
 
 const (
@@ -94,9 +96,9 @@ func (p *pbfmsg) DoProtoHandshake(our *message.ProtoHandshake) (their *message.P
 	// returning the handshake read error. If the remote side
 	// disconnects us early with a valid reason, we should return it
 	// as the error so it can be tracked elsewhere.
+	p.rw = newPBFrameRW(p.fd)
 	werr := make(chan error, 1)
-	go func() { // // TODO: fix me
-		// werr <- message.Send(p.rw, message.HandshakeMsg, our) }()
+	go func() {
 		werr <- message.Send(p.rw, message.HandshakeMsg, nil)
 	}()
 	if their, err = readProtocolHandshake(p.rw, our); err != nil {
@@ -157,16 +159,20 @@ type pbfFrameRW struct {
 	conn io.ReadWriter
 }
 
-func newRLPXFrameRW(conn io.ReadWriter) *pbfFrameRW {
+func newPBFrameRW(conn io.ReadWriter) *pbfFrameRW {
 	return &pbfFrameRW{
 		conn: conn,
 	}
 }
 
 func (rw *pbfFrameRW) WriteMsg(msg message.Msg) error {
-	content, err := ioutil.ReadAll(msg.Payload)
-	if err != nil {
-		return err
+	var content []byte
+	if msg.Payload != nil {
+		content, err := ioutil.ReadAll(msg.Payload)
+		log.Trace("write msg", "content is", content)
+		if err != nil {
+			return err
+		}
 	}
 
 	protobufMsg := &protobufmsg.Msg{Code: &msg.Code, Payload: content}
@@ -197,6 +203,7 @@ func (rw *pbfFrameRW) WriteMsg(msg message.Msg) error {
 
 func (rw *pbfFrameRW) ReadMsg() (msg message.Msg, err error) {
 	// read the header
+	log.Trace("start to read msg", "rw.conn", rw.conn)
 	headbuf := make([]byte, 32)
 	if _, err := io.ReadFull(rw.conn, headbuf); err != nil {
 		return msg, err

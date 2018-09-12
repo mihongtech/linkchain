@@ -117,6 +117,16 @@ type Service struct {
 	log           log.Logger
 }
 
+var once sync.Once
+var s *Service
+
+func GetP2PServer() *Service {
+	once.Do(func() {
+		s = &Service{}
+	})
+	return s
+}
+
 type peerOpFunc func(map[node.NodeID]*peer.Peer)
 
 type peerDrop struct {
@@ -128,7 +138,7 @@ type peerDrop struct {
 func (srv *Service) Init(i interface{}) bool {
 	log.Info("p2p service init...")
 	// TODO: init config
-	srv.ListenAddr = "127.0.0.1:40000"
+	srv.ListenAddr = "127.0.0.1:40001"
 	return true
 }
 
@@ -339,16 +349,19 @@ func (srv *Service) setupConn(c *peer.Conn, flags peer.ConnFlag, dialDest *node.
 	//	}
 	clog := srv.log.New("id", c.ID, "addr", c.FD.RemoteAddr(), "conn", c.Flags)
 	// For dialed connections, check that the remote public key matches.
-	if dialDest != nil && c.ID != dialDest.ID {
-		clog.Trace("Dialed identity mismatch", "want", c, dialDest.ID)
-		return peer_error.DiscUnexpectedIdentity
+	if dialDest != nil {
+		c.ID = dialDest.ID
+		// clog.Trace("Dialed identity mismatch", "want", c, dialDest.ID)
+		// return peer_error.DiscUnexpectedIdentity
 	}
-	err = srv.checkpoint(c, srv.posthandshake)
-	if err != nil {
-		clog.Trace("Rejected peer before protocol handshake", "err", err)
-		return err
-	}
+	//	log.Trace("start to checkpoint of posthandshake")
+	//	err = srv.checkpoint(c, srv.posthandshake)
+	//	if err != nil {
+	//		clog.Trace("Rejected peer before protocol handshake", "err", err)
+	//		return err
+	//	}
 	// Run the protocol handshake
+	log.Trace("start to run  protocol handshake")
 	phs, err := c.DoProtoHandshake(srv.ourHandshake)
 	if err != nil {
 		clog.Trace("Failed proto handshake", "err", err)
@@ -482,7 +495,7 @@ func (srv *Service) run(dialstate dialer) {
 	for _, n := range srv.TrustedNodes {
 		trusted[n.ID] = true
 	}
-
+	log.Info("trusted nodes is ", "trusted", trusted)
 	// removes t from runningTasks
 	delTask := func(t task) {
 		for i := range runningTasks {
