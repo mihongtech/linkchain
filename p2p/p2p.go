@@ -1,6 +1,7 @@
 package p2p
 
 import (
+	"crypto/sha256"
 	"errors"
 	"net"
 	"sync"
@@ -126,6 +127,8 @@ type peerDrop struct {
 
 func (srv *Service) Init(i interface{}) bool {
 	log.Info("p2p service init...")
+	// TODO: init config
+	srv.ListenAddr = "127.0.0.1:40000"
 	return true
 }
 
@@ -202,8 +205,10 @@ func (srv *Service) Stop() {
 
 func (srv *Service) startListening() error {
 	// Launch the TCP listener.
+	log.Info("Start tcp listenner", "srv.ListenAddr", srv.ListenAddr)
 	listener, err := net.Listen("tcp", srv.ListenAddr)
 	if err != nil {
+		log.Error("Failed to start tcp listenner", "srv.ListenAddr", srv.ListenAddr)
 		return err
 	}
 	laddr := listener.Addr().(*net.TCPAddr)
@@ -288,13 +293,16 @@ func (srv *Service) Self() *node.Node {
 func (srv *Service) makeSelf(listener net.Listener) *node.Node {
 	// Inbound connections disabled, use zero address.
 	if listener == nil {
-		return &node.Node{IP: net.ParseIP("0.0.0.0")}
+		// TODO use publikey to generate ID
+		return &node.Node{IP: net.ParseIP("0.0.0.0"), ID: sha256.Sum256([]byte((&net.TCPAddr{IP: net.ParseIP("0.0.0.0")}).String()))}
 	}
 	// Otherwise inject the listener address too
 	addr := listener.Addr().(*net.TCPAddr)
+	// TODO use publikey to generate ID
 	return &node.Node{
 		IP:  addr.IP,
 		TCP: uint16(addr.Port),
+		ID:  sha256.Sum256([]byte((&net.TCPAddr{IP: addr.IP, Port: int(addr.Port)}).String())),
 	}
 }
 
@@ -401,7 +409,7 @@ type tempError interface {
 // inbound connections.
 func (srv *Service) listenLoop() {
 	defer srv.loopWG.Done()
-	srv.log.Info("RLPx listener up", "self", srv.makeSelf(srv.listener))
+	srv.log.Info("Protobuf listener up", "self", srv.makeSelf(srv.listener))
 
 	tokens := peer.DefaultMaxPendingPeers
 	if srv.MaxPendingPeers > 0 {
