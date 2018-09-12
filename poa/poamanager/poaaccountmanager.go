@@ -36,7 +36,7 @@ func (m *POAAccountManager) Stop(){
 func (m *POAAccountManager) NewAccount() account.IAccount  {
 	t := time.Now()
 	accountID := math.Hash(sha256.Sum256([]byte(t.String())))
-	account := poameta.POAAccount{AccountID:poameta.POAAccountID{ID:accountID},Value:poameta.POAAmount{Value:t.Day()}}
+	account := poameta.POAAccount{AccountID:poameta.POAAccountID{ID:accountID},Value:poameta.POAAmount{Value:int32(t.Day())}}
 	return &account
 }
 

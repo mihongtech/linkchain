@@ -1,0 +1,47 @@
+syntax = "proto2";
+package protobuf;
+
+
+message POABlockHeader {
+    required uint32 version = 1;
+    required Hash prevHash = 2;
+    required Hash merkleRoot = 3;
+    required int64 time = 4;
+    required uint32 difficulty = 5;
+    required uint32 nounce = 6;
+    required uint32 height = 7;
+    optional bytes extra = 8;
+
+}
+
+message POABlock {
+    required POABlockHeader header = 1;
+    repeated POATransaction txs = 2;
+}
+
+message POATransaction {
+    required int32 version = 1;
+    required POATransactionPeer from = 2;
+    required POATransactionPeer to = 3;
+    required POAAmount amount = 4;
+    required uint32 time = 5;
+    optional bytes extra = 6;
+    optional bytes sign = 7;
+}
+
+message POATransactionPeer {
+    required POAAccountID accountID = 1;
+    optional bytes extra = 2 ;
+}
+
+message POAAccountID {
+    required Hash id=1;
+}
+
+message Hash {
+    required bytes data = 1;
+}
+
+message POAAmount {
+    required int32 value = 1;
+}

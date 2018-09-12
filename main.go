@@ -1,21 +1,19 @@
 package main
 
 import (
-	"os"
-	"fmt"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/cmd"
-	"strings"
 	"bufio"
+	"fmt"
+	"github.com/linkchain/cmd"
+	"github.com/linkchain/common/util/log"
+	"os"
+	"strings"
 )
-
 
 func main() {
 	//init log
 	log.Root().SetHandler(
 		log.LvlFilterHandler(log.Lvl(log.LvlInfo),
 			log.StreamHandler(os.Stdout, log.TerminalFormat(true))))
-
 
 	start := strings.Fields("start")
 
@@ -26,7 +24,6 @@ func main() {
 
 	cmd.RootCmd.SetArgs(mine)
 	cmd.RootCmd.Execute()
-
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for {

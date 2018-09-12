@@ -3,6 +3,9 @@ package math
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/linkchain/common/serialize"
+	"github.com/linkchain/poa/meta/protobuf"
+	"github.com/golang/protobuf/proto"
 )
 
 // HashSize of array used to store hashes.  See Hash.
@@ -127,4 +130,17 @@ func Decode(dst *Hash, src string) error {
 	}
 
 	return nil
+}
+
+//Serialize/Deserialize
+func (hash *Hash) Serialize()(serialize.SerializeStream){
+	h := protobuf.Hash{
+		Data:proto.NewBuffer(hash.CloneBytes()).Bytes(),
+	}
+	return h
+}
+
+func (hash *Hash) Deserialize(s serialize.SerializeStream){
+	h := *s.(*protobuf.Hash)
+	hash.SetBytes(h.Data)
 }

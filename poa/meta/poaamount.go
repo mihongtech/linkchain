@@ -6,11 +6,11 @@ import (
 )
 
 type POAAmount struct {
-	Value int
+	Value int32
 }
 
 func (a *POAAmount) GetInt() int  {
-	return a.Value
+	return int(a.Value)
 }
 
 func (a *POAAmount) GetFloat() float32  {
@@ -18,7 +18,7 @@ func (a *POAAmount) GetFloat() float32  {
 }
 
 func (a *POAAmount) GetString() string  {
-	return strconv.Itoa(a.Value)
+	return strconv.Itoa(a.GetInt())
 }
 
 func (a *POAAmount)IsLessThan(otherAmount meta.IAmount) bool  {
@@ -26,11 +26,11 @@ func (a *POAAmount)IsLessThan(otherAmount meta.IAmount) bool  {
 }
 
 func (a *POAAmount)Subtraction(otherAmount meta.IAmount)  {
-	a.Value = a.GetInt() - otherAmount.GetInt()
+	a.Value = int32(a.GetInt() - otherAmount.GetInt())
 }
 
 func (a *POAAmount)Addition(otherAmount meta.IAmount)  {
-	a.Value = a.GetInt() + otherAmount.GetInt()
+	a.Value = int32(a.GetInt() + otherAmount.GetInt())
 }
 
 
