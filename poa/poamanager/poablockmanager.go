@@ -4,7 +4,6 @@ import (
 	"sync"
 	"time"
 	"errors"
-	"crypto/sha256"
 
 	"github.com/linkchain/meta/block"
 	"github.com/linkchain/common/util/log"
@@ -16,7 +15,7 @@ const (
 	MaxMapSize = 1024 * 4
 )
 
-var minerAccountId = poameta.POAAccountID{ID:math.Hash(sha256.Sum256([]byte("lf")))}
+var minerAccountId = poameta.POAAccountID{ID:math.DoubleHashH([]byte("lf"))}
 
 type POABlockManager struct {
 	sync.RWMutex
