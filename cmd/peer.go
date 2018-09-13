@@ -9,7 +9,7 @@ import (
 
 func init() {
 	RootCmd.AddCommand(peerCmd)
-	peerCmd.AddCommand(addPeerCmd, listPeerCmd)
+	peerCmd.AddCommand(addPeerCmd, listPeerCmd, removePeerCmd)
 }
 
 var peerCmd = &cobra.Command{
@@ -49,5 +49,21 @@ var listPeerCmd = &cobra.Command{
 		for _, peer := range peers {
 			println("peer: %s", peer.String())
 		}
+	},
+}
+
+var removePeerCmd = &cobra.Command{
+	Use:   "remove",
+	Short: "remove a new peer",
+	Run: func(cmd *cobra.Command, args []string) {
+		println("Remove  peer")
+		println("args is %s", args[0])
+		server := p2p.GetP2PServer()
+		node, err := node.ParseNode(args[0])
+		if err != nil {
+			log.Error("parse node failes", "url", args[0])
+			return
+		}
+		server.RemovePeer(node)
 	},
 }
