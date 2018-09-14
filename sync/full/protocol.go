@@ -19,7 +19,7 @@ const (
 var ProtocolName = "full"
 
 // Supported versions of the eth protocol (first is primary).
-var ProtocolVersions = []uint{full01}
+var ProtocolVersions = []uint64{full01}
 
 // Number of implemented message corresponding to different protocol versions.
 var ProtocolLengths = []uint64{8}
