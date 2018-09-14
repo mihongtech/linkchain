@@ -97,6 +97,12 @@
 			"revision": "11551d06cbcc94edc80a0facaccbda56473c19c1",
 			"revisionTime": "2018-08-23T14:12:18Z",
 			"tree": true
+		},
+		{
+			"checksumSHA1": "+5+sKIljBicQ52xh5Jwx03z5G/A=",
+			"path": "gopkg.in/fatih/set.v0",
+			"revision": "2c768e3c5489976167bfc42b5c7c92ca783f4389",
+			"revisionTime": "2018-08-03T06:55:37Z"
 		}
 	],
 	"rootPath": "github.com/linkchain"
