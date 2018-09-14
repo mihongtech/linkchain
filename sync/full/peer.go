@@ -50,8 +50,8 @@ type peer struct {
 	td   *big.Int
 	lock sync.RWMutex
 
-	knownTxs    *set.Set // Set of transaction hashes known to be known by this peer
-	knownBlocks *set.Set // Set of block hashes known to be known by this peer
+	knownTxs    set.Interface // Set of transaction hashes known to be known by this peer
+	knownBlocks set.Interface // Set of block hashes known to be known by this peer
 }
 
 func newPeer(version int, p *p2p_peer.Peer, rw message.MsgReadWriter) *peer {
@@ -62,8 +62,8 @@ func newPeer(version int, p *p2p_peer.Peer, rw message.MsgReadWriter) *peer {
 		rw:          rw,
 		version:     version,
 		id:          fmt.Sprintf("%x", id[:8]),
-		knownTxs:    set.New(),
-		knownBlocks: set.New(),
+		knownTxs:    set.New(set.ThreadSafe),
+		knownBlocks: set.New(set.ThreadSafe),
 	}
 }
 
