@@ -1,5 +1,7 @@
 package meta
 
+import "github.com/linkchain/common/serialize"
+
 type IAmount interface{
 	GetInt() int
 	GetFloat() float32
@@ -9,4 +11,14 @@ type IAmount interface{
 
 	Subtraction(otherAmount IAmount)
 	Addition(otherAmount IAmount)
+}
+
+type DataID interface{
+	GetString() string
+	IsEqual(id DataID) bool
+	IsEmpty() bool
+	CloneBytes() []byte
+	SetBytes(newHash []byte) error
+
+	serialize.ISerialize
 }

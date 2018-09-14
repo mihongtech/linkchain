@@ -4,6 +4,7 @@ import (
 	"github.com/linkchain/meta/block"
 	"github.com/linkchain/common/math"
 	"strconv"
+	"github.com/linkchain/meta"
 )
 
 type POAChainNode struct {
@@ -14,8 +15,8 @@ type POAChainNode struct {
 
 func NewPOAChainNode(block block.IBlock) POAChainNode {
 	return POAChainNode{
-		curentHash: block.GetBlockID().(math.Hash),
-		prevHash: block.GetPrevBlockID().(math.Hash),
+		curentHash: *block.GetBlockID().(*math.Hash),
+		prevHash: *block.GetPrevBlockID().(*math.Hash),
 		height: block.GetHeight()}
 }
 
@@ -23,12 +24,12 @@ func (bn *POAChainNode) GetNodeHeight() uint32 {
 	return bn.height
 }
 
-func (bn *POAChainNode) GetNodeHash() block.IBlockID {
-	return bn.curentHash
+func (bn *POAChainNode) GetNodeHash() meta.DataID {
+	return &bn.curentHash
 }
 
-func (bn *POAChainNode) GetPrevHash() block.IBlockID {
-	return bn.prevHash
+func (bn *POAChainNode) GetPrevHash() meta.DataID {
+	return &bn.prevHash
 }
 
 func (bn *POAChainNode) CheckPrev(prevNode POAChainNode) bool  {
@@ -37,6 +38,10 @@ func (bn *POAChainNode) CheckPrev(prevNode POAChainNode) bool  {
 
 func (bn *POAChainNode) IsEuqal(checkNode POAChainNode) bool {
 	return bn.curentHash.IsEqual(&checkNode.curentHash)
+}
+
+func (bn *POAChainNode) IsGensis() bool  {
+	return bn.height == 0 && bn.prevHash.IsEmpty()
 }
 
 func (bn *POAChainNode) GetString() string {

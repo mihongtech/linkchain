@@ -12,6 +12,7 @@ import (
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/poa/meta/protobuf"
 	"github.com/golang/protobuf/proto"
+	"github.com/linkchain/meta"
 )
 
 type POABlock struct{
@@ -44,6 +45,8 @@ type POABlockHeader struct {
 
 	// Extra used to extenion the block.
 	Extra []byte
+
+	hash math.Hash
 }
 
 
@@ -64,12 +67,12 @@ func (b *POABlock)GetHeight() uint32{
 	return b.Header.Height
 }
 
-func (b *POABlock)GetBlockID() block.IBlockID{
+func (b *POABlock)GetBlockID() meta.DataID{
 	return b.Header.GetBlockID()
 }
 
-func (b *POABlock)GetPrevBlockID() block.IBlockID{
-	return b.Header.PrevBlock
+func (b *POABlock) GetPrevBlockID() meta.DataID{
+	return &b.Header.PrevBlock
 }
 
 func (b *POABlock)Verify()(error){
@@ -107,7 +110,7 @@ func (b *POABlock)Deserialize(s serialize.SerializeStream){
 	}
 }
 
-func (b *POABlock) GetTxs() []tx.ITx  {
+func (b *POABlock) GetTxs() []tx.ITx {
 	txs := make([]tx.ITx,0)
 	for _,tx := range b.TXs {
 		txs = append(txs,&tx)
@@ -124,13 +127,16 @@ func (b *POABlock)ToString()(string){
 	return string(data)
 }
 
-func (bh *POABlockHeader)GetBlockID() block.IBlockID{
-	header := bh.Serialize().(*protobuf.POABlockHeader)
-	buffer,err := proto.Marshal(header)
-	if err != nil {
-		log.Error("header marshaling error: ", err)
+
+func (b *POABlock) IsGensis() bool {
+	return b.Header.IsGensis()
+}
+
+func (bh *POABlockHeader)GetBlockID() meta.DataID{
+	if bh.hash.IsEmpty(){
+		bh.hash = math.MakeHash(bh.Serialize())
 	}
-	return math.DoubleHashH(buffer)
+	return &bh.hash
 }
 
 func (bh *POABlockHeader) GetMineAccount() account.IAccountID {
@@ -174,5 +180,9 @@ func (bh *POABlockHeader) Deserialize(s serialize.SerializeStream){
 	bh.Nonce = *data.Nounce
 	bh.Height = *data.Height
 	bh.Extra = data.Extra
+}
+
+func (b *POABlockHeader) IsGensis() bool {
+	return b.Height == 0 && b.PrevBlock.IsEmpty()
 }
 

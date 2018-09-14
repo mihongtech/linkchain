@@ -9,13 +9,10 @@ import (
 type ITxPeer interface{
 }
 
-type ITxID interface{
-	GetString() string
-}
 
 type ITx interface {
 
-	GetTxID() ITxID
+	GetTxID() meta.DataID
 
 	//tx content
 	SetFrom(from ITxPeer)

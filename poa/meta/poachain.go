@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/linkchain/meta/block"
+	"github.com/linkchain/meta"
 )
 
 type POAChain struct {
@@ -51,7 +52,7 @@ func (bc *POAChain) GetHeight() uint32  {
 	return bc.GetLastBlock().GetHeight()
 }
 
-func (bc *POAChain) GetBlockByID(block.IBlockID) block.IBlock {
+func (bc *POAChain) GetBlockByID(id meta.DataID) block.IBlock {
 	//TODO need to sorage
 	return nil
 }

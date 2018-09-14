@@ -6,6 +6,7 @@ import (
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/poa/meta/protobuf"
 	"github.com/golang/protobuf/proto"
+	"github.com/linkchain/meta"
 )
 
 // HashSize of array used to store hashes.  See Hash.
@@ -38,6 +39,17 @@ func (hash Hash) GetString() string {
 	return hex.EncodeToString(hash[:])
 }
 
+func (hash Hash) IsEmpty() bool  {
+	isEmpty := true
+	for i := 0; i < HashSize; i++ {
+		if hash[i] != 0{
+			isEmpty = false
+			break
+		}
+	}
+	return isEmpty
+}
+
 // CloneBytes returns a copy of the bytes which represent the hash as a byte
 // slice.
 //
@@ -63,15 +75,16 @@ func (hash *Hash) SetBytes(newHash []byte) error {
 	return nil
 }
 
+
 // IsEqual returns true if target is the same as hash.
-func (hash *Hash) IsEqual(target *Hash) bool {
-	if hash == nil && target == nil {
+func (hash *Hash) IsEqual(id meta.DataID) bool {
+	if hash == nil && id == nil {
 		return true
 	}
-	if hash == nil || target == nil {
+	if hash == nil || id == nil {
 		return false
 	}
-	return *hash == *target
+	return *hash == *id.(*Hash)
 }
 
 // NewHash returns a new Hash from a byte slice.  An error is returned if
@@ -144,3 +157,8 @@ func (hash *Hash) Deserialize(s serialize.SerializeStream){
 	h := *s.(*protobuf.Hash)
 	hash.SetBytes(h.Data)
 }
+
+func (hash *Hash) ToString() string{
+	return hash.String()
+}
+

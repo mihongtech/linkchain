@@ -11,7 +11,6 @@ import (
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/poa/meta/protobuf"
 	"github.com/golang/protobuf/proto"
-	"github.com/linkchain/common/util/log"
 )
 
 type POATransactionPeer struct {
@@ -60,15 +59,15 @@ type POATransaction struct {
 	Extra []byte
 
 	Signs FromSign
+
+	txid math.Hash
 }
 
-func (tx *POATransaction) GetTxID() tx.ITxID  {
-	newTx := tx.Serialize().(*protobuf.POATransaction)
-	buffer,err := proto.Marshal(newTx)
-	if err != nil {
-		log.Error("header marshaling error: ", err)
+func (tx *POATransaction) GetTxID() meta.DataID  {
+	if tx.txid.IsEmpty(){
+		tx.txid = math.MakeHash(tx.Serialize())
 	}
-	return math.DoubleHashH(buffer)
+	return &tx.txid
 }
 
 func (tx *POATransaction) SetFrom(from tx.ITxPeer)  {
@@ -152,5 +151,3 @@ func (tx *POATransaction) ToString()(string) {
 	}
 	return string(data)
 }
-
-

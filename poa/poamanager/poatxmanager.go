@@ -8,7 +8,6 @@ import (
 	poameta "github.com/linkchain/poa/meta"
 	"github.com/linkchain/meta/account"
 	"github.com/linkchain/meta"
-	"github.com/linkchain/common/math"
 )
 
 type POATxManager struct {
@@ -48,12 +47,11 @@ func (m *POATxManager) GetAllTransaction() []tx.ITx{
 }
 
 
-func (m *POATxManager) RemoveTransaction(txid tx.ITxID) error{
-	txidHash := txid.(math.Hash)
+func (m *POATxManager) RemoveTransaction(txid meta.DataID) error{
 	deleteIndex := make([]int,0)
 	for index,tx := range m.txpool{
-		txHash := tx.GetTxID().(math.Hash)
-		if txHash.IsEqual(&txidHash){
+		txHash := tx.GetTxID()
+		if txHash.IsEqual(txid){
 			deleteIndex = append(deleteIndex,index)
 		}
 	}

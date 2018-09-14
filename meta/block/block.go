@@ -3,11 +3,8 @@ package block
 import (
 	"github.com/linkchain/meta/tx"
 	"github.com/linkchain/common/serialize"
+	"github.com/linkchain/meta"
 )
-
-type IBlockID interface{
-	GetString() string
-}
 
 type IBlock interface {
 	//block content
@@ -17,11 +14,13 @@ type IBlock interface {
 
 	GetHeight() uint32
 
-	GetBlockID() IBlockID
+	GetBlockID() meta.DataID
 
-	GetPrevBlockID() IBlockID
+	GetPrevBlockID() meta.DataID
 	//verifiy
 	Verify()(error)
+
+	IsGensis() bool
 
 	//serialize
 	serialize.ISerialize

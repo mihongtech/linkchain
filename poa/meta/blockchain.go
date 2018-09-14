@@ -2,8 +2,6 @@ package meta
 
 import (
 	"container/list"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/common/math"
 	"github.com/linkchain/consensus/manager"
 	"github.com/linkchain/meta/block"
 )
@@ -20,9 +18,7 @@ func NewBlockChain(startNode POAChainNode) BlockChain {
 }
 
 func (bc *BlockChain)AddNode(newNode POAChainNode) error {
-	if !bc.IsOnChain(newNode) {
-		bc.chain.PushBack(newNode)
-	}
+	bc.chain.PushBack(newNode)
 	return nil
 }
 
@@ -30,8 +26,9 @@ func (bc *BlockChain)GetHeight() uint32 {
 	return uint32(bc.chain.Len() - 1)
 }
 
-func (bc *BlockChain)GetLastNode() POAChainNode {
-	return bc.chain.Back().Value.(POAChainNode)
+func (bc *BlockChain)GetLastNode() *POAChainNode {
+	lastNode := bc.chain.Back().Value.(POAChainNode)
+	return &lastNode
 }
 
 func (bc *BlockChain)IsOnChain(checkNode POAChainNode) bool {
@@ -46,39 +43,34 @@ func (bc *BlockChain)IsOnChain(checkNode POAChainNode) bool {
 	return false
 }
 
-//TODO maybe give up
 func (bc *BlockChain) FillChain(blockManager manager.BlockManager) error  {
-	currentHeight := uint32(bc.chain.Len()) - 1
-	if currentHeight == 0 {
-		log.Info("BlockChain","fillChain",string("the chain only have gensisblock"))
-		return nil
-	}
+	currentE := bc.GetLastElement()
+	prevE := currentE.Prev()
 
-	currentElement := bc.chain.Back()
-	prevElement := currentElement.Prev()
-	for currentElement != nil && prevElement != nil && !bc.CheckPrevElement(currentElement, prevElement)   {
+	for !bc.IsFillChain() && currentE != nil && prevE != nil{
+		currentNode := currentE.Value.(POAChainNode)
+		prevNode := currentE.Prev().Value.(POAChainNode)
+		if !bc.CheckPrevElement(currentE) {
+			if currentNode.GetNodeHeight() <= prevNode.GetNodeHeight() {
+				prevE = currentE.Prev().Prev()
+				bc.chain.Remove(currentE.Prev())
+				continue
+			}
 
-		if bc.CheckPrevByHeight(currentElement, prevElement) {
-			bc.chain.Remove(prevElement)
+			if !currentNode.IsGensis() {
+				insertBlock,error := blockManager.GetBlockByID(currentNode.GetPrevHash())
+				if error != nil {
+					return error
+				}
+				bc.chain.InsertBefore(NewPOAChainNode(insertBlock),currentE)
+			}
 		}
 
-		currentNode := currentElement.Value.(POAChainNode)
-		prevNode := prevElement.Value.(POAChainNode)
-		log.Info("BlockChain","Height",currentNode.height, "current hash",currentNode.curentHash,"prev hash",currentNode.prevHash)
-		log.Info("BlockChain","prevNode Height",prevNode.height, "current hash",prevNode.curentHash,"prev hash",prevNode.prevHash)
-		insertBlock,error := blockManager.GetBlockByID(currentNode.GetPrevHash())
-		if error != nil {
-			return error
-		}
-		log.Error("BlockChain","insertBlock height",insertBlock.GetHeight(), "insertBlock hash",insertBlock.GetBlockID().GetString())
-		//add corret element
-		bc.chain.InsertBefore(NewPOAChainNode(insertBlock),currentElement)
-
-		currentElement = currentElement.Prev()
-		prevElement = currentElement.Prev()
-		if prevElement == nil {
+		currentE = prevE
+		if currentE == nil {
 			break
 		}
+		prevE = currentE.Prev()
 	}
 	return nil
 }
@@ -88,15 +80,15 @@ func (bc *BlockChain) CloneChainIndex(index []POAChainNode) []POAChainNode  {
 	forkPosition := len(index) - 1
 	for ; forkNode != nil && forkPosition >= 0 ; forkNode = forkNode.Prev() {
 		node := forkNode.Value.(POAChainNode)
-		nodeHash := node.GetNodeHash().(math.Hash)
+		nodeHash := node.GetNodeHash()
 		if node.GetNodeHeight() > uint32(forkPosition) {
 			continue
 		} else if int(node.GetNodeHeight()) < forkPosition{
 			forkPosition--
 			continue
 		}
-		checkIndexHash := index[forkPosition].GetNodeHash().(math.Hash)
-		if checkIndexHash.IsEqual(&nodeHash) {
+		checkIndexHash := index[forkPosition].GetNodeHash()
+		if checkIndexHash.IsEqual(nodeHash) {
 			break
 		}
 		forkPosition--
@@ -128,19 +120,23 @@ func (bc *BlockChain) RemoveElement(element *list.Element) {
 func (bc *BlockChain) InsertBeforeElement(insertBlock block.IBlock,element *list.Element) {
 	bc.chain.InsertBefore(NewPOAChainNode(insertBlock),element)
 }
+
+func (bc *BlockChain) IsFillChain() bool {
+	return bc.GetLastNode().GetNodeHeight() == bc.GetHeight()
+}
 /**
 	checkChainElement
 	aim:if the currentE of prevpoint is prevE,then return true
  */
-func (bc *BlockChain) CheckPrevElement(currentE *list.Element, prevE *list.Element) bool {
+func (bc *BlockChain) CheckPrevElement(currentE *list.Element) bool {
 	currentNode := currentE.Value.(POAChainNode)
-	prevNode := prevE.Value.(POAChainNode)
+	prevNode := currentE.Prev().Value.(POAChainNode)
 	return currentNode.CheckPrev(prevNode)
 }
 
-func (bc *BlockChain) CheckPrevByHeight(currentE *list.Element, prevE *list.Element) bool {
+func (bc *BlockChain) CheckPrevByHeight(currentE *list.Element) bool {
 	currentNode := currentE.Value.(POAChainNode)
-	prevNode := prevE.Value.(POAChainNode)
+	prevNode := currentE.Prev().Value.(POAChainNode)
 	return currentNode.height == (prevNode.height + 1)
 }
 

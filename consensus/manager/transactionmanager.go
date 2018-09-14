@@ -19,7 +19,7 @@ type TransactionManager interface{
 type TransactionPoolManager interface{
 	AddTransaction(tx tx.ITx) error
 	GetAllTransaction() []tx.ITx
-	RemoveTransaction(txid tx.ITxID) error
+	RemoveTransaction(txid meta.DataID) error
 }
 
 type TransactionValidator  interface {

@@ -7,7 +7,6 @@ import (
 	"github.com/linkchain/common/util/log"
 	"os"
 	"strings"
-	"time"
 )
 
 func main() {
@@ -21,7 +20,7 @@ func main() {
 	cmd.RootCmd.SetArgs(start)
 	cmd.RootCmd.Execute()
 
-	time.Sleep(time.Duration(2)*time.Second)
+	/*time.Sleep(time.Duration(2)*time.Second)
 
 	send := strings.Fields("tx send")
 
@@ -38,7 +37,7 @@ func main() {
 	time.Sleep(time.Duration(2)*time.Second)
 
 	cmd.RootCmd.SetArgs(mine)
-	cmd.RootCmd.Execute()
+	cmd.RootCmd.Execute()*/
 
 
 	scanner := bufio.NewScanner(os.Stdin)

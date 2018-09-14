@@ -66,12 +66,12 @@ func (m *POAAccountManager) UpdateAccountByTX(tx tx.ITx) error {
 	fromAccountId := tx.GetFrom().(*poameta.POATransactionPeer).AccountID
 	toAccountId := tx.GetTo().(*poameta.POATransactionPeer).AccountID
 
-	fromAccount,error1 := m.GetAccount(&fromAccountId)
+	fromAccount,error := m.GetAccount(&fromAccountId)
 
 
-	if error1 != nil {
+	if error != nil {
 		log.Error("POAAccountManager","update account status","can not find the account of the tx's")
-		return error1
+		return error
 	}
 
 	amount := tx.GetAmount()

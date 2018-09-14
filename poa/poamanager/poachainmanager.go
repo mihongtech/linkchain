@@ -7,6 +7,7 @@ import (
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/meta/block"
 	poameta "github.com/linkchain/poa/meta"
+	"github.com/linkchain/meta"
 )
 
 type POAChainManager struct {
@@ -68,7 +69,7 @@ func (m *POAChainManager) GetBestNode() (poameta.POAChainNode,error)  {
 	return m.mainChainIndex[bestHeight],nil
 }
 
-func (m *POAChainManager) GetBestBlockHash() block.IBlockID  {
+func (m *POAChainManager) GetBestBlockHash() meta.DataID  {
 	bestHeight,error := m.GetBestHeight()
 	if error != nil {
 		return nil
@@ -86,7 +87,7 @@ func (m *POAChainManager) GetBestHeight() (uint32,error) {
 }
 
 func (m *POAChainManager) GetBlockByHash(hash math.Hash) block.IBlock  {
-	block,_ := GetManager().BlockManager.GetBlockByID(hash)
+	block,_ := GetManager().BlockManager.GetBlockByID(&hash)
 	return block
 }
 
@@ -104,13 +105,18 @@ func (m *POAChainManager) GetBlockNodeByHeight(height uint32) (poameta.POAChainN
 
 func (m *POAChainManager) GetBlockChainInfo() string  {
 
-	log.Info("POAChainManager","chains",len(m.chains))
+	log.Info("POAChainManager chains","chains",len(m.chains))
 	for i,chain := range m.chains {
-		log.Info("POAChainManager chain","chainId",i,"chainHeight",chain.GetHeight(),"bestHash",chain.GetLastBlock().GetBlockID().GetString())
+		log.Info("POAChainManager chains","chainId",i,"chainHeight",chain.GetHeight(),"bestHash",chain.GetLastBlock().GetBlockID().GetString())
+	}
+
+	for e := m.mainChain.GetLastElement(); e != nil; e = e.Prev() {
+		currentNode := e.Value.(poameta.POAChainNode)
+		log.Info("POAChainManager mainchain","Height",currentNode.GetNodeHeight(), "current hash",currentNode.GetNodeHash(),"prev hash",currentNode.GetPrevHash())
 	}
 
 	for _,block := range m.mainChainIndex {
-		log.Info("POAChainManager mainchain","chainHeight",block.GetNodeHeight(),"bestHash",block.GetNodeHash())
+		log.Info("POAChainManager mainchainIndex","chainHeight",block.GetNodeHeight(),"bestHash",block.GetNodeHash())
 	}
 
 	return "this is poa chain";
@@ -282,15 +288,15 @@ func (m *POAChainManager) updateChainIndex() bool  {
 
 	for ; forkNode != nil && forkPosition >= 0 ; forkNode = forkNode.Prev() {
 		node := forkNode.Value.(poameta.POAChainNode)
-		nodeHash := node.GetNodeHash().(math.Hash)
+		nodeHash := node.GetNodeHash()
 		if node.GetNodeHeight() > uint32(forkPosition) {
 			continue
 		} else if int(node.GetNodeHeight()) < forkPosition{
 			forkPosition--
 			continue
 		}
-		checkIndexHash := m.mainChainIndex[forkPosition].GetNodeHash().(math.Hash)
-		if checkIndexHash.IsEqual(&nodeHash) {
+		checkIndexHash := m.mainChainIndex[forkPosition].GetNodeHash()
+		if checkIndexHash.IsEqual(nodeHash) {
 			break
 		}
 		forkPosition--
@@ -345,6 +351,7 @@ func (m *POAChainManager) updateChainIndex() bool  {
 func (m *POAChainManager) updateChain() bool  {
 	longestChain,_ := m.GetLongestChain()
 	bestBlock := longestChain.GetLastBlock()
+	log.Info("POAChainManager updateChain","bestblock",bestBlock.GetBlockID().GetString())
 	m.mainChain.AddNode(poameta.NewPOAChainNode(bestBlock))
 
 	error := m.mainChain.FillChain(GetManager().BlockManager)

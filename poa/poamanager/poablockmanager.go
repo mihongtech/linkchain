@@ -9,6 +9,7 @@ import (
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/common/math"
 	poameta "github.com/linkchain/poa/meta"
+	"github.com/linkchain/meta"
 )
 
 const (
@@ -61,10 +62,10 @@ func (m *POABlockManager) Stop(){
 func (m *POABlockManager) NewBlock() block.IBlock{
 	bestBlock := GetManager().ChainManager.GetBestBlock()
 	if bestBlock != nil {
-		bestHash := bestBlock.GetBlockID().(math.Hash)
+		bestHash := bestBlock.GetBlockID()
 		txs := []poameta.POATransaction{}
 		block := &poameta.POABlock{
-			Header: poameta.POABlockHeader{Version: 0, PrevBlock: bestHash, MerkleRoot: math.Hash{}, Timestamp: time.Now(), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: bestBlock.GetHeight() + 1},
+			Header: poameta.POABlockHeader{Version: 0, PrevBlock: *bestHash.(*math.Hash), MerkleRoot: math.Hash{}, Timestamp: time.Now(), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: bestBlock.GetHeight() + 1},
 			TXs:    txs,
 		}
 		block.Header.SetMineAccount(&minerAccountId)
@@ -87,8 +88,8 @@ func (m *POABlockManager) GetGensisBlock() block.IBlock{
 }
 
 /** interface: BlockPoolManager **/
-func (m *POABlockManager) GetBlockByID(hash block.IBlockID) (block.IBlock,error) {
-	index, ok := m.readMap(hash.(math.Hash))
+func (m *POABlockManager) GetBlockByID(hash meta.DataID) (block.IBlock,error) {
+	index, ok := m.readMap(*hash.(*math.Hash))
 	if ok {
 		return &index,nil
 	}
@@ -104,7 +105,7 @@ func (m *POABlockManager) GetBlockByHeight(height uint32) ([]block.IBlock,error)
 
 
 func (m *POABlockManager) AddBlock(block block.IBlock) error{
-	hash := block.GetBlockID().(math.Hash)
+	hash := *block.GetBlockID().(*math.Hash)
 	m.writeMap(hash,*(block.(*poameta.POABlock)))
 	return nil
 }
@@ -117,7 +118,7 @@ func (m *POABlockManager) AddBlocks(blocks []block.IBlock) error{
 }
 
 
-func (m *POABlockManager) RemoveBlock(hash block.IBlockID) error{
+func (m *POABlockManager) RemoveBlock(hash meta.DataID) error{
 	//TODO need to lock
 	m.Lock()
 	delete(m.mapBlockIndexByHash,*(hash.(*math.Hash)))
@@ -151,6 +152,7 @@ func (s *POABlockManager) ProcessBlock(block block.IBlock){
 		GetManager().ChainManager.UpdateChain()
 		return
 	}
+	log.Error("GetBlockInfo")
 	log.Info("POA ProcessBlock successed","blockchaininfo", GetManager().ChainManager.GetBlockChainInfo())
 
 	//4.updateStorage
