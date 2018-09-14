@@ -99,7 +99,7 @@ func (p *peer) SetHead(hash math.Hash, td *big.Int) {
 
 // MarkBlock marks a block as known for the peer, ensuring that the block will
 // never be propagated to this particular peer.
-func (p *peer) MarkBlock(hash math.Hash) {
+func (p *peer) MarkBlock(hash block.IBlockID) {
 	// If we reached the memory allowance, drop a previously known block hash
 	for p.knownBlocks.Size() >= maxKnownBlocks {
 		p.knownBlocks.Pop()
@@ -109,7 +109,7 @@ func (p *peer) MarkBlock(hash math.Hash) {
 
 // MarkTransaction marks a transaction as known for the peer, ensuring that it
 // will never be propagated to this particular peer.
-func (p *peer) MarkTransaction(hash math.Hash) {
+func (p *peer) MarkTransaction(hash tx.ITxID) {
 	// If we reached the memory allowance, drop a previously known transaction hash
 	for p.knownTxs.Size() >= maxKnownTxs {
 		p.knownTxs.Pop()
@@ -284,7 +284,7 @@ func (ps *peerSet) Len() int {
 
 // PeersWithoutBlock retrieves a list of peers that do not have a given block in
 // their set of known hashes.
-func (ps *peerSet) PeersWithoutBlock(hash math.Hash) []*peer {
+func (ps *peerSet) PeersWithoutBlock(hash block.IBlockID) []*peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 
@@ -299,7 +299,7 @@ func (ps *peerSet) PeersWithoutBlock(hash math.Hash) []*peer {
 
 // PeersWithoutTx retrieves a list of peers that do not have a given transaction
 // in their set of known hashes.
-func (ps *peerSet) PeersWithoutTx(hash math.Hash) []*peer {
+func (ps *peerSet) PeersWithoutTx(hash tx.ITxID) []*peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 
