@@ -56,22 +56,26 @@ func (bc *BlockChain) FillChain(blockManager manager.BlockManager) error  {
 
 	currentElement := bc.chain.Back()
 	prevElement := currentElement.Prev()
-	for !bc.CheckPrevElement(currentElement, prevElement) {
+	for currentElement != nil && prevElement != nil && !bc.CheckPrevElement(currentElement, prevElement)   {
 
 		if bc.CheckPrevByHeight(currentElement, prevElement) {
 			bc.chain.Remove(prevElement)
 		}
 
 		currentNode := currentElement.Value.(POAChainNode)
+		prevNode := prevElement.Value.(POAChainNode)
+		log.Info("BlockChain","Height",currentNode.height, "current hash",currentNode.curentHash,"prev hash",currentNode.prevHash)
+		log.Info("BlockChain","prevNode Height",prevNode.height, "current hash",prevNode.curentHash,"prev hash",prevNode.prevHash)
 		insertBlock,error := blockManager.GetBlockByID(currentNode.GetPrevHash())
 		if error != nil {
 			return error
 		}
+		log.Error("BlockChain","insertBlock height",insertBlock.GetHeight(), "insertBlock hash",insertBlock.GetBlockID().GetString())
 		//add corret element
 		bc.chain.InsertBefore(NewPOAChainNode(insertBlock),currentElement)
 
 		currentElement = currentElement.Prev()
-		prevElement := currentElement.Prev()
+		prevElement = currentElement.Prev()
 		if prevElement == nil {
 			break
 		}

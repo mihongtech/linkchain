@@ -79,22 +79,28 @@ func (b *POABlock)Verify()(error){
 //Serialize/Deserialize
 func (b *POABlock)Serialize()(serialize.SerializeStream){
 	header := b.Header.Serialize().(*protobuf.POABlockHeader)
+
 	txs := make([]*protobuf.POATransaction,0)
 	for _,tx := range b.TXs {
 		txs = append(txs,tx.Serialize().(*protobuf.POATransaction))
 	}
 
-	block := protobuf.POABlock{
-		Header:header,
+	txlist := protobuf.POATransactions{
 		Txs:txs,
 	}
+
+	block := protobuf.POABlock{
+		Header:header,
+		TxList:&txlist,
+	}
+
 	return &block
 }
 
 func (b *POABlock)Deserialize(s serialize.SerializeStream){
 	data := *s.(*protobuf.POABlock)
 	b.Header.Deserialize(data.Header)
-	for _,tx := range data.Txs {
+	for _,tx := range data.TxList.Txs {
 		newTx := POATransaction{}
 		newTx.Deserialize(tx)
 		b.TXs = append(b.TXs,newTx)

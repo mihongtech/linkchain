@@ -14,9 +14,13 @@ message POABlockHeader {
 
 }
 
+message POATransactions {
+    repeated POATransaction txs = 1;
+}
+
 message POABlock {
     required POABlockHeader header = 1;
-    repeated POATransaction txs = 2;
+    optional POATransactions txList = 2;
 }
 
 message POATransaction {

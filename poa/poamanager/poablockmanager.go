@@ -154,4 +154,6 @@ func (s *POABlockManager) ProcessBlock(block block.IBlock){
 	log.Info("POA ProcessBlock successed","blockchaininfo", GetManager().ChainManager.GetBlockChainInfo())
 
 	//4.updateStorage
+
+	//5.broadcast
 }
