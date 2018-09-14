@@ -94,12 +94,44 @@ func NewProtocolManager(config interface{}, networkId uint64, mux *event.TypeMux
 }
 
 func (pm *ProtocolManager) Start() bool {
-
+	// broadcast transactions
+	//	pm.txCh = make(chan core.TxPreEvent, txChanSize)
+	//	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
+	//	go pm.txBroadcastLoop()
+	//
+	//	// broadcast mined blocks
+	//	pm.minedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
+	//	go pm.minedBroadcastLoop()
+	//
+	//	// start sync handlers
+	//	go pm.syncer()
+	//	go pm.txsyncLoop()
 	return true
 }
 
 func (pm *ProtocolManager) Stop() {
+	log.Info("Stopping Ethereum protocol")
 
+	pm.txSub.Unsubscribe()         // quits txBroadcastLoop
+	pm.minedBlockSub.Unsubscribe() // quits blockBroadcastLoop
+
+	// Quit the sync loop.
+	// After this send has completed, no new peers will be accepted.
+	pm.noMorePeers <- struct{}{}
+
+	// Quit fetcher, txsyncLoop.
+	close(pm.quitSync)
+
+	// Disconnect existing sessions.
+	// This also closes the gate for any new registrations on the peer set.
+	// sessions which are already established but not added to pm.peers yet
+	// will exit when they try to register.
+	pm.peers.Close()
+
+	// Wait for all peer handler goroutines and the loops to come down.
+	pm.wg.Wait()
+
+	log.Info("Ethereum protocol stopped")
 }
 
 // handle is the callback invoked to manage the life cycle of an eth peer. When
@@ -148,6 +180,164 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	//		}
 	//	}
 
+	return nil
+}
+
+// handleMsg is invoked whenever an inbound message is received from a remote
+// peer. The remote connection is torn down upon returning any error.
+func (pm *ProtocolManager) handleMsg(p *peer) error {
+	// Read the next message from the remote peer, and ensure it's fully consumed
+	msg, err := p.rw.ReadMsg()
+	if err != nil {
+		return err
+	}
+	if msg.Size > ProtocolMaxMsgSize {
+		return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
+	}
+	defer msg.Discard()
+
+	// Handle the message depending on its contents
+	switch {
+	case msg.Code == StatusMsg:
+		// Status messages should never arrive after the handshake
+		return errResp(ErrExtraStatusMsg, "uncontrolled status message")
+
+	// Block header query, collect the requested headers and reply
+	case msg.Code == GetBlockHeadersMsg:
+		// do nothing
+		return nil
+
+	case msg.Code == BlockHeadersMsg:
+		// do nothing
+		return nil
+
+	case msg.Code == GetBlockBodiesMsg:
+		// Decode the retrieval message
+		//		msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
+		//		if _, err := msgStream.List(); err != nil {
+		//			return err
+		//		}
+		//		// Gather blocks until the fetch or network limits is reached
+		//		var (
+		//			hash   math.Hash
+		//			bytes  int
+		//			bodies []rlp.RawValue
+		//		)
+		//		for bytes < softResponseLimit && len(bodies) < downloader.MaxBlockFetch {
+		//			// Retrieve the hash of the next block
+		//			if err := msgStream.Decode(&hash); err == rlp.EOL {
+		//				break
+		//			} else if err != nil {
+		//				return errResp(ErrDecode, "msg %v: %v", msg, err)
+		//			}
+		//			// Retrieve the requested block body, stopping if enough was found
+		//			if data := pm.blockchain.GetBodyRLP(hash); len(data) != 0 {
+		//				bodies = append(bodies, data)
+		//				bytes += len(data)
+		//			}
+		//		}
+		//		return p.SendBlockBodiesRLP(bodies)
+
+	case msg.Code == BlockBodiesMsg:
+		// A batch of block bodies arrived to one of our previous requests
+		//		var request blockBodiesData
+		//		if err := msg.Decode(&request); err != nil {
+		//			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		//		}
+		//		// Deliver them all to the downloader for queuing
+		//		trasactions := make([][]*types.Transaction, len(request))
+		//		uncles := make([][]*types.Header, len(request))
+		//
+		//		for i, body := range request {
+		//			trasactions[i] = body.Transactions
+		//			uncles[i] = body.Uncles
+		//		}
+		//		// Filter out any explicitly requested bodies, deliver the rest to the downloader
+		//		filter := len(trasactions) > 0 || len(uncles) > 0
+		//		if filter {
+		//			trasactions, uncles = pm.fetcher.FilterBodies(p.id, trasactions, uncles, time.Now())
+		//		}
+		//		if len(trasactions) > 0 || len(uncles) > 0 || !filter {
+		//			err := pm.downloader.DeliverBodies(p.id, trasactions, uncles)
+		//			if err != nil {
+		//				log.Debug("Failed to deliver bodies", "err", err)
+		//			}
+		//		}
+
+	case msg.Code == NewBlockHashesMsg:
+		//		var announces newBlockHashesData
+		//		if err := msg.Decode(&announces); err != nil {
+		//			return errResp(ErrDecode, "%v: %v", msg, err)
+		//		}
+		//		// Mark the hashes as present at the remote node
+		//		for _, block := range announces {
+		//			p.MarkBlock(block.Hash)
+		//		}
+		//		// Schedule all the unknown hashes for retrieval
+		//		unknown := make(newBlockHashesData, 0, len(announces))
+		//		for _, block := range announces {
+		//			if !pm.blockchain.HasBlock(block.Hash, block.Number) {
+		//				unknown = append(unknown, block)
+		//			}
+		//		}
+		//		for _, block := range unknown {
+		//			pm.fetcher.Notify(p.id, block.Hash, block.Number, time.Now(), p.RequestOneHeader, p.RequestBodies)
+		//		}
+
+	case msg.Code == NewBlockMsg:
+		// Retrieve and decode the propagated block
+		//		var request newBlockData
+		//		if err := msg.Decode(&request); err != nil {
+		//			return errResp(ErrDecode, "%v: %v", msg, err)
+		//		}
+		//		request.Block.ReceivedAt = msg.ReceivedAt
+		//		request.Block.ReceivedFrom = p
+		//
+		//		// Mark the peer as owning the block and schedule it for import
+		//		p.MarkBlock(request.Block.Hash())
+		//		pm.fetcher.Enqueue(p.id, request.Block)
+		//
+		//		// Assuming the block is importable by the peer, but possibly not yet done so,
+		//		// calculate the head hash and TD that the peer truly must have.
+		//		var (
+		//			trueHead = request.Block.ParentHash()
+		//			trueTD   = new(big.Int).Sub(request.TD, request.Block.Difficulty())
+		//		)
+		//		// Update the peers total difficulty if better than the previous
+		//		if _, td := p.Head(); trueTD.Cmp(td) > 0 {
+		//			p.SetHead(trueHead, trueTD)
+		//
+		//			// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
+		//			// a singe block (as the true TD is below the propagated block), however this
+		//			// scenario should easily be covered by the fetcher.
+		//			currentBlock := pm.blockchain.CurrentBlock()
+		//			if trueTD.Cmp(pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())) > 0 {
+		//				go pm.synchronise(p)
+		//			}
+		//		}
+
+	case msg.Code == TxMsg:
+		// Transactions arrived, make sure we have a valid and fresh chain to handle them
+		//		if atomic.LoadUint32(&pm.acceptTxs) == 0 {
+		//			break
+		//		}
+		//		// Transactions can be processed, parse all of them and deliver to the pool
+		//		var txs []*types.Transaction
+		//		if err := msg.Decode(&txs); err != nil {
+		//			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		//		}
+		//		for i, tx := range txs {
+		//			// Validate and mark the remote transaction
+		//			if tx == nil {
+		//				return errResp(ErrDecode, "transaction %d is nil", i)
+		//			}
+		//			p.MarkTransaction(tx.Hash())
+		//		}
+		//		pm.txpool.AddRemotes(txs)
+
+	default:
+		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
+	}
 	return nil
 }
 
