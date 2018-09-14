@@ -1,0 +1,14 @@
+syntax = "proto2";
+package protobufmsg;
+
+message Hash {
+    required bytes data = 1;
+}
+
+message StatusData {
+  required uint32 protocolVersion = 1;
+  required uint64 networkId = 2;
+  required int64  td = 3;
+  required Hash  currentBlock = 4;
+  required Hash  genesisBlock = 5;
+}
