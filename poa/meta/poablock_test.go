@@ -44,7 +44,7 @@ func Test_Deserialize_1(t *testing.T) {
 
 	newBlock := POABlock{}
 	newBlock.Deserialize(block)
-	newBlockHash := newBlock.GetBlockID().(math.Hash)
+	newBlockHash := newBlock.GetBlockID()
 
 	if blockhash.IsEqual(&newBlockHash) {
 		t.Log("block 反序列化通过")
@@ -90,7 +90,7 @@ func Test_Serialize_4(t *testing.T) {
 
 	newTx := POATransaction{}
 	newTx.Deserialize(tx)
-	newTxHash := newTx.GetTxID().(math.Hash)
+	newTxHash := newTx.GetTxID()
 
 	if txid.IsEqual(&newTxHash) {
 		t.Log("tx 反序列化通过")
@@ -121,12 +121,12 @@ func Test_Serialize_5(t *testing.T) {
 	}
 
 
-	blockHash := block.GetBlockID().(math.Hash)
+	blockHash := block.GetBlockID()
 	s := block.Serialize()
 
 	newBlock := POABlock{}
 	newBlock.Deserialize(s)
-	newBlockHash := newBlock.GetBlockID().(math.Hash)
+	newBlockHash := newBlock.GetBlockID()
 	if blockHash.IsEqual(&newBlockHash) {
 		t.Log("block with tx 反/序列化通过")
 	} else {

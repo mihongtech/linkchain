@@ -133,9 +133,6 @@ func (b *POABlock) IsGensis() bool {
 }
 
 func (bh *POABlockHeader)GetBlockID() meta.DataID{
-	if bh.hash.IsEmpty(){
-		bh.hash = math.MakeHash(bh.Serialize())
-	}
 	return &bh.hash
 }
 
@@ -180,6 +177,8 @@ func (bh *POABlockHeader) Deserialize(s serialize.SerializeStream){
 	bh.Nonce = *data.Nounce
 	bh.Height = *data.Height
 	bh.Extra = data.Extra
+
+	bh.hash = math.MakeHash(s)
 }
 
 func (b *POABlockHeader) IsGensis() bool {

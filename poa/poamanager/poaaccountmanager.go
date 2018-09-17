@@ -37,22 +37,22 @@ func (m *POAAccountManager) Stop(){
 func (m *POAAccountManager) NewAccount() account.IAccount  {
 	t := time.Now()
 	accountID := math.DoubleHashH([]byte(t.String()))
-	account := poameta.POAAccount{AccountID:poameta.POAAccountID{ID:accountID},Value:poameta.POAAmount{Value:int32(t.Day())}}
-	return &account
+	a := poameta.POAAccount{AccountID:poameta.POAAccountID{ID:accountID},Value:poameta.POAAmount{Value:int32(t.Day())}}
+	return &a
 }
 
 
 func (m *POAAccountManager) AddAccount(iAccount account.IAccount) error  {
-	accountId := *iAccount.GetAccountID().(*poameta.POAAccountID)
-	account := *iAccount.(*poameta.POAAccount)
-	m.accountMap[accountId] = account
+	aId := *iAccount.GetAccountID().(*poameta.POAAccountID)
+	a := *iAccount.(*poameta.POAAccount)
+	m.accountMap[aId] = a
 	return nil
 }
 
 func (m *POAAccountManager) GetAccount(id account.IAccountID) (account.IAccount,error) {
-	account,ok := m.accountMap[*id.(*poameta.POAAccountID)]
+	a,ok := m.accountMap[*id.(*poameta.POAAccountID)]
 	if ok {
-		return &account,nil
+		return &a,nil
 	}
 	return nil,errors.New("Can not find Account ")
 }
@@ -66,12 +66,12 @@ func (m *POAAccountManager) UpdateAccountByTX(tx tx.ITx) error {
 	fromAccountId := tx.GetFrom().(*poameta.POATransactionPeer).AccountID
 	toAccountId := tx.GetTo().(*poameta.POATransactionPeer).AccountID
 
-	fromAccount,error := m.GetAccount(&fromAccountId)
+	fromAccount,err := m.GetAccount(&fromAccountId)
 
 
-	if error != nil {
+	if err != nil {
 		log.Error("POAAccountManager","update account status","can not find the account of the tx's")
-		return error
+		return err
 	}
 
 	amount := tx.GetAmount()
@@ -92,11 +92,11 @@ func (m *POAAccountManager) UpdateAccountByTX(tx tx.ITx) error {
 }
 
 func (m *POAAccountManager) UpdateAccount(iAccount account.IAccount) error {
-	account := *iAccount.(*poameta.POAAccount)
+	a := *iAccount.(*poameta.POAAccount)
 
-	newAccount,error := m.GetAccount(iAccount.GetAccountID())
-	if error == nil {
-		newAccount.GetAmount().Addition(account.GetAmount())
+	newAccount,err := m.GetAccount(iAccount.GetAccountID())
+	if err == nil {
+		newAccount.GetAmount().Addition(a.GetAmount())
 		m.AddAccount(newAccount)
 	} else {
 		m.AddAccount(iAccount)
@@ -107,12 +107,12 @@ func (m *POAAccountManager) UpdateAccount(iAccount account.IAccount) error {
 
 func (m *POAAccountManager) CheckTxFromAccount(tx tx.ITx) error {
 	fromAccountId := tx.GetFrom().(*poameta.POATransactionPeer).AccountID
-	fromAccount,error1 := m.GetAccount(&fromAccountId)
+	fromAccount,err := m.GetAccount(&fromAccountId)
 	amount := tx.GetAmount()
 
-	if error1 != nil {
+	if err != nil {
 		log.Error("POAAccountManager","update account status","can not find the account of the tx's")
-		return error1
+		return err
 	}
 
 	if fromAccount.GetAmount().IsLessThan(amount) {

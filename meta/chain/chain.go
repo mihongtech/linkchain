@@ -2,6 +2,7 @@ package chain
 
 import (
 	"github.com/linkchain/meta/block"
+	"github.com/linkchain/meta"
 )
 
 type IChain interface {
@@ -17,7 +18,7 @@ type IChain interface {
 
 	GetHeight() uint32
 
-	GetBlockByID(block.IBlockID) block.IBlock
+	GetBlockByID(id meta.DataID) block.IBlock
 
 	GetBlockByHeight(int) block.IBlock
 }

@@ -64,9 +64,6 @@ type POATransaction struct {
 }
 
 func (tx *POATransaction) GetTxID() meta.DataID  {
-	if tx.txid.IsEmpty(){
-		tx.txid = math.MakeHash(tx.Serialize())
-	}
 	return &tx.txid
 }
 
@@ -142,6 +139,8 @@ func (tx *POATransaction) Deserialize(s serialize.SerializeStream){
 	tx.Time = time.Unix(*data.Time,0)
 	tx.Amount.Deserialize(data.Amount)
 	tx.Extra = data.Extra
+
+	tx.txid = math.MakeHash(s)
 }
 
 func (tx *POATransaction) ToString()(string) {

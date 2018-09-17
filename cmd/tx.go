@@ -7,6 +7,8 @@ import (
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/poa/meta"
 	"github.com/linkchain/common/math"
+	"github.com/golang/protobuf/proto"
+	"encoding/hex"
 )
 
 func init() {
@@ -31,6 +33,7 @@ var createTxCmd = &cobra.Command{
 		toAccount := &meta.POAAccount{AccountID:meta.POAAccountID{ID:toAddress}}
 		amount := &meta.POAAmount{Value:10}
 		tx := poamanager.GetManager().TransactionManager.NewTransaction(formAccount,toAccount,amount)
+		tx.Deserialize(tx.Serialize())
 		log.Info("createtx","data",tx)
 	},
 }
@@ -54,7 +57,12 @@ var sendTxCmd = &cobra.Command{
 		toAccount := &meta.POAAccount{AccountID:meta.POAAccountID{ID:toAddress}}
 		amount := &meta.POAAmount{Value:10}
 		tx := poamanager.GetManager().TransactionManager.NewTransaction(formAccount,toAccount,amount)
-		log.Info("send tx","txid",tx.GetTxID().GetString(),"data", tx)
+		tx.Deserialize(tx.Serialize())
+		buffer,err := proto.Marshal(tx.Serialize())
+		if err != nil {
+			log.Error("block 序列化不通过 marshaling error",err)
+		}
+		log.Info("send tx","txid",tx.GetTxID().GetString(),"data", hex.EncodeToString(buffer))
 		poamanager.GetManager().TransactionManager.ProcessTx(tx)
 	},
 }

@@ -69,6 +69,7 @@ func (m *POABlockManager) NewBlock() block.IBlock{
 			TXs:    txs,
 		}
 		block.Header.SetMineAccount(&minerAccountId)
+		block.Deserialize(block.Serialize())
 		return block
 	}else {
 		return m.GetGensisBlock()
@@ -84,6 +85,7 @@ func (m *POABlockManager) GetGensisBlock() block.IBlock{
 		TXs:    txs,
 	}
 	block.Header.SetMineAccount(&minerAccountId)
+	block.Deserialize(block.Serialize())
 	return block
 }
 
