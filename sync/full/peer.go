@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/linkchain/common/math"
+	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
 	"github.com/linkchain/meta/tx"
 	"github.com/linkchain/p2p/message"
@@ -99,7 +100,7 @@ func (p *peer) SetHead(hash math.Hash, td *big.Int) {
 
 // MarkBlock marks a block as known for the peer, ensuring that the block will
 // never be propagated to this particular peer.
-func (p *peer) MarkBlock(hash block.IBlockID) {
+func (p *peer) MarkBlock(hash meta.DataID) {
 	// If we reached the memory allowance, drop a previously known block hash
 	for p.knownBlocks.Size() >= maxKnownBlocks {
 		p.knownBlocks.Pop()
@@ -109,7 +110,7 @@ func (p *peer) MarkBlock(hash block.IBlockID) {
 
 // MarkTransaction marks a transaction as known for the peer, ensuring that it
 // will never be propagated to this particular peer.
-func (p *peer) MarkTransaction(hash tx.ITxID) {
+func (p *peer) MarkTransaction(hash meta.DataID) {
 	// If we reached the memory allowance, drop a previously known transaction hash
 	for p.knownTxs.Size() >= maxKnownTxs {
 		p.knownTxs.Pop()
@@ -284,7 +285,7 @@ func (ps *peerSet) Len() int {
 
 // PeersWithoutBlock retrieves a list of peers that do not have a given block in
 // their set of known hashes.
-func (ps *peerSet) PeersWithoutBlock(hash block.IBlockID) []*peer {
+func (ps *peerSet) PeersWithoutBlock(hash meta.DataID) []*peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 
@@ -299,7 +300,7 @@ func (ps *peerSet) PeersWithoutBlock(hash block.IBlockID) []*peer {
 
 // PeersWithoutTx retrieves a list of peers that do not have a given transaction
 // in their set of known hashes.
-func (ps *peerSet) PeersWithoutTx(hash tx.ITxID) []*peer {
+func (ps *peerSet) PeersWithoutTx(hash meta.DataID) []*peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 

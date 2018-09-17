@@ -11,6 +11,7 @@ import (
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
 	"github.com/linkchain/meta/tx"
 	"github.com/linkchain/p2p/message"
@@ -22,6 +23,15 @@ import (
 // errIncompatibleConfig is returned if the requested protocols and configs are
 // not compatible (low protocol version restrictions and high requirements).
 var errIncompatibleConfig = errors.New("incompatible configuration")
+
+const (
+	// softResponseLimit = 2 * 1024 * 1024 // Target maximum size of returned blocks, headers or node data.
+	// estHeaderRlpSize  = 500             // Approximate size of an RLP encoded block header
+
+	// txChanSize is the size of channel listening to TxPreEvent.
+	// The number is referenced from the size of tx pool.
+	txChanSize = 4096
+)
 
 type ProtocolManager struct {
 	networkId uint64
@@ -36,8 +46,8 @@ type ProtocolManager struct {
 	minedBlockSub *event.TypeMuxSubscription
 
 	// channels for fetcher, syncer, txsyncLoop
-	newPeerCh chan *peer
-	// txsyncCh    chan *txsync
+	newPeerCh   chan *peer
+	txsyncCh    chan *txsync
 	quitSync    chan struct{}
 	noMorePeers chan struct{}
 
@@ -100,17 +110,17 @@ func NewProtocolManager(config interface{}, networkId uint64, mux *event.TypeMux
 
 func (pm *ProtocolManager) Start() bool {
 	// broadcast transactions
-	//	pm.txCh = make(chan core.TxPreEvent, txChanSize)
-	//	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
+	pm.txCh = make(chan tx.ITx, txChanSize)
+	// pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
 	go pm.txBroadcastLoop()
 	//
-	//	// broadcast mined blocks
-	//	pm.minedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
+	//	 broadcast mined blocks
+	pm.minedBlockSub = pm.eventMux.Subscribe([]block.IBlock{})
 	go pm.minedBroadcastLoop()
 	//
-	//	// start sync handlers
-	//	go pm.syncer()
-	//	go pm.txsyncLoop()
+	//	 start sync handlers
+	go pm.syncer()
+	go pm.txsyncLoop()
 	return true
 }
 
@@ -178,12 +188,12 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 	// main loop. handle incoming messages.
 
-	//	for {
-	//		if err := pm.handleMsg(p); err != nil {
-	//			p.Log().Debug("Ethereum message handling failed", "err", err)
-	//			return err
-	//		}
-	//	}
+	for {
+		if err := pm.handleMsg(p); err != nil {
+			p.Log().Debug("Linkchain message handling failed", "err", err)
+			return err
+		}
+	}
 
 	return nil
 }
@@ -451,7 +461,7 @@ func (pm *ProtocolManager) BroadcastBlock(block block.IBlock, propagate bool) {
 
 // BroadcastTx will propagate a transaction to all peers which are not known to
 // already have the given transaction.
-func (pm *ProtocolManager) BroadcastTx(hash tx.ITxID, t tx.ITx) {
+func (pm *ProtocolManager) BroadcastTx(hash meta.DataID, t tx.ITx) {
 	// Broadcast transaction to a batch of peers not knowing about it
 	peers := pm.peers.PeersWithoutTx(hash)
 	//FIXME include this again: peers = peers[:int(math.Sqrt(float64(len(peers))))]
