@@ -10,7 +10,7 @@ import (
 var (
 	//service collection
 	svcList = []common.IService{
-		p2p.GetP2PServer(),
+		&p2p.Service{},
 		&consensus.Service{},
 	}
 )
@@ -37,10 +37,10 @@ func Run() {
 }
 
 //get service
-func GetConsensusService() *consensus.Service{
-	return svcList[1].(*consensus.Service);
+func GetConsensusService() *consensus.Service {
+	return svcList[1].(*consensus.Service)
 }
 
-func GetP2pService() *p2p.Service{
-	return svcList[0].(*p2p.Service);
+func GetP2pService() *p2p.Service {
+	return svcList[0].(*p2p.Service)
 }

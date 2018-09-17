@@ -117,16 +117,6 @@ type Service struct {
 	log           log.Logger
 }
 
-var once sync.Once
-var s *Service
-
-func GetP2PServer() *Service {
-	once.Do(func() {
-		s = &Service{}
-	})
-	return s
-}
-
 type peerOpFunc func(map[node.NodeID]*peer.Peer)
 
 type peerDrop struct {
