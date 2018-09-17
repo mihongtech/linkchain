@@ -35,3 +35,12 @@ func Run() {
 	/*block :=svcList[1].(*consensus.Service).GetBlockManager().NewBlock()
 	svcList[1].(*consensus.Service).GetBlockManager().ProcessBlock(block)*/
 }
+
+//get service
+func GetConsensusService() *consensus.Service{
+	return svcList[1].(*consensus.Service);
+}
+
+func GetP2pService() *p2p.Service{
+	return svcList[0].(*p2p.Service);
+}
