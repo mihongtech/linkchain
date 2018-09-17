@@ -1,11 +1,12 @@
 package meta
 
 import (
+	"encoding/json"
+
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/account"
-	"encoding/json"
 	"github.com/linkchain/poa/meta/protobuf"
 )
 
@@ -15,7 +16,7 @@ type POAAccountID struct {
 }
 
 func (id *POAAccountID) GetString() string  {
-	return id.ID.GetString()
+	return id.ID.String()
 }
 
 //Serialize/Deserialize
