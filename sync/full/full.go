@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	_ "math"
-	_ "math/big"
+	"math/big"
 	"sync"
 	_ "time"
 
@@ -20,6 +20,7 @@ import (
 	p2p_node "github.com/linkchain/p2p/node"
 	p2p_peer "github.com/linkchain/p2p/peer"
 	"github.com/linkchain/p2p/peer_error"
+	"github.com/linkchain/sync/full/downloader"
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are
@@ -40,6 +41,7 @@ type ProtocolManager struct {
 	maxPeers  int
 	peers     *peerSet
 
+	downloader    *downloader.Downloader
 	SubProtocols  []p2p_peer.Protocol
 	blockchain    manager.ChainManager
 	eventMux      *event.TypeMux
@@ -108,6 +110,9 @@ func NewProtocolManager(config interface{}, networkId uint64, mux *event.TypeMux
 	if len(manager.SubProtocols) == 0 {
 		return nil, errIncompatibleConfig
 	}
+
+	manager.downloader = downloader.New(manager.eventMux, manager.blockchain, manager.removePeer)
+
 	return manager, nil
 }
 
@@ -163,16 +168,15 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 	// Execute the Ethereum handshake
 	var (
-	// genesis = pm.blockchain.Genesis()
-	// head    = pm.blockchain.CurrentHeader()
-	// hash    = head.Hash()
-	// number  = head.Number.Uint64()
-	// td      = pm.blockchain.GetTd(hash, number)
+		genesis = pm.blockchain.GetBlockByHeight(0)
+		current = pm.blockchain.GetBestBlock()
+		hash    = current.GetBlockID()
+		number  = current.GetHeight()
 	)
-	//	if err := p.Handshake(pm.networkId, td, hash, genesis.Hash()); err != nil {
-	//		p.Log().Debug("Ethereum handshake failed", "err", err)
-	//		return err
-	//	}
+	if err := p.Handshake(pm.networkId, big.NewInt(0), hash, genesis.GetBlockID()); err != nil {
+		p.Log().Debug("Linkchain handshake failed", "err", err)
+		return err
+	}
 
 	// Register the peer locally
 	if err := pm.peers.Register(p); err != nil {
@@ -182,9 +186,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	defer pm.removePeer(p.id)
 
 	// Register the peer in the downloader. If the downloader considers it banned, we disconnect
-	//	if err := pm.downloader.RegisterPeer(p.id, p.version, p); err != nil {
-	//		return err
-	//	}
+	if err := pm.downloader.RegisterPeer(p.id, p.version, p); err != nil {
+		return err
+	}
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
 	// pm.syncTransactions(p)
