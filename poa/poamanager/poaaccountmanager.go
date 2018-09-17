@@ -1,56 +1,57 @@
 package poamanager
 
 import (
-	"time"
 	"errors"
 
 	"github.com/linkchain/meta/account"
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/common/math"
 	"github.com/linkchain/meta/tx"
 
 	poameta "github.com/linkchain/poa/meta"
+	"github.com/linkchain/common/btcec"
 )
 
 type POAAccountManager struct {
-	accountMap map[poameta.POAAccountID]poameta.POAAccount
+	accountMap map[string]poameta.POAAccount
 }
 
 /** interface: common.IService **/
 func (m *POAAccountManager) Init(i interface{}) bool{
-	log.Info("POABlockManager init...");
-	m.accountMap = make(map[poameta.POAAccountID]poameta.POAAccount)
+	log.Info("POAAccountManager init...");
+	m.accountMap = make(map[string]poameta.POAAccount)
 
 	return true
 }
 
 func (m *POAAccountManager) Start() bool{
-	log.Info("POABlockManager start...");
+	log.Info("POAAccountManager start...");
 	return true
 }
 
 func (m *POAAccountManager) Stop(){
-	log.Info("POABlockManager stop...");
+	log.Info("POAAccountManager stop...");
 }
 
 
 func (m *POAAccountManager) NewAccount() account.IAccount  {
-	t := time.Now()
-	accountID := math.DoubleHashH([]byte(t.String()))
-	a := poameta.POAAccount{AccountID:poameta.POAAccountID{ID:accountID},Value:poameta.POAAmount{Value:int32(t.Day())}}
+	priv,err := btcec.NewPrivateKey(btcec.S256())
+	if err != nil {
+		log.Info("POAAccountManager","NewAccount - generate private key failed",err)
+	}
+	accountID := *poameta.NewAccountId(priv.PubKey().SerializeUncompressed()).(*poameta.POAAccountID)
+	a := poameta.POAAccount{AccountID:accountID,Value:poameta.POAAmount{Value:int32(0)}}
 	return &a
 }
 
 
 func (m *POAAccountManager) AddAccount(iAccount account.IAccount) error  {
-	aId := *iAccount.GetAccountID().(*poameta.POAAccountID)
 	a := *iAccount.(*poameta.POAAccount)
-	m.accountMap[aId] = a
+	m.accountMap[iAccount.GetAccountID().GetString()] = a
 	return nil
 }
 
 func (m *POAAccountManager) GetAccount(id account.IAccountID) (account.IAccount,error) {
-	a,ok := m.accountMap[*id.(*poameta.POAAccountID)]
+	a,ok := m.accountMap[id.GetString()]
 	if ok {
 		return &a,nil
 	}
@@ -58,7 +59,7 @@ func (m *POAAccountManager) GetAccount(id account.IAccountID) (account.IAccount,
 }
 
 func (m *POAAccountManager) RemoveAccount(id account.IAccountID) error  {
-	delete(m.accountMap,*id.(*poameta.POAAccountID))
+	delete(m.accountMap,id.GetString())
 	return nil
 }
 
@@ -70,15 +71,15 @@ func (m *POAAccountManager) UpdateAccountByTX(tx tx.ITx) error {
 
 
 	if err != nil {
-		log.Error("POAAccountManager","update account status","can not find the account of the tx's")
+		log.Error("POAAccountManager","UpdateAccountByTX","can not find the account of the tx's")
 		return err
 	}
 
 	amount := tx.GetAmount()
 
 	if fromAccount.GetAmount().IsLessThan(amount) {
-		log.Error("POAAccountManager","update account status","the from of tx doesn't have enough money to pay")
-		return errors.New("update account status the from of tx doesn't have enough money to pay")
+		log.Error("POAAccountManager","UpdateAccountByTX","the from of tx doesn't have enough money to pay")
+		return errors.New("UpdateAccountByTX the from of tx doesn't have enough money to pay")
 	}
 
 	fromAmount := poameta.POAAmount{Value:0}
@@ -92,11 +93,10 @@ func (m *POAAccountManager) UpdateAccountByTX(tx tx.ITx) error {
 }
 
 func (m *POAAccountManager) UpdateAccount(iAccount account.IAccount) error {
-	a := *iAccount.(*poameta.POAAccount)
 
 	newAccount,err := m.GetAccount(iAccount.GetAccountID())
 	if err == nil {
-		newAccount.GetAmount().Addition(a.GetAmount())
+		newAccount.GetAmount().Addition(iAccount.GetAmount())
 		m.AddAccount(newAccount)
 	} else {
 		m.AddAccount(iAccount)
@@ -111,14 +111,22 @@ func (m *POAAccountManager) CheckTxFromAccount(tx tx.ITx) error {
 	amount := tx.GetAmount()
 
 	if err != nil {
-		log.Error("POAAccountManager","update account status","can not find the account of the tx's")
+		log.Error("POAAccountManager","CheckTxFromAccount","can not find the account of the tx's")
+		log.Error("POAAccountManager","tx from",fromAccountId.GetString())
 		return err
 	}
 
 	if fromAccount.GetAmount().IsLessThan(amount) {
-		log.Error("POAAccountManager","update account status","the from of tx doesn't have enough money to pay")
-		return errors.New("update account status the from of tx doesn't have enough money to pay")
+		log.Error("POAAccountManager","CheckTxFromAccount","the from of tx doesn't have enough money to pay")
+		return errors.New("CheckTxFromAccount the from of tx doesn't have enough money to pay")
 	}
+
+	//checkSign
+	err = tx.Verify()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -365,7 +365,7 @@ func (m *POAChainManager) updateChain() bool  {
 func (m *POAChainManager) updateStatus(block block.IBlock,isAdd bool) error {
 	//check all from account
 	for _,tx := range block.GetTxs() {
-		error := GetManager().AccountManager.UpdateAccountByTX(tx)
+		error := GetManager().AccountManager.CheckTxFromAccount(tx)
 		if error != nil {
 			return error
 		}
@@ -394,9 +394,9 @@ func (m *POAChainManager) updateStatus(block block.IBlock,isAdd bool) error {
 		} else {
 			actualTx = *tx.ChangeFromTo().(*poameta.POATransaction)
 		}
-		error := GetManager().AccountManager.UpdateAccountByTX(&actualTx)
-		if error != nil {
-			return error
+		err := GetManager().AccountManager.UpdateAccountByTX(&actualTx)
+		if err != nil {
+			return err
 		}
 	}
 	return nil

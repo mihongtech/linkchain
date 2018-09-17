@@ -39,7 +39,7 @@ message POATransactionPeer {
 }
 
 message POAAccountID {
-    required Hash id=1;
+    required bytes id=1;
 }
 
 message Hash {
