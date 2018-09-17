@@ -12,7 +12,7 @@ type BlockManager interface {
 	BlockPoolManager
 	BlockValidator
 
-	ProcessBlock(block block.IBlock)
+	ProcessBlock(block block.IBlock) error
 }
 
 type BlockBaseManager interface {

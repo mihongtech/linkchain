@@ -8,6 +8,7 @@ import (
 	poameta "github.com/linkchain/poa/meta"
 	"github.com/linkchain/meta/account"
 	"github.com/linkchain/meta"
+	"errors"
 )
 
 type POATxManager struct {
@@ -75,16 +76,17 @@ func (m *POATxManager) CheckTx(tx tx.ITx) bool {
 	return true
 }
 
-func (m *POATxManager) ProcessTx(tx tx.ITx) {
+func (m *POATxManager) ProcessTx(tx tx.ITx) error{
 	log.Info("POA ProcessTx ...")
 	//1.checkTx
 	if !m.CheckTx(tx) {
 		log.Error("POA checkTransaction failed")
-		return
+		return errors.New("POA checkTransaction failed")
 	}
 	//2.push Tx into storage
 	m.AddTransaction(tx)
 	log.Info("POA Add Tranasaction Pool  ...")
+	return nil
 }
 
 func (m *POATxManager) SignTransaction(tx tx.ITx) error  {

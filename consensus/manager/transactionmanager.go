@@ -13,7 +13,7 @@ type TransactionManager interface{
 	TransactionPoolManager
 	NewTransaction(account.IAccount, account.IAccount, meta.IAmount) tx.ITx
 	SignTransaction(tx tx.ITx) error
-	ProcessTx(tx tx.ITx)
+	ProcessTx(tx tx.ITx) error
 }
 
 type TransactionPoolManager interface{

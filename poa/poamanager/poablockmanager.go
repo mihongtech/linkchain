@@ -135,12 +135,12 @@ func (m *POABlockManager) CheckBlock(block block.IBlock) bool {
 	return true
 }
 
-func (s *POABlockManager) ProcessBlock(block block.IBlock){
+func (s *POABlockManager) ProcessBlock(block block.IBlock) error{
 	log.Info("POA ProcessBlock ...")
 	//1.checkBlock
 	if !GetManager().BlockManager.CheckBlock(block) {
 		log.Error("POA checkBlock failed")
-		return
+		return errors.New("POA checkBlock failed")
 	}
 
 	//2.acceptBlock
@@ -152,11 +152,12 @@ func (s *POABlockManager) ProcessBlock(block block.IBlock){
 	if !GetManager().ChainManager.UpdateChain() {
 		log.Info("POA Update chain failed")
 		GetManager().ChainManager.UpdateChain()
-		return
+		return errors.New("POA Update chain failed")
 	}
 	log.Error("GetBlockInfo")
 	log.Info("POA ProcessBlock successed","blockchaininfo", GetManager().ChainManager.GetBlockChainInfo())
 
+	return nil
 	//4.updateStorage
 
 	//5.broadcast
