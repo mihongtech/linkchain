@@ -11,11 +11,13 @@ import (
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/consensus/manager"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
 	"github.com/linkchain/meta/tx"
+	"github.com/linkchain/node"
 	"github.com/linkchain/p2p/message"
-	"github.com/linkchain/p2p/node"
+	p2p_node "github.com/linkchain/p2p/node"
 	p2p_peer "github.com/linkchain/p2p/peer"
 	"github.com/linkchain/p2p/peer_error"
 )
@@ -38,8 +40,8 @@ type ProtocolManager struct {
 	maxPeers  int
 	peers     *peerSet
 
-	SubProtocols []p2p_peer.Protocol
-
+	SubProtocols  []p2p_peer.Protocol
+	blockchain    manager.ChainManager
 	eventMux      *event.TypeMux
 	txCh          chan tx.ITx
 	txSub         event.Subscription
@@ -67,8 +69,9 @@ func NewProtocolManager(config interface{}, networkId uint64, mux *event.TypeMux
 		peers:       newPeerSet(),
 		newPeerCh:   make(chan *peer),
 		noMorePeers: make(chan struct{}),
-		// txsyncCh:    make(chan *txsync),
-		quitSync: make(chan struct{}),
+		blockchain:  node.GetConsensusService().GetChainManager(),
+		txsyncCh:    make(chan *txsync),
+		quitSync:    make(chan struct{}),
 	}
 
 	// Initiate a sub-protocol for every implemented version we can handle
@@ -94,7 +97,7 @@ func NewProtocolManager(config interface{}, networkId uint64, mux *event.TypeMux
 			NodeInfo: func() interface{} {
 				return manager.NodeInfo()
 			},
-			PeerInfo: func(id node.NodeID) interface{} {
+			PeerInfo: func(id p2p_node.NodeID) interface{} {
 				if p := manager.peers.Peer(fmt.Sprintf("%x", id[:8])); p != nil {
 					return p.Info()
 				}
