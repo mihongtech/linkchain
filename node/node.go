@@ -6,7 +6,6 @@ import (
 	"github.com/linkchain/consensus"
 	"github.com/linkchain/function/wallet"
 	"github.com/linkchain/p2p"
-	"github.com/linkchain/sync"
 )
 
 var (
@@ -15,7 +14,6 @@ var (
 		&consensus.Service{},
 		&wallet.Wallet{},
 		&p2p.Service{},
-		&sync.Service{},
 	}
 )
 
@@ -24,7 +22,7 @@ func Init() {
 
 	//init all service
 	for index, v := range svcList {
-		if index == 3 {
+		if index == 2 {
 			v.Init(svcList[0].(*consensus.Service))
 			continue
 		}
@@ -46,13 +44,13 @@ func Run() {
 
 //get service
 func GetConsensusService() *consensus.Service {
-	return svcList[1].(*consensus.Service)
+	return svcList[0].(*consensus.Service)
 }
 
 func GetP2pService() *p2p.Service {
-	return svcList[0].(*p2p.Service)
+	return svcList[2].(*p2p.Service)
 }
 
 func GetWallet() *wallet.Wallet {
-	return svcList[2].(*wallet.Wallet)
+	return svcList[1].(*wallet.Wallet)
 }

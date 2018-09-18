@@ -3,13 +3,14 @@ package sync
 import (
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/consensus"
+	p2p_peer "github.com/linkchain/p2p/peer"
 	"github.com/linkchain/sync/full"
 )
 
 var ()
 
 type Service struct {
-	engine *full.ProtocolManager
+	Engine *full.ProtocolManager
 }
 
 func (s *Service) Init(i interface{}) bool {
@@ -18,17 +19,21 @@ func (s *Service) Init(i interface{}) bool {
 	if err != nil {
 		return false
 	}
-	s.engine = engine
+	s.Engine = engine
 	return true
 }
 
 func (s *Service) Start() bool {
 	//log.Info("sync service start...");
-	s.engine.Start()
+	s.Engine.Start()
 	return true
 }
 
 func (s *Service) Stop() {
 	//log.Info("sync service stop...");
-	s.engine.Stop()
+	s.Engine.Stop()
+}
+
+func (s *Service) Protocols() []p2p_peer.Protocol {
+	return s.Engine.SubProtocols
 }

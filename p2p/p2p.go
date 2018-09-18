@@ -16,6 +16,7 @@ import (
 	"github.com/linkchain/p2p/peer"
 	"github.com/linkchain/p2p/peer_error"
 	"github.com/linkchain/p2p/transport"
+	data_sync "github.com/linkchain/sync"
 )
 
 var errServerStopped = errors.New("server stopped")
@@ -115,6 +116,7 @@ type Service struct {
 	loopWG        sync.WaitGroup // loop, listenLoop
 	peerFeed      event.Feed
 	log           log.Logger
+	sync          *data_sync.Service
 }
 
 type peerOpFunc func(map[node.NodeID]*peer.Peer)
@@ -129,6 +131,8 @@ func (srv *Service) Init(i interface{}) bool {
 	log.Info("p2p service init...")
 	// TODO: init config
 	srv.ListenAddr = "127.0.0.1:40001"
+	srv.sync = &data_sync.Service{}
+	srv.sync.Init(i)
 	return true
 }
 
@@ -161,6 +165,7 @@ func (srv *Service) Start() bool {
 	srv.removestatic = make(chan *node.Node)
 	srv.peerOp = make(chan peerOpFunc)
 	srv.peerOpDone = make(chan struct{})
+	srv.Protocols = append(srv.Protocols, srv.sync.Protocols()...)
 
 	dynPeers := srv.maxDialedConns()
 	dialer := newDialState(srv.StaticNodes, srv.BootstrapNodes, nil, dynPeers, srv.NetRestrict)
