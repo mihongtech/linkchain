@@ -4,8 +4,9 @@ import (
 	"github.com/linkchain/common"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/consensus"
-	"github.com/linkchain/p2p"
 	"github.com/linkchain/function/wallet"
+	"github.com/linkchain/p2p"
+	"github.com/linkchain/sync"
 )
 
 var (
@@ -14,6 +15,7 @@ var (
 		&consensus.Service{},
 		&wallet.Wallet{},
 		&p2p.Service{},
+		&sync.Service{},
 	}
 )
 
@@ -22,7 +24,7 @@ func Init() {
 
 	//init all service
 	for index, v := range svcList {
-		if index == 2 {
+		if index == 3 {
 			v.Init(svcList[0].(*consensus.Service))
 			continue
 		}

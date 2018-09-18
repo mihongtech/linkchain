@@ -1,7 +1,8 @@
 package sync
 
 import (
-	_ "github.com/linkchain/consensus/manager"
+	"github.com/linkchain/common/util/event"
+	"github.com/linkchain/consensus"
 	"github.com/linkchain/sync/full"
 )
 
@@ -13,7 +14,7 @@ type Service struct {
 
 func (s *Service) Init(i interface{}) bool {
 	//log.Info("sync service init...");
-	engine, err := full.NewProtocolManager(i, 0, nil)
+	engine, err := full.NewProtocolManager(i, i.(*consensus.Service), 0, &(event.TypeMux{}), &(event.Feed{}))
 	if err != nil {
 		return false
 	}

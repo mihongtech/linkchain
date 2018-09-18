@@ -9,11 +9,11 @@ import (
 
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/consensus"
 	"github.com/linkchain/consensus/manager"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
 	"github.com/linkchain/meta/tx"
-	"github.com/linkchain/node"
 	"github.com/linkchain/p2p/message"
 	p2p_node "github.com/linkchain/p2p/node"
 	p2p_peer "github.com/linkchain/p2p/peer"
@@ -45,6 +45,7 @@ type ProtocolManager struct {
 	blockmanager  manager.BlockManager
 	txmanager     manager.TransactionManager
 	eventMux      *event.TypeMux
+	eventTx       *event.Feed
 	txCh          chan tx.ITx
 	txSub         event.Subscription
 	minedBlockSub *event.TypeMuxSubscription
@@ -62,18 +63,19 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Ethereum sub protocol manages peers capable
 // with the ethereum network.
-func NewProtocolManager(config interface{}, networkId uint64, mux *event.TypeMux) (*ProtocolManager, error) {
+func NewProtocolManager(config interface{}, consensus *consensus.Service, networkId uint64, mux *event.TypeMux, tx *event.Feed) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:    networkId,
 		maxPeers:     64,
+		eventTx:      tx,
 		eventMux:     mux,
 		peers:        newPeerSet(),
 		newPeerCh:    make(chan *peer),
 		noMorePeers:  make(chan struct{}),
-		blockchain:   node.GetConsensusService().GetChainManager(),
-		blockmanager: node.GetConsensusService().GetBlockManager(),
-		txmanager:    node.GetConsensusService().GetTXManager(),
+		blockchain:   consensus.GetChainManager(),
+		blockmanager: consensus.GetBlockManager(),
+		txmanager:    consensus.GetTXManager(),
 		txsyncCh:     make(chan *txsync),
 		quitSync:     make(chan struct{}),
 	}
@@ -127,7 +129,7 @@ func NewProtocolManager(config interface{}, networkId uint64, mux *event.TypeMux
 func (pm *ProtocolManager) Start() bool {
 	// broadcast transactions
 	pm.txCh = make(chan tx.ITx, txChanSize)
-	// pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
+	pm.txSub = pm.eventTx.Subscribe(pm.txCh)
 	go pm.txBroadcastLoop()
 	//
 	//	 broadcast mined blocks
@@ -383,9 +385,9 @@ func (self *ProtocolManager) txBroadcastLoop() {
 		case event := <-self.txCh:
 			self.BroadcastTx(event.GetTxID(), event)
 
-		// Err() channel will be closed when unsubscribing.
-		case <-self.txSub.Err():
-			return
+			// Err() channel will be closed when unsubscribing.
+			//		case <-self.txSub.Err():
+			//			return
 		}
 	}
 }
