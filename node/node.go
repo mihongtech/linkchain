@@ -20,14 +20,9 @@ var (
 func Init() {
 	log.Info("Node init...")
 
-	//init all service
-	for index, v := range svcList {
-		if index == 2 {
-			v.Init(svcList[0].(*consensus.Service))
-			continue
-		}
-		v.Init(nil)
-	}
+	svcList[0].Init(nil)		//consensus init
+	svcList[1].Init(GetConsensusService().GetAccountManager()) //wallet init
+	svcList[2].Init(GetConsensusService()) //p2p init
 }
 
 func Run() {

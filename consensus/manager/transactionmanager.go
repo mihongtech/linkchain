@@ -11,7 +11,7 @@ type TransactionManager interface{
 	common.IService
 	TransactionValidator
 	TransactionPoolManager
-	NewTransaction(account.IAccount, account.IAccount, meta.IAmount) tx.ITx
+	NewTransaction(from account.IAccount,to account.IAccount,amount meta.IAmount) tx.ITx
 	SignTransaction(tx tx.ITx) error
 	ProcessTx(tx tx.ITx) error
 }
