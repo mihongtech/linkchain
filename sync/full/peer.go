@@ -126,8 +126,6 @@ func (p *peer) SendTransactions(txs []tx.ITx) error {
 		p.knownTxs.Add(tx.GetTxID())
 		message.Send(p.rw, TxMsg, tx.Serialize())
 	}
-	// TODO: add send txs feature
-	// return message.Send(p.rw, TxMsg, protobufTxs)
 	return nil
 }
 

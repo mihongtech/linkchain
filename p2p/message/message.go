@@ -38,10 +38,6 @@ const (
 	PeersMsg     = 0x05
 )
 
-// Decode parses the RLP content of a message into
-// the given value, which must be a pointer.
-//
-// For the decoding rules, please see package rlp.
 func (msg Msg) Decode(data proto.Message) error {
 	content, err := ioutil.ReadAll(msg.Payload)
 	if err != nil {

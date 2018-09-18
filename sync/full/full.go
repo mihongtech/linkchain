@@ -19,6 +19,7 @@ import (
 	p2p_node "github.com/linkchain/p2p/node"
 	p2p_peer "github.com/linkchain/p2p/peer"
 	"github.com/linkchain/p2p/peer_error"
+	"github.com/linkchain/poa/meta/protobuf"
 	"github.com/linkchain/sync/full/downloader"
 	"github.com/linkchain/sync/full/fetcher"
 	"github.com/linkchain/sync/full/protobufmsg"
@@ -48,6 +49,7 @@ type ProtocolManager struct {
 	SubProtocols  []p2p_peer.Protocol
 	blockchain    manager.ChainManager
 	blockmanager  manager.BlockManager
+	txmanager     manager.TransactionManager
 	eventMux      *event.TypeMux
 	txCh          chan tx.ITx
 	txSub         event.Subscription
@@ -77,6 +79,7 @@ func NewProtocolManager(config interface{}, networkId uint64, mux *event.TypeMux
 		noMorePeers:  make(chan struct{}),
 		blockchain:   node.GetConsensusService().GetChainManager(),
 		blockmanager: node.GetConsensusService().GetBlockManager(),
+		txmanager:    node.GetConsensusService().GetTXManager(),
 		txsyncCh:     make(chan *txsync),
 		quitSync:     make(chan struct{}),
 	}
@@ -301,23 +304,17 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		//		}
 
 	case msg.Code == TxMsg:
-		// Transactions arrived, make sure we have a valid and fresh chain to handle them
-		//		if atomic.LoadUint32(&pm.acceptTxs) == 0 {
-		//			break
-		//		}
-		//		// Transactions can be processed, parse all of them and deliver to the pool
-		//		var txs []*types.Transaction
-		//		if err := msg.Decode(&txs); err != nil {
-		//			return errResp(ErrDecode, "msg %v: %v", msg, err)
-		//		}
-		//		for i, tx := range txs {
-		//			// Validate and mark the remote transaction
-		//			if tx == nil {
-		//				return errResp(ErrDecode, "transaction %d is nil", i)
-		//			}
-		//			p.MarkTransaction(tx.Hash())
-		//		}
-		//		pm.txpool.AddRemotes(txs)
+
+		// TODO: add interface
+		var t protobuf.POATransaction
+		if err := msg.Decode(&t); err != nil {
+			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		}
+		var transaction tx.ITx
+		transaction.Deserialize(&t)
+		p.MarkTransaction(transaction.GetTxID())
+
+		pm.txmanager.AddTransaction(transaction)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
