@@ -28,12 +28,9 @@ func (m *POAChainManager) Init(i interface{}) bool{
 
 	gensisChainNode := poameta.NewPOAChainNode(gensisBlock)
 	m.mainChainIndex = make([]poameta.POAChainNode,0)
-	//m.mainChainIndex = append(m.mainChainIndex,gensisChainNode)
 
 	m.mainChain = poameta.NewBlockChain(gensisChainNode)
-	/*longestChain,_ := m.GetLongestChain()
-	bestBlock := longestChain.GetLastBlock()
-	m.mainChain.AddNode(poameta.NewPOAChainNode(bestBlock))*/
+
 	//TODO need to load storage
 
 	//TODO BlockManager need inited
@@ -381,7 +378,7 @@ func (m *POAChainManager) updateStatus(block block.IBlock,isAdd bool) error {
 	}
 	account := poameta.NewPOAAccount(mineAccountId,&amount,uint32(0))
 
-	error := GetManager().AccountManager.UpdateAccount(&account,false)
+	error := GetManager().AccountManager.UpdateAccount(&account)
 	if error != nil {
 		return error
 	}

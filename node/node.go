@@ -44,13 +44,13 @@ func Run() {
 
 //get service
 func GetConsensusService() *consensus.Service {
-	return svcList[1].(*consensus.Service)
+	return svcList[0].(*consensus.Service)
 }
 
 func GetP2pService() *p2p.Service {
-	return svcList[0].(*p2p.Service)
+	return svcList[2].(*p2p.Service)
 }
 
 func GetWallet() *wallet.Wallet {
-	return svcList[2].(*wallet.Wallet)
+	return svcList[1].(*wallet.Wallet)
 }

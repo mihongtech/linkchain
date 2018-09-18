@@ -68,8 +68,6 @@ func (m *POAAccountManager) UpdateAccountByTX(tx tx.ITx) error {
 	toAccountId := tx.GetTo().GetID()
 
 	fromAccount,err := m.GetAccount(fromAccountId)
-
-
 	if err != nil {
 		log.Error("POAAccountManager","UpdateAccountByTX","can not find the account of the tx's")
 		return err
@@ -82,22 +80,30 @@ func (m *POAAccountManager) UpdateAccountByTX(tx tx.ITx) error {
 		return errors.New("UpdateAccountByTX the from of tx doesn't have enough money to pay")
 	}
 
-	if fromAccount.CheckNounce(tx.GetNounce()) {
+	log.Info("POAAccountManager","fromAccount nounce",fromAccount.GetNounce(),"tx nounce",tx.GetNounce())
+	if !fromAccount.CheckNounce(tx.GetNounce()) {
 		log.Error("POAAccountManager","CheckTxFromAccount","the from of tx doesn't have corrent nounce")
 		return errors.New("CheckTxFromAccount the from of tx doesn't have corrent nounce")
 	}
 
-	fromAmount := poameta.POAAmount{Value:0}
+	fromAmount := poameta.NewPOAAmout(0)
 	fromAmount.Subtraction(amount)
 	fromAccount.ChangeAmount(&fromAmount)
-	m.UpdateAccount(fromAccount, true)
-	toAccount := poameta.NewPOAAccount(toAccountId,amount,tx.GetNounce())
-	m.UpdateAccount(&toAccount,false)
+	fromAccount.SetNounce(tx.GetNounce())
+	m.UpdateAccount(fromAccount)
+
+	toNounce := uint32(0)
+	toAccount, err := m.GetAccount(toAccountId)
+	if err == nil {
+		toNounce = toAccount.GetNounce()
+	}
+	a := poameta.NewPOAAccount(toAccountId,amount,toNounce)
+	m.UpdateAccount(&a)
+
 	return nil
 }
 
-func (m *POAAccountManager) UpdateAccount(iAccount account.IAccount, isFrom bool) error {
-	//TODO
+func (m *POAAccountManager) UpdateAccount(iAccount account.IAccount) error {
 	newAccount,err := m.GetAccount(iAccount.GetAccountID())
 	if err == nil {
 		newAccount.GetAmount().Addition(iAccount.GetAmount())
@@ -125,7 +131,7 @@ func (m *POAAccountManager) CheckTxFromAccount(tx tx.ITx) error {
 		return errors.New("CheckTxFromAccount the from of tx doesn't have enough money to pay")
 	}
 
-	if fromAccount.CheckNounce(tx.GetNounce()) {
+	if !fromAccount.CheckNounce(tx.GetNounce()) {
 		log.Error("POAAccountManager","CheckTxFromAccount","the from of tx doesn't have corrent nounce")
 		return errors.New("CheckTxFromAccount the from of tx doesn't have corrent nounce")
 	}

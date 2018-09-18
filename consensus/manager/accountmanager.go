@@ -18,7 +18,7 @@ type AccountPoolManager interface{
 	AddAccount(iAccount account.IAccount) error
 	GetAccount(id account.IAccountID) (account.IAccount,error)
 	RemoveAccount(id account.IAccountID) error
-	UpdateAccount(iAccount account.IAccount, isFrom bool) error
+	UpdateAccount(iAccount account.IAccount) error
 	UpdateAccountByTX(tx tx.ITx) error
 	CheckTxFromAccount(tx tx.ITx) error
 
