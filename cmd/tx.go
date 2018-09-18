@@ -130,6 +130,8 @@ var sendTxCmd = &cobra.Command{
 		}else {
 			log.Info("Verify tx","successed",true)
 		}
+
+		poamanager.GetManager().TransactionManager.ProcessTx(tx)
 	},
 }
 

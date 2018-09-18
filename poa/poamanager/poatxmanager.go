@@ -62,12 +62,13 @@ func (m *POATxManager) RemoveTransaction(txid meta.DataID) error{
 	return nil
 }
 
-func (m *POATxManager) NewTransaction(form account.IAccount,to account.IAccount,amount meta.IAmount) tx.ITx {
+func (m *POATxManager) NewTransaction(from account.IAccount,to account.IAccount,amount meta.IAmount) tx.ITx {
 	newTx := poameta.POATransaction{Version:0,
-		From:poameta.GetPOATransactionPeer(form,nil),
+		From:poameta.GetPOATransactionPeer(from,nil),
 		To:poameta.GetPOATransactionPeer(to,nil),
 		Amount:*amount.(*poameta.POAAmount),
-		Time:time.Now()}
+		Time:time.Now(),
+		Nounce:(from.GetNounce()+1),}
 	return &newTx
 }
 

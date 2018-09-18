@@ -1,13 +1,16 @@
 package wallet
 
 import (
+	"errors"
+	"strings"
+	"encoding/hex"
+
 	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/meta/account"
-	"errors"
 	poameta "github.com/linkchain/poa/meta"
-	"encoding/hex"
 	"github.com/linkchain/meta/tx"
+	"github.com/linkchain/consensus/manager"
 )
 
 var minePriv,_ = hex.DecodeString("fe38240982f313ae5afb3e904fb8215fb11af1200592b" +
@@ -16,6 +19,7 @@ var minePriv,_ = hex.DecodeString("fe38240982f313ae5afb3e904fb8215fb11af1200592b
 type WAccount struct {
 	privKey btcec.PrivateKey
 	amount int
+	nounce uint32
 }
 
 func NewWSAccount() WAccount {
@@ -29,6 +33,15 @@ func NewWSAccount() WAccount {
 func CreateWAccountFromBytes(pb []byte) WAccount {
 	priv, _ := btcec.PrivKeyFromBytes(btcec.S256(), pb)
 	return WAccount{privKey:*priv,amount:0}
+}
+
+func (wa *WAccount) UpdateWAccount(iAccount account.IAccount) error {
+	if strings.Compare(iAccount.GetAccountID().GetString(),string(wa.privKey.PubKey().SerializeCompressed())) != 0 {
+		return errors.New("Account is error")
+	}
+	wa.amount = iAccount.GetAmount().GetInt()
+	wa.nounce = iAccount.GetNounce()
+	return nil
 }
 
 func (wa *WAccount) ConvertAccount() account.IAccount  {
@@ -48,12 +61,13 @@ func (wa *WAccount) Sign(messageHash []byte) []byte {
 
 type Wallet struct {
 	accounts map[string]WAccount
+	am manager.AccountManager
 }
 
 func (w *Wallet) Init(i interface{}) bool{
 	log.Info("Wallet init...");
 	w.accounts = make(map[string]WAccount)
-
+	w.am = i.(manager.AccountManager)
 	return true
 }
 
@@ -62,6 +76,10 @@ func (w *Wallet) Start() bool{
 	gensisWA := CreateWAccountFromBytes(minePriv)
 	gensisKey := hex.EncodeToString(gensisWA.privKey.PubKey().SerializeCompressed())
 	w.accounts[gensisKey] = gensisWA
+	ga,err := w.am.GetAccount(gensisWA.ConvertAccount().GetAccountID())
+	if err == nil {
+		gensisWA.UpdateWAccount(ga)
+	}
 	return true
 }
 
@@ -76,19 +94,6 @@ func (w *Wallet) UpdateWalletAccount(account account.IAccount) (error) {
 	}
 	a.amount = account.GetAmount().GetInt()
 	return nil
-}
-
-func (w *Wallet) SignTransaction(tx tx.ITx) (tx.ITx,error) {
-	a,ok := w.accounts[tx.GetFrom().GetID().GetString()]
-	if !ok {
-		return nil,errors.New("SignTransaction can not find tx from account")
-	}
-	sign := a.Sign(tx.GetTxID().CloneBytes())
-	if sign == nil {
-		return nil,errors.New("SignTransaction failed")
-	}
-	tx.SetSignature(sign)
-	return tx,nil
 }
 
 func (w *Wallet) AddWAccount(wa WAccount)  {
@@ -106,4 +111,17 @@ func (w *Wallet) GetWAccount() account.IAccount  {
 		return randWA.ConvertAccount()
 	}
 	return nil
+}
+
+func (w *Wallet) SignTransaction(tx tx.ITx) (tx.ITx,error) {
+	a,ok := w.accounts[tx.GetFrom().GetID().GetString()]
+	if !ok {
+		return nil,errors.New("SignTransaction can not find tx from account")
+	}
+	sign := a.Sign(tx.GetTxID().CloneBytes())
+	if sign == nil {
+		return nil,errors.New("SignTransaction failed")
+	}
+	tx.SetSignature(sign)
+	return tx,nil
 }
