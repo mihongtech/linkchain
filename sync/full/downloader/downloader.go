@@ -8,8 +8,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	ethereum "github.com/ethereum/go-ethereum"
-
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/consensus/manager"
@@ -146,26 +144,26 @@ func New(mux *event.TypeMux, chain manager.ChainManager, blockManager manager.Bl
 // In addition, during the state download phase of fast synchronisation the number
 // of processed and the total number of known states are also returned. Otherwise
 // these are zero.
-func (d *Downloader) Progress() ethereum.SyncProgress {
-	// Lock the current stats and return the progress
-	d.syncStatsLock.RLock()
-	defer d.syncStatsLock.RUnlock()
-
-	current := uint64(0)
-	switch d.mode {
-	case FullSync:
-		current = uint64(d.blockchain.GetBestBlock().GetHeight())
-		//	case FastSync:
-		//		current = d.blockchain.CurrentFastBlock().NumberU64()
-		//	case LightSync:
-		//		current = d.lightchain.CurrentHeader().Number.Uint64()
-	}
-	return ethereum.SyncProgress{
-		StartingBlock: d.syncStatsChainOrigin,
-		CurrentBlock:  current,
-		HighestBlock:  d.syncStatsChainHeight,
-	}
-}
+//func (d *Downloader) Progress() ethereum.SyncProgress {
+//	// Lock the current stats and return the progress
+//	d.syncStatsLock.RLock()
+//	defer d.syncStatsLock.RUnlock()
+//
+//	current := uint64(0)
+//	switch d.mode {
+//	case FullSync:
+//		current = uint64(d.blockchain.GetBestBlock().GetHeight())
+//		//	case FastSync:
+//		//		current = d.blockchain.CurrentFastBlock().NumberU64()
+//		//	case LightSync:
+//		//		current = d.lightchain.CurrentHeader().Number.Uint64()
+//	}
+//	return ethereum.SyncProgress{
+//		StartingBlock: d.syncStatsChainOrigin,
+//		CurrentBlock:  current,
+//		HighestBlock:  d.syncStatsChainHeight,
+//	}
+//}
 
 // Synchronising returns whether the downloader is currently retrieving blocks.
 func (d *Downloader) Synchronising() bool {
