@@ -30,11 +30,6 @@ import (
 var errIncompatibleConfig = errors.New("incompatible configuration")
 
 const (
-	// softResponseLimit = 2 * 1024 * 1024 // Target maximum size of returned blocks, headers or node data.
-	// estHeaderRlpSize  = 500             // Approximate size of an RLP encoded block header
-
-	// txChanSize is the size of channel listening to TxPreEvent.
-	// The number is referenced from the size of tx pool.
 	txChanSize = 4096
 )
 
@@ -240,8 +235,26 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	// Block header query, collect the requested headers and reply
 	case msg.Code == GetBlockMsg:
-		// do nothing
-		return nil
+		// Decode the complex header query
+		var query protobufmsg.GetBlockHeadersData
+		if err := msg.Decode(&query); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		data := &getBlockHeadersData{}
+		data.Deserialize(&query)
+		var block block.IBlock
+		var err error
+		if data.Hash.IsEmpty() {
+			block = pm.blockchain.GetBlockByHeight(uint32(data.Number))
+		} else {
+			block, err = pm.blockmanager.GetBlockByID(data.Hash)
+		}
+		if err != nil || block == nil {
+			log.Error("get block msg error", "query data", data, "err", err)
+			return err
+		}
+
+		return p.SendBlock(block)
 
 	case msg.Code == BlockMsg:
 		// do nothing

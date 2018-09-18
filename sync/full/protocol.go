@@ -136,17 +136,21 @@ func (n *newBlockHashData) Deserialize(data serialize.SerializeStream) {
 	n.Number = *(d.Number)
 }
 
-//// newBlockData is the network packet for the block propagation message.
-//type newBlockData struct {
-//	Block *types.Block
-//	TD    *big.Int
-//}
-//
-//// blockBody represents the data content of a single block.
-//type blockBody struct {
-//	Transactions []*types.Transaction // Transactions contained within a block
-//	Uncles       []*types.Header      // Uncles contained within a block
-//}
-//
-//// blockBodiesData is the network packet for block content distribution.
-//type blockBodiesData []*blockBody
+type getBlockHeadersData struct {
+	Hash   meta.DataID // Hash of one particular block being announced
+	Number uint64      // Number of one particular block being announced
+}
+
+func (n *getBlockHeadersData) Serialize() serialize.SerializeStream {
+	data := &protobufmsg.NewBlockHashData{
+		Hash:   n.Hash.Serialize().(*protobufmsg.Hash),
+		Number: &(n.Number),
+	}
+	return data
+}
+
+func (n *getBlockHeadersData) Deserialize(data serialize.SerializeStream) {
+	d := data.(*protobufmsg.NewBlockHashData)
+	n.Hash.Deserialize(d.Hash)
+	n.Number = *(d.Number)
+}

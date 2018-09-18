@@ -135,12 +135,18 @@ func (p *peer) SendNewBlock(block block.IBlock, td *big.Int) error {
 	return message.Send(p.rw, NewBlockMsg, block.Serialize())
 }
 
+func (p *peer) SendBlock(block block.IBlock) error {
+	p.knownBlocks.Add(block.GetBlockID())
+	return message.Send(p.rw, BlockMsg, block.Serialize())
+}
+
 // RequestBodies fetches a batch of blocks' bodies corresponding to the hashes
 // specified.
 func (p *peer) RequestBlock(hashes []meta.DataID) error {
 	p.Log().Debug("Fetching batch of block bodies", "count", len(hashes))
 	for _, hash := range hashes {
-		message.Send(p.rw, GetBlockMsg, hash.Serialize().(*protobufmsg.Hash))
+		data := &getBlockHeadersData{Hash: hash}
+		message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobufmsg.GetBlockHeadersData))
 	}
 
 	return nil
@@ -148,7 +154,8 @@ func (p *peer) RequestBlock(hashes []meta.DataID) error {
 
 func (p *peer) RequestOneBlock(hash meta.DataID) error {
 	p.Log().Debug("Fetching single header", "hash", hash)
-	return message.Send(p.rw, GetBlockMsg, hash.Serialize().(*protobufmsg.Hash))
+	data := &getBlockHeadersData{Hash: hash}
+	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobufmsg.GetBlockHeadersData))
 }
 
 // Handshake executes the eth protocol handshake, negotiating version number,

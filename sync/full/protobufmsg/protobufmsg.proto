@@ -21,3 +21,8 @@ message NewBlockHashData {
 message NewBlockHashesDatas{
   repeated NewBlockHashData data = 1;
 }
+
+message GetBlockHeadersData {
+  required Hash    hash = 1;
+  required uint64  number = 2;
+}
