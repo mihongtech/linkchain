@@ -32,7 +32,7 @@ func CreateWAccountFromBytes(pb []byte) WAccount {
 }
 
 func (wa *WAccount) ConvertAccount() account.IAccount  {
-	accountID := *poameta.NewAccountId(wa.privKey.PubKey().SerializeUncompressed()).(*poameta.POAAccountID)
+	accountID := *poameta.NewAccountId(wa.privKey.PubKey().SerializeCompressed()).(*poameta.POAAccountID)
 	a := poameta.POAAccount{AccountID:accountID,Value:poameta.POAAmount{Value:int32(wa.amount)}}
 	return &a
 }
@@ -60,7 +60,7 @@ func (w *Wallet) Init(i interface{}) bool{
 func (w *Wallet) Start() bool{
 	log.Info("Wallet start...");
 	gensisWA := CreateWAccountFromBytes(minePriv)
-	gensisKey := hex.EncodeToString(gensisWA.privKey.PubKey().SerializeUncompressed())
+	gensisKey := hex.EncodeToString(gensisWA.privKey.PubKey().SerializeCompressed())
 	w.accounts[gensisKey] = gensisWA
 	return true
 }
@@ -92,7 +92,7 @@ func (w *Wallet) SignTransaction(tx tx.ITx) (tx.ITx,error) {
 }
 
 func (w *Wallet) AddWAccount(wa WAccount)  {
-	key := hex.EncodeToString(wa.privKey.PubKey().SerializeUncompressed())
+	key := hex.EncodeToString(wa.privKey.PubKey().SerializeCompressed())
 	w.accounts[key] = wa
 }
 

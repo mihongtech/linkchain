@@ -19,13 +19,13 @@ type POAAccountID struct {
 }
 
 func (id *POAAccountID) GetString() string  {
-	return hex.EncodeToString(id.ID.SerializeUncompressed())
+	return hex.EncodeToString(id.ID.SerializeCompressed())
 }
 
 //Serialize/Deserialize
 func (a *POAAccountID)Serialize()(serialize.SerializeStream){
 	accountId := protobuf.POAAccountID{
-		Id:proto.NewBuffer(a.ID.SerializeUncompressed()).Bytes(),
+		Id:proto.NewBuffer(a.ID.SerializeCompressed()).Bytes(),
 	}
 	return &accountId
 }

@@ -38,7 +38,7 @@ func (m *POAAccountManager) NewAccount() account.IAccount  {
 	if err != nil {
 		log.Info("POAAccountManager","NewAccount - generate private key failed",err)
 	}
-	accountID := *poameta.NewAccountId(priv.PubKey().SerializeUncompressed()).(*poameta.POAAccountID)
+	accountID := *poameta.NewAccountId(priv.PubKey().SerializeCompressed()).(*poameta.POAAccountID)
 	a := poameta.POAAccount{AccountID:accountID,Value:poameta.POAAmount{Value:int32(0)}}
 	return &a
 }

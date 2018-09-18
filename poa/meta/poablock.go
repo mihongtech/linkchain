@@ -140,7 +140,7 @@ func (bh *POABlockHeader) GetMineAccount() account.IAccountID {
 }
 
 func (bh *POABlockHeader) SetMineAccount(id account.IAccountID)  {
-	bh.Extra = append(bh.Extra,id.(*POAAccountID).ID.SerializeUncompressed()...)
+	bh.Extra = append(bh.Extra,id.(*POAAccountID).ID.SerializeCompressed()...)
 }
 
 //Serialize/Deserialize
