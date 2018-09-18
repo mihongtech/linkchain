@@ -9,12 +9,6 @@
 			"revisionTime": "2018-08-29T17:58:32Z"
 		},
 		{
-			"checksumSHA1": "kH45ZS6tfxl5R6xer2oJIqEp6kQ=",
-			"path": "github.com/shengdoushi/base58",
-			"revision": "c5f44ca1af76fb63925d5fba8fa7b85870199839",
-			"revisionTime": "2018-08-08T02:09:52Z"
-		},
-		{
 			"checksumSHA1": "aENNVxKxF9h9PfvTIstiAS5I3Lg=",
 			"path": "github.com/davecgh/go-spew/spew",
 			"revision": "d8f796af33cc11cb798c1aaeb27a4ebc5099927d",
@@ -73,6 +67,12 @@
 			"revisionTime": "2018-08-21T05:17:52Z"
 		},
 		{
+			"checksumSHA1": "kH45ZS6tfxl5R6xer2oJIqEp6kQ=",
+			"path": "github.com/shengdoushi/base58",
+			"revision": "c5f44ca1af76fb63925d5fba8fa7b85870199839",
+			"revisionTime": "2018-08-08T02:09:52Z"
+		},
+		{
 			"checksumSHA1": "6R6VIJm2rsJ2X44pX4ElzFlKfvs=",
 			"path": "github.com/sirupsen/logrus",
 			"revision": "fc587f31c804fe6853cd90f0d8d90af588eca5bd",
@@ -109,6 +109,12 @@
 			"path": "gopkg.in/fatih/set.v0",
 			"revision": "2c768e3c5489976167bfc42b5c7c92ca783f4389",
 			"revisionTime": "2018-08-03T06:55:37Z"
+		},
+		{
+			"checksumSHA1": "1l+DHbXeIPDI2yyqkRJfvSVy3W0=",
+			"path": "gopkg.in/karalabe/cookiejar.v2/collections/prque",
+			"revision": "8dcd6a7f4951f6ff3ee9cbb919a06d8925822e57",
+			"revisionTime": "2015-07-24T13:16:13Z"
 		}
 	],
 	"rootPath": "github.com/linkchain"
