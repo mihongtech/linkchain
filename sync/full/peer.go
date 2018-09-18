@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/linkchain/common/math"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
 	"github.com/linkchain/meta/tx"
@@ -47,7 +46,7 @@ type peer struct {
 	version  int         // Protocol version negotiated
 	forkDrop *time.Timer // Timed connection dropper if forks aren't validated in time
 
-	head math.Hash
+	head meta.DataID
 	td   *big.Int
 	lock sync.RWMutex
 
@@ -75,26 +74,28 @@ func (p *peer) Info() *PeerInfo {
 	return &PeerInfo{
 		Version:    p.version,
 		Difficulty: td,
-		Head:       hash.String(),
+		Head:       hash.GetString(),
 	}
 }
 
 // Head retrieves a copy of the current head hash and total difficulty of the
 // peer.
-func (p *peer) Head() (hash math.Hash, td *big.Int) {
+func (p *peer) Head() (hash meta.DataID, td *big.Int) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	copy(hash[:], p.head[:])
+	// copy(hash[:], p.head[:])
+	hash.SetBytes(p.head.CloneBytes())
 	return hash, new(big.Int).Set(p.td)
 }
 
 // SetHead updates the head hash and total difficulty of the peer.
-func (p *peer) SetHead(hash math.Hash, td *big.Int) {
+func (p *peer) SetHead(hash meta.DataID, td *big.Int) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	copy(p.head[:], hash[:])
+	// copy(p.head[:], hash[:])
+	p.head.SetBytes(hash.CloneBytes())
 	p.td.Set(td)
 }
 
@@ -138,10 +139,10 @@ func (p *peer) SendNewBlock(block block.IBlock, td *big.Int) error {
 
 // RequestBodies fetches a batch of blocks' bodies corresponding to the hashes
 // specified.
-func (p *peer) RequestBlock(hashes []math.Hash) error {
+func (p *peer) RequestBlock(hashes []meta.DataID) error {
 	p.Log().Debug("Fetching batch of block bodies", "count", len(hashes))
 	for _, hash := range hashes {
-		message.Send(p.rw, GetBlockBodiesMsg, hash.Serialize().(*protobufmsg.Hash))
+		message.Send(p.rw, GetBlockMsg, hash.Serialize().(*protobufmsg.Hash))
 	}
 
 	return nil
@@ -149,7 +150,7 @@ func (p *peer) RequestBlock(hashes []math.Hash) error {
 
 // Handshake executes the eth protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(network uint64, td *big.Int, head math.Hash, genesis math.Hash) error {
+func (p *peer) Handshake(network uint64, td *big.Int, head meta.DataID, genesis meta.DataID) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
 	var status statusData // safe to read after two values have been received from errc
@@ -187,7 +188,7 @@ func errResp(code errCode, format string, v ...interface{}) error {
 	return fmt.Errorf("%v - %v", code, fmt.Sprintf(format, v...))
 }
 
-func (p *peer) readStatus(network uint64, status *statusData, genesis math.Hash) (err error) {
+func (p *peer) readStatus(network uint64, status *statusData, genesis meta.DataID) (err error) {
 	msg, err := p.rw.ReadMsg()
 	if err != nil {
 		return err
@@ -204,8 +205,8 @@ func (p *peer) readStatus(network uint64, status *statusData, genesis math.Hash)
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
 	status.Deserialize(&data)
-	if status.GenesisBlock != genesis {
-		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status.GenesisBlock[:8], genesis[:8])
+	if !status.GenesisBlock.IsEqual(genesis) {
+		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status.GenesisBlock, genesis)
 	}
 	if status.NetworkId != network {
 		return errResp(ErrNetworkIdMismatch, "%d (!= %d)", status.NetworkId, network)
@@ -221,6 +222,13 @@ func (p *peer) String() string {
 	return fmt.Sprintf("Peer %s [%s]", p.id,
 		fmt.Sprintf("eth/%2d", p.version),
 	)
+}
+
+func (p *peer) RequestBlocksByHash(h meta.DataID, amount int, skip int, reverse bool) error {
+	return nil
+}
+func (p *peer) RequestBlocksByNumber(i uint64, amount int, skip int, reverse bool) error {
+	return nil
 }
 
 // peerSet represents the collection of active peers currently participating in

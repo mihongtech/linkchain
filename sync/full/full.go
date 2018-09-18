@@ -44,6 +44,7 @@ type ProtocolManager struct {
 	downloader    *downloader.Downloader
 	SubProtocols  []p2p_peer.Protocol
 	blockchain    manager.ChainManager
+	blockmanager  manager.BlockManager
 	eventMux      *event.TypeMux
 	txCh          chan tx.ITx
 	txSub         event.Subscription
@@ -65,15 +66,16 @@ type ProtocolManager struct {
 func NewProtocolManager(config interface{}, networkId uint64, mux *event.TypeMux) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		networkId:   networkId,
-		maxPeers:    64,
-		eventMux:    mux,
-		peers:       newPeerSet(),
-		newPeerCh:   make(chan *peer),
-		noMorePeers: make(chan struct{}),
-		blockchain:  node.GetConsensusService().GetChainManager(),
-		txsyncCh:    make(chan *txsync),
-		quitSync:    make(chan struct{}),
+		networkId:    networkId,
+		maxPeers:     64,
+		eventMux:     mux,
+		peers:        newPeerSet(),
+		newPeerCh:    make(chan *peer),
+		noMorePeers:  make(chan struct{}),
+		blockchain:   node.GetConsensusService().GetChainManager(),
+		blockmanager: node.GetConsensusService().GetBlockManager(),
+		txsyncCh:     make(chan *txsync),
+		quitSync:     make(chan struct{}),
 	}
 
 	// Initiate a sub-protocol for every implemented version we can handle
@@ -111,7 +113,7 @@ func NewProtocolManager(config interface{}, networkId uint64, mux *event.TypeMux
 		return nil, errIncompatibleConfig
 	}
 
-	manager.downloader = downloader.New(manager.eventMux, manager.blockchain, manager.removePeer)
+	manager.downloader = downloader.New(manager.eventMux, manager.blockchain, manager.blockmanager, manager.removePeer)
 
 	return manager, nil
 }
@@ -171,7 +173,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		genesis = pm.blockchain.GetBlockByHeight(0)
 		current = pm.blockchain.GetBestBlock()
 		hash    = current.GetBlockID()
-		number  = current.GetHeight()
+		// number  = current.GetHeight()
 	)
 	if err := p.Handshake(pm.networkId, big.NewInt(0), hash, genesis.GetBlockID()); err != nil {
 		p.Log().Debug("Linkchain handshake failed", "err", err)
@@ -225,66 +227,13 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return errResp(ErrExtraStatusMsg, "uncontrolled status message")
 
 	// Block header query, collect the requested headers and reply
-	case msg.Code == GetBlockHeadersMsg:
+	case msg.Code == GetBlockMsg:
 		// do nothing
 		return nil
 
-	case msg.Code == BlockHeadersMsg:
+	case msg.Code == BlockMsg:
 		// do nothing
 		return nil
-
-	case msg.Code == GetBlockBodiesMsg:
-		// Decode the retrieval message
-		//		msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
-		//		if _, err := msgStream.List(); err != nil {
-		//			return err
-		//		}
-		//		// Gather blocks until the fetch or network limits is reached
-		//		var (
-		//			hash   math.Hash
-		//			bytes  int
-		//			bodies []rlp.RawValue
-		//		)
-		//		for bytes < softResponseLimit && len(bodies) < downloader.MaxBlockFetch {
-		//			// Retrieve the hash of the next block
-		//			if err := msgStream.Decode(&hash); err == rlp.EOL {
-		//				break
-		//			} else if err != nil {
-		//				return errResp(ErrDecode, "msg %v: %v", msg, err)
-		//			}
-		//			// Retrieve the requested block body, stopping if enough was found
-		//			if data := pm.blockchain.GetBodyRLP(hash); len(data) != 0 {
-		//				bodies = append(bodies, data)
-		//				bytes += len(data)
-		//			}
-		//		}
-		//		return p.SendBlockBodiesRLP(bodies)
-
-	case msg.Code == BlockBodiesMsg:
-		// A batch of block bodies arrived to one of our previous requests
-		//		var request blockBodiesData
-		//		if err := msg.Decode(&request); err != nil {
-		//			return errResp(ErrDecode, "msg %v: %v", msg, err)
-		//		}
-		//		// Deliver them all to the downloader for queuing
-		//		trasactions := make([][]*types.Transaction, len(request))
-		//		uncles := make([][]*types.Header, len(request))
-		//
-		//		for i, body := range request {
-		//			trasactions[i] = body.Transactions
-		//			uncles[i] = body.Uncles
-		//		}
-		//		// Filter out any explicitly requested bodies, deliver the rest to the downloader
-		//		filter := len(trasactions) > 0 || len(uncles) > 0
-		//		if filter {
-		//			trasactions, uncles = pm.fetcher.FilterBodies(p.id, trasactions, uncles, time.Now())
-		//		}
-		//		if len(trasactions) > 0 || len(uncles) > 0 || !filter {
-		//			err := pm.downloader.DeliverBodies(p.id, trasactions, uncles)
-		//			if err != nil {
-		//				log.Debug("Failed to deliver bodies", "err", err)
-		//			}
-		//		}
 
 	case msg.Code == NewBlockHashesMsg:
 		//		var announces newBlockHashesData

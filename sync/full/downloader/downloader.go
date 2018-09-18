@@ -9,7 +9,7 @@ import (
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum"
-	common_math "github.com/linkchain/common/math"
+
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/consensus/manager"
@@ -91,7 +91,7 @@ type Downloader struct {
 	dropPeer peerDropFn // Drops a peer for misbehaving
 
 	// Status
-	synchroniseMock func(id string, hash common_math.Hash) error // Replacement for synchronise during testing
+	synchroniseMock func(id string, hash meta.DataID) error // Replacement for synchronise during testing
 	synchronising   int32
 	notified        int32
 	committed       int32
@@ -217,8 +217,8 @@ func (d *Downloader) UnregisterPeer(id string) error {
 
 // Synchronise tries to sync up our local block chain with a remote peer, both
 // adding various sanity checks as well as wrapping it with various log entries.
-func (d *Downloader) Synchronise(id string, head common_math.Hash, td *big.Int, mode SyncMode) error {
-	err := d.synchronise(id, head, td, mode)
+func (d *Downloader) Synchronise(id string, head meta.DataID, td *big.Int) error {
+	err := d.synchronise(id, head, td)
 	switch err {
 	case nil:
 	case errBusy:
@@ -243,7 +243,7 @@ func (d *Downloader) Synchronise(id string, head common_math.Hash, td *big.Int, 
 // synchronise will select the peer and use it for synchronising. If an empty string is given
 // it will use the best peer possible and synchronize if its TD is higher than our own. If any of the
 // checks fail an error will be returned. This method is synchronous
-func (d *Downloader) synchronise(id string, hash common_math.Hash, td *big.Int, mode SyncMode) error {
+func (d *Downloader) synchronise(id string, hash meta.DataID, td *big.Int) error {
 	// Mock out the synchronisation if testing
 	if d.synchroniseMock != nil {
 		return d.synchroniseMock(id, hash)
@@ -286,9 +286,6 @@ func (d *Downloader) synchronise(id string, hash common_math.Hash, td *big.Int, 
 
 	defer d.Cancel() // No matter what, we can't leave the cancel channel open
 
-	// Set the requested sync mode, unless it's forbidden
-	d.mode = mode
-
 	// Retrieve the origin peer and initiate the downloading process
 	p := d.peers.Peer(id)
 	if p == nil {
@@ -299,7 +296,7 @@ func (d *Downloader) synchronise(id string, hash common_math.Hash, td *big.Int, 
 
 // syncWithPeer starts a block synchronization based on the hash chain from the
 // specified peer and head hash.
-func (d *Downloader) syncWithPeer(p *peerConnection, hash common_math.Hash, td *big.Int) (err error) {
+func (d *Downloader) syncWithPeer(p *peerConnection, hash meta.DataID, td *big.Int) (err error) {
 	d.mux.Post(StartEvent{})
 	defer func() {
 		// reset on error
@@ -945,7 +942,7 @@ func (d *Downloader) processBlocks(origin uint64, pivot uint64, td *big.Int) err
 	}()
 
 	// Wait for batches of blocks to process
-	gotBlocks := false
+	// gotBlocks := false
 
 	for {
 		select {
@@ -960,7 +957,7 @@ func (d *Downloader) processBlocks(origin uint64, pivot uint64, td *big.Int) err
 				return nil
 			}
 			// Otherwise split the chunk of headers into batches and process them
-			gotBlocks = true
+			// gotBlocks = true
 
 			for len(blocks) > 0 {
 				// Terminate if something failed in between processing chunks
@@ -1039,8 +1036,8 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 		"firstnum", first.GetHeight(), "firsthash", first.GetBlockID(),
 		"lastnum", last.GetHeight(), "lasthash", last.GetBlockID(),
 	)
-	blocks := make([]block.IBlock, len(results))
-	for i, result := range results {
+	//blocks := make([]block.IBlock, len(results))
+	for _, result := range results {
 		if err := d.blockmanager.ProcessBlock(result.Block); err != nil {
 			log.Debug("Downloaded item processing failed", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "err", err)
 			return errInvalidChain

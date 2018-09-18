@@ -1,7 +1,7 @@
 package full
 
 import (
-	"math/big"
+	_ "math/big"
 	"math/rand"
 	_ "sync/atomic"
 	"time"
@@ -150,16 +150,16 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 		return
 	}
 	//	// Make sure the peer's TD is higher than our own
-	currentBlock := pm.blockchain.GetBestBlock()
-	td := big.NewInt(0)
+	// currentBlock := pm.blockchain.GetBestBlock()
+	//	/td := big.NewInt(0)
 
 	pHead, pTd := peer.Head()
-	if pTd.Cmp(td) <= 0 {
-		return
-	}
+	//	if pTd.Cmp(td) <= 0 {
+	//		return
+	//	}
 
 	//	// Run the sync cycle, and disable fast sync if we've went past the pivot block
-	if err := pm.downloader.Synchronise(peer.id, pHead, pTd, mode); err != nil {
+	if err := pm.downloader.Synchronise(peer.id, pHead, pTd); err != nil {
 		return
 	}
 

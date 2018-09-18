@@ -5,8 +5,8 @@ import (
 	_ "io"
 	"math/big"
 
-	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/serialize"
+	"github.com/linkchain/meta"
 	"github.com/linkchain/sync/full/protobufmsg"
 )
 
@@ -86,8 +86,8 @@ type statusData struct {
 	ProtocolVersion uint32
 	NetworkId       uint64
 	TD              *big.Int
-	CurrentBlock    math.Hash
-	GenesisBlock    math.Hash
+	CurrentBlock    meta.DataID
+	GenesisBlock    meta.DataID
 }
 
 func (s *statusData) Serialize() serialize.SerializeStream {
