@@ -1,0 +1,45 @@
+syntax = "proto2";
+
+import "protobuf/transaction.proto";
+
+package protobuf;
+
+message StatusData {
+  required uint32 protocolVersion = 1;
+  required uint64 networkId = 2;
+  required Hash   currentBlock = 3;
+  required Hash   genesisBlock = 4;
+}
+
+message NewBlockHashData {
+  required Hash    hash = 1;
+  required uint64  number = 2;
+}
+
+message NewBlockHashesDatas{
+  repeated NewBlockHashData data = 1;
+}
+
+message GetBlockHeadersData {
+  required Hash    hash = 1;
+  required uint64  number = 2;
+}
+
+message Msg {
+  required uint64 code = 1;
+  optional bytes payload = 2 ;
+}
+
+message Cap {
+  required string name = 1;
+  required uint64 version = 2;
+}
+
+message ProtoHandshake {
+  required uint64 version = 1;
+  required string name = 2;
+  repeated Cap caps = 3;
+  optional uint64 listenPort = 4;
+  optional bytes id = 5;
+  optional bytes rest = 6;
+}

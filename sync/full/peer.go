@@ -12,7 +12,7 @@ import (
 	"github.com/linkchain/p2p/message"
 	p2p_peer "github.com/linkchain/p2p/peer"
 	"github.com/linkchain/p2p/peer_error"
-	"github.com/linkchain/sync/full/protobufmsg"
+	"github.com/linkchain/protobuf"
 	"gopkg.in/fatih/set.v0"
 )
 
@@ -141,7 +141,7 @@ func (p *peer) RequestBlock(hashes []meta.DataID) error {
 	p.Log().Debug("Fetching batch of block bodies", "count", len(hashes))
 	for _, hash := range hashes {
 		data := &getBlockHeadersData{Hash: hash}
-		message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobufmsg.GetBlockHeadersData))
+		message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 	}
 
 	return nil
@@ -150,7 +150,7 @@ func (p *peer) RequestBlock(hashes []meta.DataID) error {
 func (p *peer) RequestOneBlock(hash meta.DataID) error {
 	p.Log().Debug("Fetching single header", "hash", hash)
 	data := &getBlockHeadersData{Hash: hash}
-	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobufmsg.GetBlockHeadersData))
+	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 }
 
 // Handshake executes the eth protocol handshake, negotiating version number,
@@ -204,7 +204,7 @@ func (p *peer) readStatus(network uint64, status *statusData, genesis meta.DataI
 		return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
 	}
 	// Decode the handshake and make sure everything matches
-	data := protobufmsg.StatusData{}
+	data := protobuf.StatusData{}
 	if err := msg.Decode(&data); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
@@ -231,27 +231,27 @@ func (p *peer) String() string {
 func (p *peer) RequestBlocksByHash(h meta.DataID, amount int, skip int, reverse bool) error {
 	p.Log().Debug("Fetching single header", "hash", h)
 	data := &getBlockHeadersData{Hash: h}
-	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobufmsg.GetBlockHeadersData))
+	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 }
 func (p *peer) RequestBlocksByNumber(i uint64, amount int, skip int, reverse bool) error {
 	p.Log().Debug("Fetching block", "number", i)
 	data := &getBlockHeadersData{Number: i}
-	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobufmsg.GetBlockHeadersData))
+	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 }
 
 func (p *peer) SendNewBlockHashes(hashes []meta.DataID, numbers []uint64) error {
 	for _, hash := range hashes {
 		p.knownBlocks.Add(hash)
 	}
-	msg := make([]*protobufmsg.NewBlockHashData, 0, len(hashes))
+	msg := make([]*protobuf.NewBlockHashData, 0, len(hashes))
 	for i := 0; i < len(hashes); i++ {
 		request := &newBlockHashData{
 			hashes[i],
 			numbers[i],
 		}
-		msg = append(msg, request.Serialize().(*protobufmsg.NewBlockHashData))
+		msg = append(msg, request.Serialize().(*protobuf.NewBlockHashData))
 	}
-	return message.Send(p.rw, NewBlockHashesMsg, &(protobufmsg.NewBlockHashesDatas{Data: msg}))
+	return message.Send(p.rw, NewBlockHashesMsg, &(protobuf.NewBlockHashesDatas{Data: msg}))
 }
 
 // peerSet represents the collection of active peers currently participating in

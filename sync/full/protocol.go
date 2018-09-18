@@ -7,7 +7,7 @@ import (
 
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/meta"
-	"github.com/linkchain/sync/full/protobufmsg"
+	"github.com/linkchain/protobuf"
 )
 
 // Constants to match up protocol versions and messages
@@ -76,9 +76,9 @@ type statusData struct {
 }
 
 func (s *statusData) Serialize() serialize.SerializeStream {
-	currentBlock := s.CurrentBlock.Serialize().(*protobufmsg.Hash)
-	genesisBlock := s.GenesisBlock.Serialize().(*protobufmsg.Hash)
-	status := &protobufmsg.StatusData{
+	currentBlock := s.CurrentBlock.Serialize().(*protobuf.Hash)
+	genesisBlock := s.GenesisBlock.Serialize().(*protobuf.Hash)
+	status := &protobuf.StatusData{
 		ProtocolVersion: &s.ProtocolVersion,
 		NetworkId:       &s.NetworkId,
 		CurrentBlock:    currentBlock,
@@ -89,7 +89,7 @@ func (s *statusData) Serialize() serialize.SerializeStream {
 }
 
 func (s *statusData) Deserialize(data serialize.SerializeStream) {
-	d := data.(*protobufmsg.StatusData)
+	d := data.(*protobuf.StatusData)
 	s.ProtocolVersion = *d.ProtocolVersion
 	s.NetworkId = *d.NetworkId
 	s.GenesisBlock.Deserialize(d.GenesisBlock)
@@ -105,15 +105,15 @@ type newBlockHashData struct {
 }
 
 func (n *newBlockHashData) Serialize() serialize.SerializeStream {
-	data := &protobufmsg.NewBlockHashData{
-		Hash:   n.Hash.Serialize().(*protobufmsg.Hash),
+	data := &protobuf.NewBlockHashData{
+		Hash:   n.Hash.Serialize().(*protobuf.Hash),
 		Number: &(n.Number),
 	}
 	return data
 }
 
 func (n *newBlockHashData) Deserialize(data serialize.SerializeStream) {
-	d := data.(*protobufmsg.NewBlockHashData)
+	d := data.(*protobuf.NewBlockHashData)
 	n.Hash.Deserialize(d.Hash)
 	n.Number = *(d.Number)
 }
@@ -124,15 +124,15 @@ type getBlockHeadersData struct {
 }
 
 func (n *getBlockHeadersData) Serialize() serialize.SerializeStream {
-	data := &protobufmsg.NewBlockHashData{
-		Hash:   n.Hash.Serialize().(*protobufmsg.Hash),
+	data := &protobuf.NewBlockHashData{
+		Hash:   n.Hash.Serialize().(*protobuf.Hash),
 		Number: &(n.Number),
 	}
 	return data
 }
 
 func (n *getBlockHeadersData) Deserialize(data serialize.SerializeStream) {
-	d := data.(*protobufmsg.NewBlockHashData)
+	d := data.(*protobuf.NewBlockHashData)
 	n.Hash.Deserialize(d.Hash)
 	n.Number = *(d.Number)
 }

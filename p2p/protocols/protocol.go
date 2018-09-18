@@ -173,7 +173,7 @@ func (s *Spec) NewMsg(code uint64) (proto.Message, bool) {
 	if !ok {
 		return nil, false
 	}
-	return new(protobufmsg.Msg), true
+	return new(protobuf.Msg), true
 }
 
 // Peer represents a remote peer or protocol instance that is running on a peer connection with

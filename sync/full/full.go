@@ -21,7 +21,6 @@ import (
 	"github.com/linkchain/protobuf"
 	"github.com/linkchain/sync/full/downloader"
 	"github.com/linkchain/sync/full/fetcher"
-	"github.com/linkchain/sync/full/protobufmsg"
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are
@@ -237,7 +236,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	// Block header query, collect the requested headers and reply
 	case msg.Code == GetBlockMsg:
 		// Decode the complex header query
-		var query protobufmsg.GetBlockHeadersData
+		var query protobuf.GetBlockHeadersData
 		if err := msg.Decode(&query); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
@@ -276,7 +275,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return nil
 
 	case msg.Code == NewBlockHashesMsg:
-		var announces protobufmsg.NewBlockHashesDatas
+		var announces protobuf.NewBlockHashesDatas
 		if err := msg.Decode(&announces); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}

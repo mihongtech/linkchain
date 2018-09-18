@@ -13,9 +13,9 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/p2p/message"
-	"github.com/linkchain/p2p/message/protobufmsg"
 	"github.com/linkchain/p2p/node"
 	"github.com/linkchain/p2p/peer_error"
+	"github.com/linkchain/protobuf"
 )
 
 const (
@@ -99,12 +99,12 @@ func (p *pbfmsg) DoProtoHandshake(our *message.ProtoHandshake) (their *message.P
 	p.rw = newPBFrameRW(p.fd)
 	werr := make(chan error, 1)
 	go func() {
-		var caps []*protobufmsg.Cap
+		var caps []*protobuf.Cap
 		for _, cap := range our.Caps {
-			caps = append(caps, &protobufmsg.Cap{Name: &(cap.Name), Version: &(cap.Version)})
+			caps = append(caps, &protobuf.Cap{Name: &(cap.Name), Version: &(cap.Version)})
 		}
 
-		pbmsg := protobufmsg.ProtoHandshake{Version: &our.Version, Name: &our.Name, ListenPort: &our.ListenPort, Id: our.ID[:], Caps: caps, Rest: our.Rest}
+		pbmsg := protobuf.ProtoHandshake{Version: &our.Version, Name: &our.Name, ListenPort: &our.ListenPort, Id: our.ID[:], Caps: caps, Rest: our.Rest}
 		werr <- message.Send(p.rw, message.HandshakeMsg, &pbmsg)
 	}()
 	if their, err = readProtocolHandshake(p.rw, our); err != nil {
@@ -139,7 +139,7 @@ func readProtocolHandshake(rw message.MsgReader, our *message.ProtoHandshake) (*
 		return nil, fmt.Errorf("expected handshake, got %x", msg.Code)
 	}
 
-	var pbmsg protobufmsg.ProtoHandshake
+	var pbmsg protobuf.ProtoHandshake
 	if err := msg.Decode(&pbmsg); err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func (rw *pbfFrameRW) WriteMsg(msg message.Msg) error {
 		}
 	}
 
-	protobufMsg := &protobufmsg.Msg{Code: &msg.Code, Payload: content}
+	protobufMsg := &protobuf.Msg{Code: &msg.Code, Payload: content}
 	log.Trace("write msg", "protobufMsg.Code", protobufMsg.Code, "protobufMsg.Payload", protobufMsg.Payload)
 	data, err := proto.Marshal(protobufMsg)
 	if err != nil {
@@ -243,7 +243,7 @@ func (rw *pbfFrameRW) ReadMsg() (msg message.Msg, err error) {
 		return msg, err
 	}
 	log.Trace("read msg", "framebuf is", framebuf)
-	protubufMsg := protobufmsg.Msg{}
+	protubufMsg := protobuf.Msg{}
 
 	if err := proto.Unmarshal(framebuf, &protubufMsg); err != nil {
 		return msg, err
