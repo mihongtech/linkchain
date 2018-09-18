@@ -231,6 +231,21 @@ func (p *peer) RequestBlocksByNumber(i uint64, amount int, skip int, reverse boo
 	return nil
 }
 
+func (p *peer) SendNewBlockHashes(hashes []meta.DataID, numbers []uint64) error {
+	for _, hash := range hashes {
+		p.knownBlocks.Add(hash)
+	}
+	msg := make([]*protobufmsg.NewBlockHashData, 0, len(hashes))
+	for i := 0; i < len(hashes); i++ {
+		request := &newBlockHashData{
+			hashes[i],
+			numbers[i],
+		}
+		msg = append(msg, request.Serialize().(*protobufmsg.NewBlockHashData))
+	}
+	return message.Send(p.rw, NewBlockHashesMsg, &(protobufmsg.NewBlockHashesDatas{Data: msg}))
+}
+
 // peerSet represents the collection of active peers currently participating in
 // the Ethereum sub-protocol.
 type peerSet struct {

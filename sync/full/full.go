@@ -8,7 +8,6 @@ import (
 	"sync"
 	_ "time"
 
-	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/consensus/manager"
@@ -325,10 +324,10 @@ func (pm *ProtocolManager) removePeer(id string) {
 	log.Debug("Removing Ethereum peer", "peer", id)
 
 	// Unregister the peer from the downloader and Ethereum peer set
-	//	pm.downloader.UnregisterPeer(id)
-	//	if err := pm.peers.Unregister(id); err != nil {
-	//		log.Error("Peer removal failed", "peer", id, "err", err)
-	//	}
+	pm.downloader.UnregisterPeer(id)
+	if err := pm.peers.Unregister(id); err != nil {
+		log.Error("Peer removal failed", "peer", id, "err", err)
+	}
 	// Hard disconnect at the networking layer
 	if peer != nil {
 		peer.Peer.Disconnect(peer_error.DiscUselessPeer)
@@ -338,22 +337,17 @@ func (pm *ProtocolManager) removePeer(id string) {
 // NodeInfo represents a short summary of the Ethereum sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {
-	Network uint64 `json:"network"` // Ethereum network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
-	//	Difficulty *big.Int            `json:"difficulty"` // Total difficulty of the host's blockchain
-	Genesis math.Hash `json:"genesis"` // hash of the host's genesis block
-	//	Config     *params.ChainConfig `json:"config"`     // Chain configuration for the fork rules
-	Head math.Hash `json:"head"` // hash of the host's best owned block
+	Network uint64      `json:"network"` // Ethereum network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
+	Genesis meta.DataID `json:"genesis"` // hash of the host's genesis block
+	Head    meta.DataID `json:"head"`    // hash of the host's best owned block
 }
 
 // NodeInfo retrieves some protocol metadata about the running host node.
 func (self *ProtocolManager) NodeInfo() *NodeInfo {
 	return &NodeInfo{
 		Network: self.networkId,
-		// TODO: add node info
-		//		Difficulty: self.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64()),
-		// Genesis: self.blockchain.Genesis().Hash(),
-		//		Config:     self.blockchain.Config(),
-		// Head: currentBlock.Hash(),
+		Genesis: self.blockchain.GetBlockByHeight(0).GetBlockID(),
+		Head:    self.blockchain.GetBestBlock().GetBlockID(),
 	}
 }
 
@@ -407,12 +401,12 @@ func (pm *ProtocolManager) BroadcastBlock(block block.IBlock, propagate bool) {
 		//		return
 	}
 	// Otherwise if the block is indeed in out own chain, announce it
-	//if pm.blockchain.HasBlock(hash, block.NumberU64()) {
-	// for _, peer := range peers {
-	// 	peer.SendNewBlockHashes([]math.Hash{hash}, []uint64{block.NumberU64()})
-	// }
-	log.Trace("Announced block", "hash", hash, "recipients", len(peers))
-	// }
+	if pm.blockmanager.HasBlock(hash) {
+		for _, peer := range peers {
+			peer.SendNewBlockHashes([]meta.DataID{hash}, []uint64{uint64(block.GetHeight())})
+		}
+		log.Trace("Announced block", "hash", hash, "recipients", len(peers))
+	}
 }
 
 // BroadcastTx will propagate a transaction to all peers which are not known to

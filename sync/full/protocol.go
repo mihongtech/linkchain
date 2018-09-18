@@ -114,12 +114,28 @@ func (s *statusData) Deserialize(data serialize.SerializeStream) {
 	s.CurrentBlock.Deserialize(d.CurrentBlock)
 }
 
-//// newBlockHashesData is the network packet for the block announcements.
-//type newBlockHashesData []struct {
-//	Hash   common.Hash // Hash of one particular block being announced
-//	Number uint64      // Number of one particular block being announced
-//}
-//
+// newBlockHashesData is the network packet for the block announcements.
+type newBlockHashesData []newBlockHashData
+
+type newBlockHashData struct {
+	Hash   meta.DataID // Hash of one particular block being announced
+	Number uint64      // Number of one particular block being announced
+}
+
+func (n *newBlockHashData) Serialize() serialize.SerializeStream {
+	data := &protobufmsg.NewBlockHashData{
+		Hash:   n.Hash.Serialize().(*protobufmsg.Hash),
+		Number: &(n.Number),
+	}
+	return data
+}
+
+func (n *newBlockHashData) Deserialize(data serialize.SerializeStream) {
+	d := data.(*protobufmsg.NewBlockHashData)
+	n.Hash.Deserialize(d.Hash)
+	n.Number = *(d.Number)
+}
+
 //// getBlockHeadersData represents a block header query.
 //type getBlockHeadersData struct {
 //	Origin  hashOrNumber // Block from which to retrieve headers
