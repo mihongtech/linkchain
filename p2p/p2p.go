@@ -191,12 +191,13 @@ func (srv *Service) Start() bool {
 	srv.loopWG.Add(1)
 	go srv.run(dialer)
 	srv.running = true
-
+	srv.sync.Start()
 	return true
 }
 
 func (srv *Service) Stop() {
 	log.Info("p2p service stop...")
+	srv.sync.Stop()
 	srv.lock.Lock()
 	defer srv.lock.Unlock()
 	if !srv.running {
