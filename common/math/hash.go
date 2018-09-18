@@ -3,10 +3,10 @@ package math
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/linkchain/common/serialize"
-	"github.com/linkchain/poa/meta/protobuf"
 	"github.com/golang/protobuf/proto"
+	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/meta"
+	"github.com/linkchain/protobuf"
 )
 
 // HashSize of array used to store hashes.  See Hash.
@@ -39,10 +39,10 @@ func (hash Hash) GetString() string {
 	return hex.EncodeToString(hash[:])
 }
 
-func (hash Hash) IsEmpty() bool  {
+func (hash Hash) IsEmpty() bool {
 	isEmpty := true
 	for i := 0; i < HashSize; i++ {
-		if hash[i] != 0{
+		if hash[i] != 0 {
 			isEmpty = false
 			break
 		}
@@ -74,7 +74,6 @@ func (hash *Hash) SetBytes(newHash []byte) error {
 
 	return nil
 }
-
 
 // IsEqual returns true if target is the same as hash.
 func (hash *Hash) IsEqual(id meta.DataID) bool {
@@ -146,19 +145,18 @@ func Decode(dst *Hash, src string) error {
 }
 
 //Serialize/Deserialize
-func (hash *Hash) Serialize()(serialize.SerializeStream){
+func (hash *Hash) Serialize() serialize.SerializeStream {
 	h := protobuf.Hash{
-		Data:proto.NewBuffer(hash.CloneBytes()).Bytes(),
+		Data: proto.NewBuffer(hash.CloneBytes()).Bytes(),
 	}
 	return &h
 }
 
-func (hash *Hash) Deserialize(s serialize.SerializeStream){
+func (hash *Hash) Deserialize(s serialize.SerializeStream) {
 	h := *s.(*protobuf.Hash)
 	hash.SetBytes(h.Data)
 }
 
-func (hash *Hash) ToString() string{
+func (hash *Hash) ToString() string {
 	return hash.String()
 }
-

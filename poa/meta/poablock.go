@@ -4,19 +4,19 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/linkchain/meta/tx"
-	"github.com/linkchain/common/serialize"
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/meta/block"
-	"github.com/linkchain/meta/account"
-	"github.com/linkchain/poa/meta/protobuf"
 	"github.com/golang/protobuf/proto"
+	"github.com/linkchain/common/math"
+	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/meta"
+	"github.com/linkchain/meta/account"
+	"github.com/linkchain/meta/block"
+	"github.com/linkchain/meta/tx"
+	"github.com/linkchain/protobuf"
 )
 
-type POABlock struct{
+type POABlock struct {
 	Header POABlockHeader
-	TXs []POATransaction
+	TXs    []POATransaction
 }
 
 type POABlockHeader struct {
@@ -48,90 +48,87 @@ type POABlockHeader struct {
 	hash math.Hash
 }
 
-
-func NewPOABlock()(block.IBlock, error){
+func NewPOABlock() (block.IBlock, error) {
 	block := &POABlock{}
 	return block, nil
 }
 
-
-func (b *POABlock)SetTx(newTXs []tx.ITx)(error){
-	for _,tx := range newTXs{
-		b.TXs = append(b.TXs,*tx.(*POATransaction))
+func (b *POABlock) SetTx(newTXs []tx.ITx) error {
+	for _, tx := range newTXs {
+		b.TXs = append(b.TXs, *tx.(*POATransaction))
 	}
 	return nil
 }
 
-func (b *POABlock)GetHeight() uint32{
+func (b *POABlock) GetHeight() uint32 {
 	return b.Header.Height
 }
 
-func (b *POABlock)GetBlockID() meta.DataID{
+func (b *POABlock) GetBlockID() meta.DataID {
 	return b.Header.GetBlockID()
 }
 
-func (b *POABlock) GetPrevBlockID() meta.DataID{
+func (b *POABlock) GetPrevBlockID() meta.DataID {
 	return &b.Header.PrevBlock
 }
 
-func (b *POABlock)Verify()(error){
+func (b *POABlock) Verify() error {
 	return nil
 }
 
 //Serialize/Deserialize
-func (b *POABlock)Serialize()(serialize.SerializeStream){
-	header := b.Header.Serialize().(*protobuf.POABlockHeader)
+func (b *POABlock) Serialize() serialize.SerializeStream {
+	header := b.Header.Serialize().(*protobuf.BlockHeader)
 
-	txs := make([]*protobuf.POATransaction,0)
-	for _,tx := range b.TXs {
-		txs = append(txs,tx.Serialize().(*protobuf.POATransaction))
+	txs := make([]*protobuf.Transaction, 0)
+	for _, tx := range b.TXs {
+		txs = append(txs, tx.Serialize().(*protobuf.Transaction))
 	}
 
-	txlist := protobuf.POATransactions{
-		Txs:txs,
+	txlist := protobuf.Transactions{
+		Txs: txs,
 	}
 
-	block := protobuf.POABlock{
-		Header:header,
-		TxList:&txlist,
+	block := protobuf.Block{
+		Header: header,
+		TxList: &txlist,
 	}
 
 	return &block
 }
 
-func (b *POABlock)Deserialize(s serialize.SerializeStream){
-	data := *s.(*protobuf.POABlock)
+func (b *POABlock) Deserialize(s serialize.SerializeStream) {
+	data := *s.(*protobuf.Block)
 	b.Header.Deserialize(data.Header)
-	for _,tx := range data.TxList.Txs {
+	for _, tx := range data.TxList.Txs {
 		newTx := POATransaction{}
 		newTx.Deserialize(tx)
-		b.TXs = append(b.TXs,newTx)
+		b.TXs = append(b.TXs, newTx)
 	}
 }
 
 func (b *POABlock) GetTxs() []tx.ITx {
-	txs := make([]tx.ITx,0)
-	for _,tx := range b.TXs {
-		txs = append(txs,&tx)
+	txs := make([]tx.ITx, 0)
+	for _, tx := range b.TXs {
+		txs = append(txs, &tx)
 	}
 	return txs
 }
 
 //
-func (b *POABlock)ToString()(string){
-	data, err := json.Marshal(b);
-	if  err != nil {
+func (b *POABlock) ToString() string {
+	data, err := json.Marshal(b)
+	if err != nil {
 		return err.Error()
 	}
 	return string(data)
 }
 
-
 func (b *POABlock) IsGensis() bool {
 	return b.Header.IsGensis()
 }
 
-func (bh *POABlockHeader)GetBlockID() meta.DataID{
+func (bh *POABlockHeader) GetBlockID() meta.DataID {
 	return &bh.hash
 }
 
@@ -139,33 +136,33 @@ func (bh *POABlockHeader) GetMineAccount() account.IAccountID {
 	return NewAccountId(bh.Extra)
 }
 
-func (bh *POABlockHeader) SetMineAccount(id account.IAccountID)  {
-	bh.Extra = append(bh.Extra,id.(*POAAccountID).ID.SerializeCompressed()...)
+func (bh *POABlockHeader) SetMineAccount(id account.IAccountID) {
+	bh.Extra = append(bh.Extra, id.(*POAAccountID).ID.SerializeCompressed()...)
 }
 
 //Serialize/Deserialize
-func (bh *POABlockHeader) Serialize()(serialize.SerializeStream){
+func (bh *POABlockHeader) Serialize() serialize.SerializeStream {
 	prevHash := bh.PrevBlock.Serialize().(*protobuf.Hash)
 	merkleRoot := bh.MerkleRoot.Serialize().(*protobuf.Hash)
-	header := protobuf.POABlockHeader{
-		Version:proto.Uint32(bh.Version),
-		PrevHash:prevHash,
-		MerkleRoot:merkleRoot,
-		Time:proto.Int64(bh.Timestamp.Unix()),
-		Difficulty:proto.Uint32(bh.Difficulty),
-		Nounce:proto.Uint32(bh.Nonce),
-		Height:proto.Uint32(bh.Height),
-		Extra:proto.NewBuffer(bh.Extra).Bytes(),
+	header := protobuf.BlockHeader{
+		Version:    proto.Uint32(bh.Version),
+		PrevHash:   prevHash,
+		MerkleRoot: merkleRoot,
+		Time:       proto.Int64(bh.Timestamp.Unix()),
+		Difficulty: proto.Uint32(bh.Difficulty),
+		Nounce:     proto.Uint32(bh.Nonce),
+		Height:     proto.Uint32(bh.Height),
+		Extra:      proto.NewBuffer(bh.Extra).Bytes(),
 	}
 	return &header
 }
 
-func (bh *POABlockHeader) Deserialize(s serialize.SerializeStream){
-	data := s.(*protobuf.POABlockHeader)
+func (bh *POABlockHeader) Deserialize(s serialize.SerializeStream) {
+	data := s.(*protobuf.BlockHeader)
 	bh.Version = *data.Version
 	bh.PrevBlock.Deserialize(data.PrevHash)
 	bh.MerkleRoot.Deserialize(data.MerkleRoot)
-	bh.Timestamp = time.Unix(*data.Time,0)
+	bh.Timestamp = time.Unix(*data.Time, 0)
 	bh.Difficulty = *data.Difficulty
 	bh.Nonce = *data.Nounce
 	bh.Height = *data.Height
@@ -177,4 +174,3 @@ func (bh *POABlockHeader) Deserialize(s serialize.SerializeStream){
 func (b *POABlockHeader) IsGensis() bool {
 	return b.Height == 0 && b.PrevBlock.IsEmpty()
 }
-

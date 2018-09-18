@@ -18,7 +18,7 @@ import (
 	p2p_node "github.com/linkchain/p2p/node"
 	p2p_peer "github.com/linkchain/p2p/peer"
 	"github.com/linkchain/p2p/peer_error"
-	"github.com/linkchain/poa/meta/protobuf"
+	"github.com/linkchain/protobuf"
 	"github.com/linkchain/sync/full/downloader"
 	"github.com/linkchain/sync/full/fetcher"
 	"github.com/linkchain/sync/full/protobufmsg"
@@ -258,7 +258,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return p.SendBlock(block)
 
 	case msg.Code == BlockMsg:
-		var b protobuf.POABlock
+		var b protobuf.Block
 		if err := msg.Decode(&b); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
@@ -301,7 +301,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	case msg.Code == NewBlockMsg:
 		// Retrieve and decode the propagated block
-		var b protobuf.POABlock
+		var b protobuf.Block
 		if err := msg.Decode(&b); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
@@ -323,7 +323,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	case msg.Code == TxMsg:
 
 		// TODO: add interface
-		var t protobuf.POATransaction
+		var t protobuf.Transaction
 		if err := msg.Decode(&t); err != nil {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
