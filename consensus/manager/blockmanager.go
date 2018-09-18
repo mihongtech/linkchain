@@ -29,6 +29,7 @@ type BlockPoolManager interface{
 	AddBlock(block block.IBlock) error
 	AddBlocks(block []block.IBlock) error
 	RemoveBlock(hash meta.DataID) error
+	HasBlock(hash meta.DataID) bool
 }
 
 type BlockValidator  interface {

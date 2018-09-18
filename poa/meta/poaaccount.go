@@ -3,34 +3,50 @@ package meta
 import (
 	"encoding/json"
 
-	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/account"
 	"github.com/linkchain/poa/meta/protobuf"
+	"github.com/linkchain/common/btcec"
+	"encoding/hex"
+	"github.com/golang/protobuf/proto"
+	"github.com/linkchain/common/util/log"
 )
 
 
 type POAAccountID struct {
-	ID math.Hash
+	ID btcec.PublicKey
 }
 
 func (id *POAAccountID) GetString() string  {
-	return id.ID.String()
+	return hex.EncodeToString(id.ID.SerializeUncompressed())
 }
 
 //Serialize/Deserialize
 func (a *POAAccountID)Serialize()(serialize.SerializeStream){
-	id := a.ID.Serialize().(*protobuf.Hash)
 	accountId := protobuf.POAAccountID{
-		Id:id,
+		Id:proto.NewBuffer(a.ID.SerializeUncompressed()).Bytes(),
 	}
 	return &accountId
 }
 
 func (a *POAAccountID)Deserialize(s serialize.SerializeStream){
 	data := s.(*protobuf.POAAccountID)
-	a.ID.Deserialize(data.Id)
+	pk,err := btcec.ParsePubKey(data.Id, btcec.S256())
+	if err != nil {
+		log.Error("POAAccountID","Deserialize failed",err)
+		return
+	}
+	a.ID = *pk
+}
+
+func NewAccountId(pkBytes []byte) account.IAccountID {
+	pk,err := btcec.ParsePubKey(pkBytes, btcec.S256())
+	if err != nil {
+		log.Error("POAAccountID","Deserialize failed",err)
+		return nil
+	}
+	return &POAAccountID{ID:*pk}
 }
 
 type POAAccount struct {

@@ -3,10 +3,12 @@ import (
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/common/math"
+	"github.com/linkchain/meta/account"
 )
 
 
 type ITxPeer interface{
+	GetID() account.IAccountID
 }
 
 
@@ -27,6 +29,7 @@ type ITx interface {
 
 	//signature
 	Sign()(math.ISignature, error)
+	SetSignature(code []byte)
 	GetSignature()(math.ISignature)
 	Verify()(error)
 

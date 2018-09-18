@@ -5,6 +5,7 @@ import (
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/consensus"
 	"github.com/linkchain/p2p"
+	"github.com/linkchain/function/wallet"
 )
 
 var (
@@ -12,6 +13,7 @@ var (
 	svcList = []common.IService{
 		&p2p.Service{},
 		&consensus.Service{},
+		&wallet.Wallet{},
 	}
 )
 
@@ -43,4 +45,8 @@ func GetConsensusService() *consensus.Service {
 
 func GetP2pService() *p2p.Service {
 	return svcList[0].(*p2p.Service)
+}
+
+func GetWallet() *wallet.Wallet {
+	return svcList[2].(*wallet.Wallet)
 }

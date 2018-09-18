@@ -10,13 +10,15 @@ import (
 	"github.com/linkchain/common/math"
 	poameta "github.com/linkchain/poa/meta"
 	"github.com/linkchain/meta"
+	"encoding/hex"
+
 )
 
 const (
 	MaxMapSize = 1024 * 4
 )
 
-var minerAccountId = poameta.POAAccountID{ID:math.DoubleHashH([]byte("lf"))}
+var mineId,_ = hex.DecodeString("04df3291e17ef2b6dda135fbe4f5c06a4b501a5d2498389f8139a9d5d1deeef45b1681993c5ebe23fb3c3534344df9f71c7c13beaba8c05744947caac9e31c6c0c")
 
 type POABlockManager struct {
 	sync.RWMutex
@@ -68,7 +70,7 @@ func (m *POABlockManager) NewBlock() block.IBlock{
 			Header: poameta.POABlockHeader{Version: 0, PrevBlock: *bestHash.(*math.Hash), MerkleRoot: math.Hash{}, Timestamp: time.Now(), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: bestBlock.GetHeight() + 1},
 			TXs:    txs,
 		}
-		block.Header.SetMineAccount(&minerAccountId)
+		block.Header.SetMineAccount(poameta.NewAccountId(mineId))
 		block.Deserialize(block.Serialize())
 		return block
 	}else {
@@ -84,7 +86,7 @@ func (m *POABlockManager) GetGensisBlock() block.IBlock{
 		Header: poameta.POABlockHeader{Version: 0, PrevBlock: math.Hash{}, MerkleRoot: math.Hash{}, Timestamp: time.Unix(1487780010, 0), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: 0},
 		TXs:    txs,
 	}
-	block.Header.SetMineAccount(&minerAccountId)
+	block.Header.SetMineAccount(poameta.NewAccountId(mineId))
 	block.Deserialize(block.Serialize())
 	return block
 }
@@ -128,6 +130,14 @@ func (m *POABlockManager) RemoveBlock(hash meta.DataID) error{
 	return nil
 }
 
+func (m *POABlockManager) HasBlock(hash meta.DataID) bool{
+	_, ok := m.readMap(*hash.(*math.Hash))
+	if ok {
+		return true
+	}
+	return false
+}
+
 /** interface: BlockValidator **/
 func (m *POABlockManager) CheckBlock(block block.IBlock) bool {
 	log.Info("POA CheckBlock ...")
@@ -154,7 +164,6 @@ func (s *POABlockManager) ProcessBlock(block block.IBlock) error{
 		GetManager().ChainManager.UpdateChain()
 		return errors.New("POA Update chain failed")
 	}
-	log.Error("GetBlockInfo")
 	log.Info("POA ProcessBlock successed","blockchaininfo", GetManager().ChainManager.GetBlockChainInfo())
 
 	return nil

@@ -1,8 +1,9 @@
 package meta
 
 import (
-	"encoding/json"
 	"time"
+	"errors"
+	"encoding/json"
 
 	"github.com/linkchain/meta/account"
 	"github.com/linkchain/meta"
@@ -11,6 +12,9 @@ import (
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/poa/meta/protobuf"
 	"github.com/golang/protobuf/proto"
+	"github.com/linkchain/common/btcec"
+	"github.com/linkchain/common/util/log"
+
 )
 
 type POATransactionPeer struct {
@@ -39,6 +43,10 @@ func (txpeer *POATransactionPeer) Deserialize(s serialize.SerializeStream){
 	txpeer.Extra = data.Extra
 }
 
+func (txpeer *POATransactionPeer) GetID() account.IAccountID {
+	return &txpeer.AccountID
+}
+
 
 type FromSign struct {
 	Code []byte
@@ -64,6 +72,9 @@ type POATransaction struct {
 }
 
 func (tx *POATransaction) GetTxID() meta.DataID  {
+	if tx.txid.IsEmpty() {
+		tx.Deserialize(tx.Serialize())
+	}
 	return &tx.txid
 }
 
@@ -110,8 +121,22 @@ func (tx *POATransaction) GetSignature()(math.ISignature)  {
 	return nil
 }
 
+func (tx *POATransaction) SetSignature(code []byte)  {
+	tx.Signs = FromSign{Code:code}
+}
+
 func (tx *POATransaction) Verify()(error)  {
-	return nil
+	signature, err := btcec.ParseSignature(tx.Signs.Code, btcec.S256())
+	if err != nil {
+		log.Error("POATransaction","VerifySign",err)
+		return err
+	}
+	verified := signature.Verify(tx.txid.CloneBytes(), &tx.From.AccountID.ID)
+	if verified {
+		return nil
+	}else {
+		return errors.New("POATransaction VerifySign failed: Error Sign")
+	}
 }
 
 //Serialize/Deserialize
@@ -127,6 +152,7 @@ func (tx *POATransaction) Serialize()(serialize.SerializeStream){
 		Time:proto.Int64(tx.Time.Unix()),
 		Amount:amount,
 		Extra:proto.NewBuffer(tx.Extra).Bytes(),
+		Sign:proto.NewBuffer(tx.Signs.Code).Bytes(),
 	}
 	return &t
 }
@@ -139,8 +165,17 @@ func (tx *POATransaction) Deserialize(s serialize.SerializeStream){
 	tx.Time = time.Unix(*data.Time,0)
 	tx.Amount.Deserialize(data.Amount)
 	tx.Extra = data.Extra
+	tx.Signs = FromSign{Code:data.Sign}
 
-	tx.txid = math.MakeHash(s)
+	t := protobuf.POATransaction{
+		Version:data.Version,
+		From:data.From,
+		To:data.To,
+		Time:data.Time,
+		Amount:data.Amount,
+		Extra:data.Extra,
+	}
+	tx.txid = math.MakeHash(&t)
 }
 
 func (tx *POATransaction) ToString()(string) {

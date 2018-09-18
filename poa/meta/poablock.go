@@ -9,7 +9,6 @@ import (
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/meta/block"
 	"github.com/linkchain/meta/account"
-	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/poa/meta/protobuf"
 	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/meta"
@@ -137,17 +136,11 @@ func (bh *POABlockHeader)GetBlockID() meta.DataID{
 }
 
 func (bh *POABlockHeader) GetMineAccount() account.IAccountID {
-	hash,e := math.NewHashFromStr(string(bh.Extra))
-	if e != nil {
-		log.Error("POABlockHeader","GetMineAccount","failed")
-	}
-
-	accountId := &POAAccountID{ID:*hash}
-	return accountId
+	return NewAccountId(bh.Extra)
 }
 
 func (bh *POABlockHeader) SetMineAccount(id account.IAccountID)  {
-	bh.Extra = append(bh.Extra,[]byte(id.GetString())...)
+	bh.Extra = append(bh.Extra,id.(*POAAccountID).ID.SerializeUncompressed()...)
 }
 
 //Serialize/Deserialize
