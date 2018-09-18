@@ -3,7 +3,6 @@ package full
 import (
 	"errors"
 	"fmt"
-	"math/big"
 	"sync"
 	"time"
 
@@ -32,9 +31,8 @@ const (
 // PeerInfo represents a short summary of the Ethereum sub-protocol metadata known
 // about a connected peer.
 type PeerInfo struct {
-	Version    int      `json:"version"`    // Ethereum protocol version negotiated
-	Difficulty *big.Int `json:"difficulty"` // Total difficulty of the peer's blockchain
-	Head       string   `json:"head"`       // SHA3 hash of the peer's best owned block
+	Version int    `json:"version"` // Ethereum protocol version negotiated
+	Head    string `json:"head"`    // SHA3 hash of the peer's best owned block
 }
 
 type peer struct {
@@ -47,7 +45,6 @@ type peer struct {
 	forkDrop *time.Timer // Timed connection dropper if forks aren't validated in time
 
 	head meta.DataID
-	td   *big.Int
 	lock sync.RWMutex
 
 	knownTxs    set.Interface // Set of transaction hashes known to be known by this peer
@@ -69,34 +66,32 @@ func newPeer(version int, p *p2p_peer.Peer, rw message.MsgReadWriter) *peer {
 
 // Info gathers and returns a collection of metadata known about a peer.
 func (p *peer) Info() *PeerInfo {
-	hash, td := p.Head()
+	hash := p.Head()
 
 	return &PeerInfo{
-		Version:    p.version,
-		Difficulty: td,
-		Head:       hash.GetString(),
+		Version: p.version,
+		Head:    hash.GetString(),
 	}
 }
 
 // Head retrieves a copy of the current head hash and total difficulty of the
 // peer.
-func (p *peer) Head() (hash meta.DataID, td *big.Int) {
+func (p *peer) Head() (hash meta.DataID) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
 	// copy(hash[:], p.head[:])
 	hash.SetBytes(p.head.CloneBytes())
-	return hash, new(big.Int).Set(p.td)
+	return hash
 }
 
 // SetHead updates the head hash and total difficulty of the peer.
-func (p *peer) SetHead(hash meta.DataID, td *big.Int) {
+func (p *peer) SetHead(hash meta.DataID) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
 	// copy(p.head[:], hash[:])
 	p.head.SetBytes(hash.CloneBytes())
-	p.td.Set(td)
 }
 
 // MarkBlock marks a block as known for the peer, ensuring that the block will
@@ -130,7 +125,7 @@ func (p *peer) SendTransactions(txs []tx.ITx) error {
 }
 
 // SendNewBlock propagates an entire block to a remote peer.
-func (p *peer) SendNewBlock(block block.IBlock, td *big.Int) error {
+func (p *peer) SendNewBlock(block block.IBlock) error {
 	p.knownBlocks.Add(block.GetBlockID())
 	return message.Send(p.rw, NewBlockMsg, block.Serialize())
 }
@@ -160,7 +155,7 @@ func (p *peer) RequestOneBlock(hash meta.DataID) error {
 
 // Handshake executes the eth protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(network uint64, td *big.Int, head meta.DataID, genesis meta.DataID) error {
+func (p *peer) Handshake(network uint64, head meta.DataID, genesis meta.DataID) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
 	var status statusData // safe to read after two values have been received from errc
@@ -169,7 +164,6 @@ func (p *peer) Handshake(network uint64, td *big.Int, head meta.DataID, genesis 
 		data := &statusData{
 			ProtocolVersion: uint32(p.version),
 			NetworkId:       network,
-			TD:              td,
 			CurrentBlock:    head,
 			GenesisBlock:    genesis,
 		}
@@ -190,7 +184,7 @@ func (p *peer) Handshake(network uint64, td *big.Int, head meta.DataID, genesis 
 			return peer_error.DiscReadTimeout
 		}
 	}
-	p.td, p.head = status.TD, status.CurrentBlock
+	p.head = status.CurrentBlock
 	return nil
 }
 
@@ -235,10 +229,14 @@ func (p *peer) String() string {
 }
 
 func (p *peer) RequestBlocksByHash(h meta.DataID, amount int, skip int, reverse bool) error {
-	return nil
+	p.Log().Debug("Fetching single header", "hash", h)
+	data := &getBlockHeadersData{Hash: h}
+	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobufmsg.GetBlockHeadersData))
 }
 func (p *peer) RequestBlocksByNumber(i uint64, amount int, skip int, reverse bool) error {
-	return nil
+	p.Log().Debug("Fetching block", "number", i)
+	data := &getBlockHeadersData{Number: i}
+	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobufmsg.GetBlockHeadersData))
 }
 
 func (p *peer) SendNewBlockHashes(hashes []meta.DataID, numbers []uint64) error {
@@ -353,12 +351,9 @@ func (ps *peerSet) BestPeer() *peer {
 
 	var (
 		bestPeer *peer
-		bestTd   *big.Int
 	)
 	for _, p := range ps.peers {
-		if _, td := p.Head(); bestPeer == nil || td.Cmp(bestTd) > 0 {
-			bestPeer, bestTd = p, td
-		}
+		bestPeer = p
 	}
 	return bestPeer
 }

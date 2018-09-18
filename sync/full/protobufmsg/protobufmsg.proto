@@ -8,9 +8,8 @@ message Hash {
 message StatusData {
   required uint32 protocolVersion = 1;
   required uint64 networkId = 2;
-  required int64  td = 3;
-  required Hash   currentBlock = 4;
-  required Hash   genesisBlock = 5;
+  required Hash   currentBlock = 3;
+  required Hash   genesisBlock = 4;
 }
 
 message NewBlockHashData {

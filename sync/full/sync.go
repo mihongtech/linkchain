@@ -153,13 +153,13 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 	// currentBlock := pm.blockchain.GetBestBlock()
 	//	/td := big.NewInt(0)
 
-	pHead, pTd := peer.Head()
+	pHead := peer.Head()
 	//	if pTd.Cmp(td) <= 0 {
 	//		return
 	//	}
 
 	//	// Run the sync cycle, and disable fast sync if we've went past the pivot block
-	if err := pm.downloader.Synchronise(peer.id, pHead, pTd); err != nil {
+	if err := pm.downloader.Synchronise(peer.id, pHead); err != nil {
 		return
 	}
 

@@ -3,7 +3,7 @@ package downloader
 import (
 	"errors"
 	"fmt"
-	"math/big"
+	_ "math/big"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -215,8 +215,8 @@ func (d *Downloader) UnregisterPeer(id string) error {
 
 // Synchronise tries to sync up our local block chain with a remote peer, both
 // adding various sanity checks as well as wrapping it with various log entries.
-func (d *Downloader) Synchronise(id string, head meta.DataID, td *big.Int) error {
-	err := d.synchronise(id, head, td)
+func (d *Downloader) Synchronise(id string, head meta.DataID) error {
+	err := d.synchronise(id, head)
 	switch err {
 	case nil:
 	case errBusy:
@@ -241,7 +241,7 @@ func (d *Downloader) Synchronise(id string, head meta.DataID, td *big.Int) error
 // synchronise will select the peer and use it for synchronising. If an empty string is given
 // it will use the best peer possible and synchronize if its TD is higher than our own. If any of the
 // checks fail an error will be returned. This method is synchronous
-func (d *Downloader) synchronise(id string, hash meta.DataID, td *big.Int) error {
+func (d *Downloader) synchronise(id string, hash meta.DataID) error {
 	// Mock out the synchronisation if testing
 	if d.synchroniseMock != nil {
 		return d.synchroniseMock(id, hash)
@@ -289,12 +289,12 @@ func (d *Downloader) synchronise(id string, hash meta.DataID, td *big.Int) error
 	if p == nil {
 		return errUnknownPeer
 	}
-	return d.syncWithPeer(p, hash, td)
+	return d.syncWithPeer(p, hash)
 }
 
 // syncWithPeer starts a block synchronization based on the hash chain from the
 // specified peer and head hash.
-func (d *Downloader) syncWithPeer(p *peerConnection, hash meta.DataID, td *big.Int) (err error) {
+func (d *Downloader) syncWithPeer(p *peerConnection, hash meta.DataID) (err error) {
 	d.mux.Post(StartEvent{})
 	defer func() {
 		// reset on error
@@ -308,7 +308,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash meta.DataID, td *big.I
 		return errTooOld
 	}
 
-	log.Debug("Synchronising with the network", "peer", p.id, "eth", p.version, "head", hash, "td", td, "mode", d.mode)
+	log.Debug("Synchronising with the network", "peer", p.id, "eth", p.version, "head", hash, "mode", d.mode)
 	defer func(start time.Time) {
 		log.Debug("Synchronisation terminated", "elapsed", time.Since(start))
 	}(time.Now())
@@ -355,7 +355,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash meta.DataID, td *big.I
 
 	fetchers := []func() error{
 		func() error { return d.fetchBlocks(p, origin+1, pivot) },
-		func() error { return d.processBlocks(origin+1, pivot, td) },
+		func() error { return d.processBlocks(origin+1, pivot) },
 	}
 	if d.mode == FullSync {
 		fetchers = append(fetchers, d.processFullSyncContent)
@@ -430,7 +430,7 @@ func (d *Downloader) fetchHeight(p *peerConnection) (block.IBlock, error) {
 	p.log.Debug("Retrieving remote chain height")
 
 	// Request the advertised remote head block and wait for the response
-	head, _ := p.peer.Head()
+	head := p.peer.Head()
 	go p.peer.RequestBlocksByHash(head, 1, 0, false)
 
 	ttl := d.requestTTL()
@@ -917,7 +917,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 	}
 }
 
-func (d *Downloader) processBlocks(origin uint64, pivot uint64, td *big.Int) error {
+func (d *Downloader) processBlocks(origin uint64, pivot uint64) error {
 	// Keep a count of uncertain headers to roll back
 	rollback := []block.IBlock{}
 	defer func() {

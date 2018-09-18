@@ -3,8 +3,6 @@ package full
 import (
 	"errors"
 	"fmt"
-	_ "math"
-	"math/big"
 	"sync"
 	"time"
 
@@ -182,7 +180,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		hash    = current.GetBlockID()
 		// number  = current.GetHeight()
 	)
-	if err := p.Handshake(pm.networkId, big.NewInt(0), hash, genesis.GetBlockID()); err != nil {
+	if err := p.Handshake(pm.networkId, hash, genesis.GetBlockID()); err != nil {
 		p.Log().Debug("Linkchain handshake failed", "err", err)
 		return err
 	}
@@ -286,35 +284,24 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	case msg.Code == NewBlockMsg:
 		// Retrieve and decode the propagated block
-		//		var request newBlockData
-		//		if err := msg.Decode(&request); err != nil {
-		//			return errResp(ErrDecode, "%v: %v", msg, err)
-		//		}
-		//		request.Block.ReceivedAt = msg.ReceivedAt
-		//		request.Block.ReceivedFrom = p
-		//
-		//		// Mark the peer as owning the block and schedule it for import
-		//		p.MarkBlock(request.Block.Hash())
-		//		pm.fetcher.Enqueue(p.id, request.Block)
-		//
-		//		// Assuming the block is importable by the peer, but possibly not yet done so,
-		//		// calculate the head hash and TD that the peer truly must have.
-		//		var (
-		//			trueHead = request.Block.ParentHash()
-		//			trueTD   = new(big.Int).Sub(request.TD, request.Block.Difficulty())
-		//		)
-		//		// Update the peers total difficulty if better than the previous
-		//		if _, td := p.Head(); trueTD.Cmp(td) > 0 {
-		//			p.SetHead(trueHead, trueTD)
-		//
-		//			// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
-		//			// a singe block (as the true TD is below the propagated block), however this
-		//			// scenario should easily be covered by the fetcher.
-		//			currentBlock := pm.blockchain.CurrentBlock()
-		//			if trueTD.Cmp(pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())) > 0 {
-		//				go pm.synchronise(p)
-		//			}
-		//		}
+		var b protobuf.POABlock
+		if err := msg.Decode(&b); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		var block block.IBlock
+		block.Deserialize(&b)
+
+		// Mark the peer as owning the block and schedule it for import
+		p.MarkBlock(block.GetBlockID())
+		pm.fetcher.Enqueue(p.id, block)
+
+		var (
+			trueHead = block.GetPrevBlockID()
+		)
+
+		p.SetHead(trueHead)
+
+		go pm.synchronise(p)
 
 	case msg.Code == TxMsg:
 

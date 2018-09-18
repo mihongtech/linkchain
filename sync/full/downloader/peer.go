@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"math/big"
+	_ "math/big"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -49,7 +49,7 @@ type peerConnection struct {
 
 // LightPeer encapsulates the methods required to synchronise with a remote light peer.
 type LightPeer interface {
-	Head() (meta.DataID, *big.Int)
+	Head() meta.DataID
 	RequestBlocksByHash(meta.DataID, int, int, bool) error
 	RequestBlocksByNumber(uint64, int, int, bool) error
 }
@@ -64,7 +64,7 @@ type lightPeerWrapper struct {
 	peer LightPeer
 }
 
-func (w *lightPeerWrapper) Head() (meta.DataID, *big.Int) { return w.peer.Head() }
+func (w *lightPeerWrapper) Head() meta.DataID { return w.peer.Head() }
 func (w *lightPeerWrapper) RequestBlocksByHash(h meta.DataID, amount int, skip int, reverse bool) error {
 	return w.peer.RequestBlocksByHash(h, amount, skip, reverse)
 }

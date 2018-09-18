@@ -3,7 +3,7 @@ package full
 import (
 	_ "fmt"
 	_ "io"
-	"math/big"
+	_ "math/big"
 
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/meta"
@@ -68,36 +68,19 @@ var errorToString = map[int]string{
 	ErrSuspendedPeer:           "Suspended peer",
 }
 
-//type txPool interface {
-//	// AddRemotes should add the given transactions to the pool.
-//	AddRemotes([]*types.Transaction) []error
-//
-//	// Pending should return pending transactions.
-//	// The slice should be modifiable by the caller.
-//	Pending() (map[common.Address]types.Transactions, error)
-//
-//	// SubscribeTxPreEvent should return an event subscription of
-//	// TxPreEvent and send events to the given channel.
-//	SubscribeTxPreEvent(chan<- core.TxPreEvent) event.Subscription
-//}
-//
-// statusData is the network packet for the status message.
 type statusData struct {
 	ProtocolVersion uint32
 	NetworkId       uint64
-	TD              *big.Int
 	CurrentBlock    meta.DataID
 	GenesisBlock    meta.DataID
 }
 
 func (s *statusData) Serialize() serialize.SerializeStream {
-	td := s.TD.Int64()
 	currentBlock := s.CurrentBlock.Serialize().(*protobufmsg.Hash)
 	genesisBlock := s.GenesisBlock.Serialize().(*protobufmsg.Hash)
 	status := &protobufmsg.StatusData{
 		ProtocolVersion: &s.ProtocolVersion,
 		NetworkId:       &s.NetworkId,
-		Td:              &td,
 		CurrentBlock:    currentBlock,
 		GenesisBlock:    genesisBlock,
 	}
@@ -109,7 +92,6 @@ func (s *statusData) Deserialize(data serialize.SerializeStream) {
 	d := data.(*protobufmsg.StatusData)
 	s.ProtocolVersion = *d.ProtocolVersion
 	s.NetworkId = *d.NetworkId
-	s.TD.SetInt64(*d.Td)
 	s.GenesisBlock.Deserialize(d.GenesisBlock)
 	s.CurrentBlock.Deserialize(d.CurrentBlock)
 }
