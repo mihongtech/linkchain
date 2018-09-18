@@ -3,6 +3,7 @@ package full
 import (
 	"errors"
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
@@ -409,21 +410,13 @@ func (pm *ProtocolManager) BroadcastBlock(block block.IBlock, propagate bool) {
 
 	// If propagation is requested, send to a subset of the peer
 	if propagate {
-		//		// Calculate the TD of the block (it's not imported yet, so block.Td is not valid)
-		//		var td *big.Int
-		//		if parent := pm.blockchain.GetBlock(block.ParentHash(), block.NumberU64()-1); parent != nil {
-		//			td = new(big.Int).Add(block.Difficulty(), pm.blockchain.GetTd(block.ParentHash(), block.NumberU64()-1))
-		//		} else {
-		//			log.Error("Propagating dangling block", "number", block.Number(), "hash", hash)
-		//			return
-		//		}
-		//		// Send the block to a subset of our peers
-		//		transfer := peers[:int(core_math.Sqrt(float64(len(peers))))]
-		//		for _, peer := range transfer {
-		//			peer.SendNewBlock(block, td)
-		//		}
-		//		log.Trace("Propagated block", "hash", hash, "recipients", len(transfer), "duration", common.PrettyDuration(time.Since(block.ReceivedAt)))
-		//		return
+		// Send the block to a subset of our peers
+		transfer := peers[:int(math.Sqrt(float64(len(peers))))]
+		for _, peer := range transfer {
+			peer.SendNewBlock(block)
+		}
+		log.Trace("Propagated block", "hash", hash, "recipients", len(transfer))
+		return
 	}
 	// Otherwise if the block is indeed in out own chain, announce it
 	if pm.blockmanager.HasBlock(hash) {

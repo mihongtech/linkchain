@@ -25,21 +25,6 @@ type txsync struct {
 	txs []tx.ITx
 }
 
-// syncTransactions starts sending all currently pending transactions to the given peer.
-//func (pm *ProtocolManager) syncTransactions(p *peer) {
-//	var txs []tx.ITx
-//	pending, _ := pm.txpool.Pending()
-//	for _, batch := range pending {
-//		txs = append(txs, batch...)
-//	}
-//	if len(txs) == 0 {
-//		return
-//	}
-//	select {
-//	case pm.txsyncCh <- &txsync{p, txs}:
-//	case <-pm.quitSync:
-//	}
-//}
 type StorageSize float64
 
 // txsyncLoop takes care of the initial transaction sync for each new
@@ -116,9 +101,9 @@ func (pm *ProtocolManager) txsyncLoop() {
 // downloading hashes and blocks as well as handling the announcement handler.
 func (pm *ProtocolManager) syncer() {
 	// Start and ensure cleanup of sync mechanisms
-	// pm.fetcher.Start()
-	// defer pm.fetcher.Stop()
-	// defer pm.downloader.Terminate()
+	pm.fetcher.Start()
+	defer pm.fetcher.Stop()
+	defer pm.downloader.Terminate()
 
 	// Wait for different events to fire synchronisation operations
 	forceSync := time.NewTicker(forceSyncCycle)
@@ -149,14 +134,8 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 	if peer == nil {
 		return
 	}
-	//	// Make sure the peer's TD is higher than our own
-	// currentBlock := pm.blockchain.GetBestBlock()
-	//	/td := big.NewInt(0)
 
 	pHead := peer.Head()
-	//	if pTd.Cmp(td) <= 0 {
-	//		return
-	//	}
 
 	//	// Run the sync cycle, and disable fast sync if we've went past the pivot block
 	if err := pm.downloader.Synchronise(peer.id, pHead); err != nil {
