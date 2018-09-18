@@ -6,7 +6,7 @@ import (
 	_ "math"
 	"math/big"
 	"sync"
-	_ "time"
+	"time"
 
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
@@ -20,6 +20,8 @@ import (
 	p2p_peer "github.com/linkchain/p2p/peer"
 	"github.com/linkchain/p2p/peer_error"
 	"github.com/linkchain/sync/full/downloader"
+	"github.com/linkchain/sync/full/fetcher"
+	"github.com/linkchain/sync/full/protobufmsg"
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are
@@ -40,7 +42,9 @@ type ProtocolManager struct {
 	maxPeers  int
 	peers     *peerSet
 
-	downloader    *downloader.Downloader
+	downloader *downloader.Downloader
+	fetcher    *fetcher.Fetcher
+
 	SubProtocols  []p2p_peer.Protocol
 	blockchain    manager.ChainManager
 	blockmanager  manager.BlockManager
@@ -113,6 +117,12 @@ func NewProtocolManager(config interface{}, networkId uint64, mux *event.TypeMux
 	}
 
 	manager.downloader = downloader.New(manager.eventMux, manager.blockchain, manager.blockmanager, manager.removePeer)
+
+	heighter := func() uint64 {
+		return uint64(manager.blockchain.GetBestBlock().GetHeight())
+	}
+
+	manager.fetcher = fetcher.New(manager.blockmanager.GetBlockByID, manager.BroadcastBlock, heighter, manager.blockmanager, manager.removePeer)
 
 	return manager, nil
 }
@@ -235,24 +245,28 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return nil
 
 	case msg.Code == NewBlockHashesMsg:
-		//		var announces newBlockHashesData
-		//		if err := msg.Decode(&announces); err != nil {
-		//			return errResp(ErrDecode, "%v: %v", msg, err)
-		//		}
-		//		// Mark the hashes as present at the remote node
-		//		for _, block := range announces {
-		//			p.MarkBlock(block.Hash)
-		//		}
-		//		// Schedule all the unknown hashes for retrieval
-		//		unknown := make(newBlockHashesData, 0, len(announces))
-		//		for _, block := range announces {
-		//			if !pm.blockchain.HasBlock(block.Hash, block.Number) {
-		//				unknown = append(unknown, block)
-		//			}
-		//		}
-		//		for _, block := range unknown {
-		//			pm.fetcher.Notify(p.id, block.Hash, block.Number, time.Now(), p.RequestOneHeader, p.RequestBodies)
-		//		}
+		var announces protobufmsg.NewBlockHashesDatas
+		if err := msg.Decode(&announces); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		// Mark the hashes as present at the remote node
+		for _, block := range announces.Data {
+			b := &newBlockHashData{}
+			b.Deserialize(block)
+			p.MarkBlock(b.Hash)
+		}
+		// Schedule all the unknown hashes for retrieval
+		unknown := make(newBlockHashesData, 0, len(announces.Data))
+		for _, block := range announces.Data {
+			b := &newBlockHashData{}
+			b.Deserialize(block)
+			if !pm.blockmanager.HasBlock(b.Hash) {
+				unknown = append(unknown, *b)
+			}
+		}
+		for _, block := range unknown {
+			pm.fetcher.Notify(p.id, block.Hash, block.Number, time.Now(), p.RequestOneBlock)
+		}
 
 	case msg.Code == NewBlockMsg:
 		// Retrieve and decode the propagated block

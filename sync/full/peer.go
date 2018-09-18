@@ -148,6 +148,11 @@ func (p *peer) RequestBlock(hashes []meta.DataID) error {
 	return nil
 }
 
+func (p *peer) RequestOneBlock(hash meta.DataID) error {
+	p.Log().Debug("Fetching single header", "hash", hash)
+	return message.Send(p.rw, GetBlockMsg, hash.Serialize().(*protobufmsg.Hash))
+}
+
 // Handshake executes the eth protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
 func (p *peer) Handshake(network uint64, td *big.Int, head meta.DataID, genesis meta.DataID) error {
