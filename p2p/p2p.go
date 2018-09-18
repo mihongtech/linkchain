@@ -191,7 +191,7 @@ func (srv *Service) Start() bool {
 	srv.loopWG.Add(1)
 	go srv.run(dialer)
 	srv.running = true
-	srv.sync.Start()
+	// srv.sync.Start()
 	return true
 }
 
