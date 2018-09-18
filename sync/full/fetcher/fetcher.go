@@ -373,45 +373,6 @@ func (f *Fetcher) loop() {
 			// Split the batch of headers into unknown ones (to return to the caller),
 			// known incomplete ones (requiring body retrievals) and completed blocks.
 			unknown, incomplete := []block.IBlock{}, []*announce{}
-			//			for _, header := range task.headers {
-			//				hash := header.GetBlockID()
-			//
-			//				// Filter fetcher-requested headers from other synchronisation algorithms
-			//				if announce := f.fetching[hash]; announce != nil && announce.origin == task.peer && f.fetched[hash] == nil && f.completing[hash] == nil && f.queued[hash] == nil {
-			//					// If the delivered header does not match the promised number, drop the announcer
-			//					if header.Number.Uint64() != announce.number {
-			//						log.Trace("Invalid block number fetched", "peer", announce.origin, "hash", header.GetBlockID(), "announced", announce.number, "provided", header.Number)
-			//						f.dropPeer(announce.origin)
-			//						f.forgetHash(hash)
-			//						continue
-			//					}
-			//					// Only keep if not imported by other means
-			//					if f.getBlock(hash) == nil {
-			//						announce.header = header
-			//						announce.time = task.time
-			//
-			//						// If the block is empty (header only), short circuit into the final import queue
-			//						if header.TxHash == types.DeriveSha(types.Transactions{}) && header.UncleHash == types.CalcUncleHash([]*types.Header{}) {
-			//							log.Trace("Block empty, skipping body retrieval", "peer", announce.origin, "number", header.Number, "hash", header.GetBlockID())
-			//
-			//							block := types.NewBlockWithHeader(header)
-			//							block.ReceivedAt = task.time
-			//
-			//							complete = append(complete, block)
-			//							f.completing[hash] = announce
-			//							continue
-			//						}
-			//						// Otherwise add to the list of blocks needing completion
-			//						incomplete = append(incomplete, announce)
-			//					} else {
-			//						log.Trace("Block already imported, discarding header", "peer", announce.origin, "number", header.Number, "hash", header.GetBlockID())
-			//						f.forgetHash(hash)
-			//					}
-			//				} else {
-			//					// Fetcher doesn't know about it, add to the return list
-			//					unknown = append(unknown, header)
-			//				}
-			//			}
 			select {
 			case filter <- &blockFilterTask{blocks: unknown, time: task.time}:
 			case <-f.quit:
@@ -429,11 +390,11 @@ func (f *Fetcher) loop() {
 				}
 			}
 			// Schedule the header-only blocks for import
-			//			for _, block := range complete {
-			//				if announce := f.completing[block.GetBlockID()]; announce != nil {
-			//					f.enqueue(announce.origin, block)
-			//				}
-			//			}
+			for _, block := range task.blocks {
+				if announce := f.completing[block.GetBlockID()]; announce != nil {
+					f.enqueue(announce.origin, block)
+				}
+			}
 		}
 	}
 }
@@ -523,29 +484,14 @@ func (f *Fetcher) insert(peer string, block block.IBlock) {
 			log.Debug("Unknown parent of propagated block", "peer", peer, "number", block.GetHeight(), "hash", hash, "parent", block.GetPrevBlockID())
 			return
 		}
-		// Quickly validate the header and propagate the block if it passes
-		//		switch err := f.verifyHeader(block.Header()); err {
-		//		case nil:
-		// All ok, quickly propagate to our peers
-		// propBroadcastOutTimer.UpdateSince(block.ReceivedAt)
+
 		go f.broadcastBlock(block, true)
-		//
-		//		case consensus.ErrFutureBlock:
-		//			// Weird future block, don't fail, but neither propagate
-		//
-		//		default:
-		//			// Something went very wrong, drop the peer
-		//			log.Debug("Propagated block verification failed", "peer", peer, "number", block.Number(), "hash", hash, "err", err)
-		//			f.dropPeer(peer)
-		//			return
-		//		}
-		// Run the actual import and log any issues
+
 		if err := f.insertChain.AddBlock(block); err != nil {
 			log.Debug("Propagated block import failed", "peer", peer, "number", block.GetHeight(), "hash", hash, "err", err)
 			return
 		}
-		// If import succeeded, broadcast the block
-		// propAnnounceOutTimer.UpdateSince(block.ReceivedAt)
+
 		go f.broadcastBlock(block, false)
 
 		// Invoke the testing hook if needed

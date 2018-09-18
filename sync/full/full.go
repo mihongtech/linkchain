@@ -255,7 +255,21 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return p.SendBlock(block)
 
 	case msg.Code == BlockMsg:
-		// do nothing
+		var b protobuf.POABlock
+		if err := msg.Decode(&b); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		var data block.IBlock
+		data.Deserialize(&b)
+
+		pm.fetcher.FilterBlocks(p.id, []block.IBlock{data}, time.Now())
+		//		if len(headers) > 0 || !filter {
+		//			err := pm.downloader.DeliverHeaders(p.id, headers)
+		//			if err != nil {
+		//				log.Debug("Failed to deliver headers", "err", err)
+		//			}
+		//		}
+
 		return nil
 
 	case msg.Code == NewBlockHashesMsg:
