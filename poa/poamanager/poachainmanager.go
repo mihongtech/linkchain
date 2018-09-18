@@ -372,16 +372,16 @@ func (m *POAChainManager) updateStatus(block block.IBlock,isAdd bool) error {
 	}
 	//update mine account status
 	poablock := *block.(*poameta.POABlock)
-	mineAccountId := *poablock.Header.GetMineAccount().(*poameta.POAAccountID)
-	var mineAccount poameta.POAAccount
-
+	mineAccountId := poablock.Header.GetMineAccount()
+	var amount poameta.POAAmount
 	if isAdd {
-		mineAccount = poameta.POAAccount{AccountID:mineAccountId, Value:poameta.POAAmount{Value:50}}
+		amount = poameta.POAAmount{Value:50}
 	} else {
-		mineAccount = poameta.POAAccount{AccountID:mineAccountId, Value:poameta.POAAmount{Value:-50}}
+		amount = poameta.POAAmount{Value:-50}
 	}
+	account := poameta.NewPOAAccount(mineAccountId,&amount,uint32(0))
 
-	error := GetManager().AccountManager.UpdateAccount(&mineAccount)
+	error := GetManager().AccountManager.UpdateAccount(&account,false)
 	if error != nil {
 		return error
 	}

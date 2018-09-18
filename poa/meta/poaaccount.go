@@ -11,6 +11,7 @@ import (
 	"encoding/hex"
 	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/util/log"
+	"errors"
 )
 
 
@@ -52,21 +53,44 @@ func NewAccountId(pkBytes []byte) account.IAccountID {
 type POAAccount struct {
 	AccountID POAAccountID
 	Value POAAmount
+	Nounce uint32
 }
 
-func (a *POAAccount) ChangeAmount(amount meta.IAmount) meta.IAmount{
+func NewPOAAccount(id account.IAccountID, value meta.IAmount,nounce uint32 ) POAAccount {
+	return POAAccount{AccountID:*id.(*POAAccountID),Value:*value.(*POAAmount)}
+}
+
+func (a *POAAccount) ChangeAmount(amount meta.IAmount) meta.IAmount {
 	a.Value = *amount.(*POAAmount)
 	return &a.Value
 }
 
-func (a *POAAccount) GetAmount() meta.IAmount{
+func (a *POAAccount) GetAmount() meta.IAmount {
 	return &(a.Value)
 }
 
-func (a *POAAccount) GetAccountID() account.IAccountID{
+func (a *POAAccount) GetAccountID() account.IAccountID {
 	return &a.AccountID
 }
 
+func (a *POAAccount) GetNounce() uint32 {
+	return a.Nounce
+}
+
+func (a *POAAccount) SetNounce(nounce uint32) error {
+	if a.CheckNounce(nounce) {
+		a.Nounce = nounce
+		return nil
+	}
+	return errors.New("POAAccount nounce is error")
+}
+
+func (a *POAAccount) CheckNounce(nounce uint32) bool {
+	if nounce - a.Nounce == 1 {
+		return true
+	}
+	return false
+}
 
 //Serialize/Deserialize
 func (a *POAAccount)Serialize()(serialize.SerializeStream){

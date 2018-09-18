@@ -29,8 +29,9 @@ message POATransaction {
     required POATransactionPeer to = 3;
     required POAAmount amount = 4;
     required int64 time = 5;
-    optional bytes extra = 6;
-    optional bytes sign = 7;
+    required uint32 nounce = 6;
+    optional bytes extra = 7;
+    optional bytes sign = 8;
 }
 
 message POATransactionPeer {

@@ -20,10 +20,12 @@ type ITx interface {
 	SetFrom(from ITxPeer)
 	SetTo(to ITxPeer)
 	SetAmount(meta.IAmount)
+	SetNounce(nounce uint32)
 
 	GetFrom() ITxPeer
 	GetTo() ITxPeer
 	GetAmount() meta.IAmount
+	GetNounce() uint32
 
 	ChangeFromTo() ITx
 

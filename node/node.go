@@ -11,9 +11,9 @@ import (
 var (
 	//service collection
 	svcList = []common.IService{
-		&p2p.Service{},
 		&consensus.Service{},
 		&wallet.Wallet{},
+		&p2p.Service{},
 	}
 )
 
@@ -21,7 +21,11 @@ func Init() {
 	log.Info("Node init...")
 
 	//init all service
-	for _, v := range svcList {
+	for index, v := range svcList {
+		if index == 2 {
+			v.Init(svcList[0].(*consensus.Service))
+			continue
+		}
 		v.Init(nil)
 	}
 }

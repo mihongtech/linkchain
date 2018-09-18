@@ -64,6 +64,9 @@ type POATransaction struct {
 
 	Time time.Time
 	// Extra used to extenion the block.
+
+	Nounce uint32
+
 	Extra []byte
 
 	Signs FromSign
@@ -100,6 +103,10 @@ func (tx *POATransaction) SetAmount(iAmount meta.IAmount)  {
 	tx.Amount = amount
 }
 
+func (tx *POATransaction) SetNounce(nounce uint32)  {
+	tx.Nounce = nounce
+}
+
 func (tx *POATransaction) GetFrom() tx.ITxPeer  {
 	return &tx.From
 }
@@ -110,6 +117,10 @@ func (tx *POATransaction) GetTo() tx.ITxPeer  {
 
 func (tx *POATransaction) GetAmount() meta.IAmount  {
 	return &tx.Amount
+}
+
+func (tx *POATransaction) GetNounce() uint32 {
+	return tx.Nounce
 }
 
 func (tx *POATransaction) Sign()(math.ISignature, error)  {
@@ -131,7 +142,7 @@ func (tx *POATransaction) Verify()(error)  {
 		log.Error("POATransaction","VerifySign",err)
 		return err
 	}
-	verified := signature.Verify(tx.txid.CloneBytes(), &tx.From.AccountID.ID)
+	verified := signature.Verify(tx.GetTxID().CloneBytes(), &tx.From.AccountID.ID)
 	if verified {
 		return nil
 	}else {
@@ -151,6 +162,7 @@ func (tx *POATransaction) Serialize()(serialize.SerializeStream){
 		To:to,
 		Time:proto.Int64(tx.Time.Unix()),
 		Amount:amount,
+		Nounce:proto.Uint32(tx.Nounce),
 		Extra:proto.NewBuffer(tx.Extra).Bytes(),
 		Sign:proto.NewBuffer(tx.Signs.Code).Bytes(),
 	}
@@ -163,6 +175,7 @@ func (tx *POATransaction) Deserialize(s serialize.SerializeStream){
 	tx.From.Deserialize(data.From)
 	tx.To.Deserialize(data.To)
 	tx.Time = time.Unix(*data.Time,0)
+	tx.Nounce = *data.Nounce
 	tx.Amount.Deserialize(data.Amount)
 	tx.Extra = data.Extra
 	tx.Signs = FromSign{Code:data.Sign}
@@ -172,6 +185,7 @@ func (tx *POATransaction) Deserialize(s serialize.SerializeStream){
 		From:data.From,
 		To:data.To,
 		Time:data.Time,
+		Nounce:data.Nounce,
 		Amount:data.Amount,
 		Extra:data.Extra,
 	}

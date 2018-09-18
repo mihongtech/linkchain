@@ -16,6 +16,12 @@ type IAccount interface {
 
 	GetAccountID()  IAccountID
 
+	GetNounce() uint32
+
+	SetNounce(nounce uint32) error
+
+	CheckNounce(nounce uint32) bool
+
 	//serialize
 	serialize.ISerialize
 }

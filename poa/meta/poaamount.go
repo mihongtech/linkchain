@@ -12,6 +12,10 @@ type POAAmount struct {
 	Value int32
 }
 
+func NewPOAAmout(value int32) POAAmount {
+	return POAAmount{Value:value}
+}
+
 func (a *POAAmount) GetInt() int  {
 	return int(a.Value)
 }
