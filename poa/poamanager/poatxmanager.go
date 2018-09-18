@@ -74,6 +74,26 @@ func (m *POATxManager) NewTransaction(from account.IAccount,to account.IAccount,
 
 func (m *POATxManager) CheckTx(tx tx.ITx) bool {
 	log.Info("POA CheckTx ...")
+	err := tx.Verify()
+	if err != nil {
+		log.Error("POA CheckTx","failed",err)
+		return false
+	}
+
+	err = GetManager().AccountManager.CheckTxFromAccount(tx)
+
+	if err != nil {
+		log.Error("POA CheckTx","failed",err)
+		return false
+	}
+
+	err = GetManager().AccountManager.CheckTxFromNounce(tx)
+
+	if err != nil {
+		log.Error("POA CheckTx","failed",err)
+		return false
+	}
+
 	return true
 }
 

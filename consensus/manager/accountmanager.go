@@ -21,6 +21,7 @@ type AccountPoolManager interface{
 	UpdateAccount(iAccount account.IAccount) error
 	UpdateAccountByTX(tx tx.ITx) error
 	CheckTxFromAccount(tx tx.ITx) error
+	CheckTxFromNounce(tx tx.ITx) error
 
 	GetAllAccounts()
 }

@@ -87,10 +87,8 @@ func (a *POAAccount) SetNounce(nounce uint32) error {
 
 func (a *POAAccount) CheckNounce(nounce uint32) bool {
 	if nounce - a.Nounce == 1 {
-		log.Info("POAAccount","CheckNounce",true)
 		return true
 	}
-	log.Info("POAAccount","CheckNounce",false)
 	return false
 }
 

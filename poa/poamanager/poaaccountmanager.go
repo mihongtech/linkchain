@@ -19,7 +19,6 @@ type POAAccountManager struct {
 func (m *POAAccountManager) Init(i interface{}) bool{
 	log.Info("POAAccountManager init...");
 	m.accountMap = make(map[string]poameta.POAAccount)
-
 	return true
 }
 
@@ -144,6 +143,25 @@ func (m *POAAccountManager) CheckTxFromAccount(tx tx.ITx) error {
 
 	return nil
 }
+
+func (m *POAAccountManager) CheckTxFromNounce(tx tx.ITx) error {
+	fromAccountId := tx.GetFrom().(*poameta.POATransactionPeer).AccountID
+	fromAccount,err := m.GetAccount(&fromAccountId)
+
+	if err != nil {
+		log.Error("POAAccountManager","CheckTxFromNounce","can not find the account of the tx's")
+		log.Error("POAAccountManager","tx from",fromAccountId.GetString())
+		return err
+	}
+
+	if fromAccount.GetNounce() >= tx.GetNounce() {
+		log.Error("POAAccountManager","CheckTxFromNounce","the from of tx should be more than fromAccount nounce")
+		return errors.New("CheckTxFromNounce the from of tx should be more than fromAccount nounce")
+	}
+
+	return nil
+}
+
 
 func (m *POAAccountManager) GetAllAccounts()  {
 	for _,accountId := range m.accountMap{
