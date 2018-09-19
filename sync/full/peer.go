@@ -194,7 +194,8 @@ func (p *peer) Handshake(network uint64, head meta.DataID, genesis meta.DataID) 
 			return peer_error.DiscReadTimeout
 		}
 	}
-	copy(p.head[:], status.CurrentBlock.CloneBytes())
+	p.SetHead(status.CurrentBlock)
+	// copy(p.head[:], status.CurrentBlock.CloneBytes())
 	return nil
 }
 

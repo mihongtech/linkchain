@@ -331,27 +331,8 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash meta.DataID) (err erro
 	d.syncStatsChainHeight = height
 	d.syncStatsLock.Unlock()
 
-	// Ensure our origin point is below any fast sync pivot point
-	pivot := uint64(0)
-	if d.mode == FastSync {
-		if height <= uint64(fsMinFullBlocks) {
-			origin = 0
-		} else {
-			pivot = height - uint64(fsMinFullBlocks)
-			if pivot <= origin {
-				origin = pivot - 1
-			}
-		}
-	}
 	d.committed = 1
-	if d.mode == FastSync && pivot != 0 {
-		d.committed = 0
-	}
-	// Initiate the sync using a concurrent header and content retrieval algorithm
 	d.queue.Prepare(origin+1, d.mode)
-	if d.syncInitHook != nil {
-		d.syncInitHook(origin, height)
-	}
 
 	fetchers := []func() error{
 		func() error { return d.fetchBlocks(p, origin+1, pivot) },
@@ -606,14 +587,6 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 	return start, nil
 }
 
-// fetchHeaders keeps retrieving headers concurrently from the number
-// requested, until no more are returned, potentially throttling on the way. To
-// facilitate concurrency but still protect against malicious nodes sending bad
-// headers, we construct a header chain skeleton using the "origin" peer we are
-// syncing with, and fill in the missing headers using anyone else. Headers from
-// other peers are only accepted if they map cleanly to the skeleton. If no one
-// can fill in the skeleton - not even the origin peer - it's assumed invalid and
-// the origin is dropped.
 func (d *Downloader) fetchBlocks(p *peerConnection, from uint64, pivot uint64) error {
 	p.log.Debug("Directing block downloads", "origin", from)
 	defer p.log.Debug("Block download terminated")
@@ -656,7 +629,7 @@ func (d *Downloader) fetchBlocks(p *peerConnection, from uint64, pivot uint64) e
 			}
 
 			timeout.Stop()
-
+			log.Debug("Received skeleton result", "packet.Items()", packet.Items())
 			// If the skeleton's finished, pull any remaining head headers directly from the origin
 			if packet.Items() == 0 && skeleton {
 				skeleton = false
@@ -1036,7 +1009,10 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 		"lastnum", last.GetHeight(), "lasthash", last.GetBlockID(),
 	)
 	//blocks := make([]block.IBlock, len(results))
+
 	for _, result := range results {
+		log.Debug("Downloaded item processing block", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "block", result.Block)
+
 		if err := d.blockmanager.ProcessBlock(result.Block); err != nil {
 			log.Debug("Downloaded item processing failed", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "err", err)
 			return errInvalidChain
