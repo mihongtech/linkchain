@@ -152,7 +152,7 @@ func (p *peer) RequestBlock(hashes []meta.DataID) error {
 }
 
 func (p *peer) RequestOneBlock(hash meta.DataID) error {
-	p.Log().Debug("Fetching single header", "hash", hash)
+	p.Log().Debug("Fetching single block", "hash", hash)
 	data := &getBlockHeadersData{Hash: hash}
 	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 }
@@ -234,12 +234,12 @@ func (p *peer) String() string {
 }
 
 func (p *peer) RequestBlocksByHash(h meta.DataID, amount int, skip int, reverse bool) error {
-	p.Log().Debug("Fetching single header", "hash", h)
+	p.Log().Debug("Fetching block by hash", "hash", h)
 	data := &getBlockHeadersData{Hash: h}
 	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 }
 func (p *peer) RequestBlocksByNumber(i uint64, amount int, skip int, reverse bool) error {
-	p.Log().Debug("Fetching block", "number", i)
+	p.Log().Debug("Fetching block by number", "number", i)
 	data := &getBlockHeadersData{Number: i}
 	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 }
