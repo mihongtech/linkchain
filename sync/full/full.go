@@ -1,6 +1,7 @@
 package full
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -245,22 +246,80 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		data := &getBlockHeadersData{}
 		data.Deserialize(&query)
-		var block block.IBlock
-		var err error
-		if data.Hash.IsEmpty() {
-			block = pm.blockchain.GetBlockByHeight(uint32(data.Number))
-			log.Debug("get block by height", "number", data.Number, "block", block)
-		} else {
-			block, err = pm.blockmanager.GetBlockByID(data.Hash)
-			log.Debug("get block by id", "Hash", data.Hash, "block", block)
+
+		var (
+			blocks  []block.IBlock
+			unknown bool
+		)
+		for !unknown && len(blocks) < int(data.Amount) && len(blocks) < downloader.MaxBlockFetch {
+			// Retrieve the next header satisfying the query
+			var block block.IBlock
+			var err error
+			if data.Hash.IsEmpty() {
+				block = pm.blockchain.GetBlockByHeight(uint32(data.Number))
+				log.Debug("get block by height", "number", data.Number, "block", block)
+			} else {
+				block, err = pm.blockmanager.GetBlockByID(data.Hash)
+				log.Debug("get block by id", "Hash", data.Hash, "block", block)
+			}
+			if err != nil || block == nil {
+				log.Error("get block msg error", "query data", data, "err", err)
+				break
+			}
+			number := uint64(block.GetHeight())
+			blocks = append(blocks, block)
+
+			// Advance to the next header of the query
+			switch {
+			case !data.Hash.IsEmpty() && data.Reverse:
+				// Hash based traversal towards the genesis block
+				for i := 0; i < int(data.Skip)+1; i++ {
+					if b, e := pm.blockmanager.GetBlockByID(data.Hash); (b != nil) && (e == nil) {
+						data.Hash = b.GetPrevBlockID()
+						number--
+					} else {
+						unknown = true
+						break
+					}
+				}
+			case !data.Hash.IsEmpty() && !data.Reverse:
+				// Hash based traversal towards the leaf block
+				var (
+					current = uint64(block.GetHeight())
+					next    = current + data.Skip + 1
+				)
+				if next <= current {
+					infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
+					p.Log().Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
+					unknown = true
+				} else {
+					if b := pm.blockchain.GetBlockByHeight(uint32(next)); b != nil {
+						log.Error("get block by height", "number", current, "skip", data.Skip, "next", next)
+						unknown = true
+					} else {
+						unknown = true
+					}
+
+				}
+			case data.Reverse:
+				// Number based traversal towards the genesis block
+				if data.Number >= data.Skip+1 {
+					data.Number -= data.Skip + 1
+				} else {
+					unknown = true
+				}
+
+			case !data.Reverse:
+				// Number based traversal towards the leaf block
+				data.Number += data.Skip + 1
+			}
 		}
 
-		if err != nil || block == nil {
-			log.Error("get block msg error", "query data", data, "err", err)
-			return err
+		log.Debug("Receive GetBlockMsg", "query is", data, "blocks is", blocks)
+		for _, b := range blocks {
+			p.SendBlock(b)
 		}
-		log.Debug("Receive GetBlockMsg", "query is", data, "block is", block)
-		return p.SendBlock(block)
+		return nil
 
 	case msg.Code == BlockMsg:
 		var b protobuf.Block

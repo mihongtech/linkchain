@@ -1,14 +1,16 @@
 package block
 
 import (
-	"github.com/linkchain/meta/tx"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/meta"
+	"github.com/linkchain/meta/tx"
 )
+
+type NewMinedBlockEvent struct{ Block IBlock }
 
 type IBlock interface {
 	//block content
-	SetTx([]tx.ITx)(error)
+	SetTx([]tx.ITx) error
 
 	GetTxs() []tx.ITx
 
@@ -18,7 +20,7 @@ type IBlock interface {
 
 	GetPrevBlockID() meta.DataID
 	//verifiy
-	Verify()(error)
+	Verify() error
 
 	IsGensis() bool
 
