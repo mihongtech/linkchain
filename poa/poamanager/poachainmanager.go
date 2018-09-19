@@ -83,14 +83,20 @@ func (m *POAChainManager) GetBestHeight() (uint32, error) {
 	return uint32(bestHeight), nil
 }
 
-func (m *POAChainManager) GetBlockByHash(hash math.Hash) block.IBlock {
-	block, _ := GetManager().BlockManager.GetBlockByID(&hash)
-	return block
+func (m *POAChainManager) GetBlockByHash(hash math.Hash) (block.IBlock, error) {
+	block, err := GetManager().BlockManager.GetBlockByID(&hash)
+	if err != nil {
+		return block, err
+	}
+	return block, nil
 }
 
-func (m *POAChainManager) GetBlockByHeight(height uint32) block.IBlock {
-	block, _ := GetManager().BlockManager.GetBlockByID(m.mainChainIndex[height].GetNodeHash())
-	return block
+func (m *POAChainManager) GetBlockByHeight(height uint32) (block.IBlock, error) {
+	block, err := GetManager().BlockManager.GetBlockByID(m.mainChainIndex[height].GetNodeHash())
+	if err != nil {
+		return block, err
+	}
+	return block, nil
 }
 
 func (m *POAChainManager) GetBlockNodeByHeight(height uint32) (poameta.POAChainNode, error) {
@@ -134,10 +140,10 @@ func (m *POAChainManager) AddBlock(block block.IBlock) {
 	log.Info("AddBlock", "Longest Chain height", len(longest.Blocks), "Longest Chain bestHash", longest.GetLastBlock().GetBlockID().GetString())
 }
 
-func (m *POAChainManager) GetBlockAncestor(block block.IBlock, height uint32) block.IBlock {
+func (m *POAChainManager) GetBlockAncestor(block block.IBlock, height uint32) (block.IBlock, error) {
 	if height > block.GetHeight() {
 		log.Error("POAChainManager", "GetBlockAncestor error", "height is plus block's height")
-		return nil
+		return nil, errors.New("POAChainManager :GetBlockAncestor error->height is plus block's height")
 	} else {
 		ancestor := block
 		var e error
@@ -145,10 +151,10 @@ func (m *POAChainManager) GetBlockAncestor(block block.IBlock, height uint32) bl
 			ancestor, e = GetManager().BlockManager.GetBlockByID(ancestor.GetPrevBlockID())
 			if e != nil {
 				log.Error("POAChainManager", "GetBlockAncestor error", "can not find ancestor")
-				return nil
+				return nil, errors.New("POAChainManager :GetBlockAncestor error->can not find ancestor")
 			}
 		}
-		return ancestor
+		return ancestor, nil
 	}
 }
 
@@ -215,8 +221,8 @@ func (m *POAChainManager) sortChains(block poameta.POABlock) bool {
 				continue
 			}
 
-			ancestorBlock := m.GetBlockAncestor(chain.GetLastBlock(), prevNode.GetNodeHeight())
-			if ancestorBlock == nil {
+			ancestorBlock, err := m.GetBlockAncestor(chain.GetLastBlock(), prevNode.GetNodeHeight())
+			if err != nil {
 				log.Info("sortChains :the chain is bad chain ,because the data of chain is imcomplete. the give up the chain")
 				deletIndex = append(deletIndex, index)
 				index--

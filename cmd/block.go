@@ -69,6 +69,12 @@ var heightCmd = &cobra.Command{
 			log.Error("getblockbyheight ", "error", "height is out of range", example[0], example[1])
 			return
 		}
-		log.Info("block", "data", poamanager.GetManager().ChainManager.GetBlockByHeight(uint32(height)))
+		block, err := poamanager.GetManager().ChainManager.GetBlockByHeight(uint32(height))
+		if err != nil {
+			log.Error("getblockbyheight ", "error", err)
+		} else {
+			log.Info("block", "data", block)
+		}
+
 	},
 }

@@ -179,9 +179,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 	// Execute the Linkchain handshake
 	var (
-		genesis = pm.blockchain.GetBlockByHeight(0)
-		current = pm.blockchain.GetBestBlock()
-		hash    = current.GetBlockID()
+		genesis, err = pm.blockchain.GetBlockByHeight(0)
+		current      = pm.blockchain.GetBestBlock()
+		hash         = current.GetBlockID()
 		// number  = current.GetHeight()
 	)
 	p.Log().Debug("Linkchain handshake data", "genesis", genesis, "number", current.GetHeight(), "current", hash)
