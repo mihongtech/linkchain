@@ -199,13 +199,13 @@ func (q *queue) RetrieveBlocks() ([]block.IBlock, int) {
 
 // Schedule adds a set of headers for the download queue for scheduling, returning
 // the new headers encountered.
-func (q *queue) Schedule(headers []block.IBlock, from uint64) []block.IBlock {
+func (q *queue) Schedule(blocks []block.IBlock, from uint64) []block.IBlock {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
 	// Insert all the headers prioritised by the contained block number
-	inserts := make([]block.IBlock, 0, len(headers))
-	for _, block := range headers {
+	inserts := make([]block.IBlock, 0, len(blocks))
+	for _, block := range blocks {
 		// Make sure chain order is honoured and preserved throughout
 		hash := block.GetBlockID()
 		if uint64(block.GetHeight()) != from {

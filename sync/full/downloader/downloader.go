@@ -675,7 +675,7 @@ func (d *Downloader) fetchBlocks(p *peerConnection, from uint64, pivot uint64) e
 				p.log.Trace("Scheduling new blocks", "count", len(blocks), "from", from)
 				select {
 				case d.blockProcCh <- blocks:
-				case <-d.cancelCh:
+				case <-d.cancewlCh:
 					return errCancelBlockFetch
 				}
 				from += uint64(len(blocks))
