@@ -136,15 +136,18 @@ func (p *peer) SendNewBlock(block block.IBlock) error {
 	return message.Send(p.rw, NewBlockMsg, block.Serialize())
 }
 
-func (p *peer) SendBlock(block block.IBlock) error {
-	if block != nil {
+func (p *peer) SendBlock(blocks []block.IBlock) error {
+	var blockArray []*protobuf.Block
+	for _, block := range blocks {
+		outBlock := block.Serialize().(*protobuf.Block)
 		p.knownBlocks.Add(block.GetBlockID())
 		log.Debug("Send BlockMsg", "block is", block)
-		return message.Send(p.rw, BlockMsg, block.Serialize())
-	} else {
-		log.Debug("Send empty BlockMsg")
-		return message.Send(p.rw, BlockMsg, nil)
+		blockArray = append(blockArray, outBlock)
+
 	}
+	outBlocks := &protobuf.Blocks{Block: blockArray}
+	return message.Send(p.rw, BlockMsg, outBlocks)
+
 }
 
 // RequestBodies fetches a batch of blocks' bodies corresponding to the hashes

@@ -499,7 +499,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 			for i := 0; i < len(blocks); i++ {
 				if number := int64(blocks[i].GetHeight()); number != from+int64(i)*16 {
 					p.log.Warn("Head blocks broke chain ordering", "index", i, "requested", from+int64(i)*16, "received", number)
-					return 0, errInvalidChain
+					// return 0, errInvalidChain
 				}
 			}
 			// Check if a common ancestor was found
@@ -961,6 +961,7 @@ func (d *Downloader) processBlocks(origin uint64, pivot uint64) error {
 			d.syncStatsLock.Unlock()
 		}
 	}
+	return nil
 }
 
 // processFullSyncContent takes fetch results from the queue and imports them into the chain.

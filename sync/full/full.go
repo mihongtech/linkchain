@@ -316,30 +316,36 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 
 		log.Debug("Receive GetBlockMsg", "query is", data, "blocks is", blocks)
-		for _, b := range blocks {
-			p.SendBlock(b)
-		}
-		if len(blocks) == 0 {
-			p.SendBlock(nil)
-		}
+
+		p.SendBlock(blocks)
+
 		return nil
 
 	case msg.Code == BlockMsg:
-		data := &poa_meta.POABlock{}
-		blocks := []block.IBlock{}
-		if msg.Size > 0 {
-			var b protobuf.Block
-			if err := msg.Decode(&b); err != nil {
-				return errResp(ErrDecode, "%v: %v", msg, err)
-			}
-			data.Deserialize(&b)
-			blocks = append(blocks, data)
 
+		blocks := []block.IBlock{}
+		var b protobuf.Blocks
+		if err := msg.Decode(&b); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
+		for _, prob := range b.Block {
+			data := &poa_meta.POABlock{}
+			data.Deserialize(prob)
+			blocks = append(blocks, data)
+		}
+
 		log.Debug("Receive BlockMsg", "block is", blocks)
-		pm.fetcher.FilterBlocks(p.id, blocks, time.Now())
+		filter := len(blocks) == 1
+		if filter {
+			pm.fetcher.FilterBlocks(p.id, blocks, time.Now())
+		}
+		if len(blocks) > 0 || !filter {
+			err := pm.downloader.DeliverBlocks(p.id, blocks)
+			if err != nil {
+				log.Debug("Failed to deliver blocks", "err", err)
+			}
+		}
 		return nil
-		// return pm.downloader.DeliverBlocks(p.id, blocks)
 
 	case msg.Code == NewBlockHashesMsg:
 		var announces protobuf.NewBlockHashesDatas

@@ -19,3 +19,7 @@ message Block {
     required BlockHeader header = 1;
     optional Transactions txList = 2;
 }
+
+message Blocks {
+    repeated Block  block = 1;
+}
