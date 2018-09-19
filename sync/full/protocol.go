@@ -124,14 +124,21 @@ func (n *newBlockHashData) Deserialize(data serialize.SerializeStream) {
 }
 
 type getBlockHeadersData struct {
-	Hash   meta.DataID // Hash of one particular block being announced
-	Number uint64      // Number of one particular block being announced
+	Hash    meta.DataID // Hash of one particular block being announced
+	Number  uint64      // Number of one particular block being announced
+	Amount  uint64      // Maximum number of headers to retrieve
+	Skip    uint64      // Blocks to skip between consecutive headers
+	Reverse bool        // Query direction (false = rising towards latest, true = falling towards genesis)
+
 }
 
 func (n *getBlockHeadersData) Serialize() serialize.SerializeStream {
 	data := &protobuf.GetBlockHeadersData{
-		Hash:   n.Hash.Serialize().(*protobuf.Hash),
-		Number: &(n.Number),
+		Hash:    n.Hash.Serialize().(*protobuf.Hash),
+		Number:  &(n.Number),
+		Amount:  &(n.Amount),
+		Skip:    &(n.Skip),
+		Reverse: &(n.Reverse),
 	}
 	return data
 }
@@ -141,4 +148,7 @@ func (n *getBlockHeadersData) Deserialize(data serialize.SerializeStream) {
 	n.Hash = &math.Hash{}
 	n.Hash.Deserialize(d.Hash)
 	n.Number = *(d.Number)
+	n.Amount = *(d.Amount)
+	n.Skip = *(d.Skip)
+	n.Reverse = *(d.Reverse)
 }
