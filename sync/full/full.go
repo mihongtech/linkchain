@@ -336,10 +336,10 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			blocks = append(blocks, data)
 
 		}
-		pm.fetcher.FilterBlocks(p.id, blocks, time.Now())
 		log.Debug("Receive BlockMsg", "block is", blocks)
-
-		return pm.downloader.DeliverBlocks(p.id, blocks)
+		pm.fetcher.FilterBlocks(p.id, blocks, time.Now())
+		return nil
+		// return pm.downloader.DeliverBlocks(p.id, blocks)
 
 	case msg.Code == NewBlockHashesMsg:
 		var announces protobuf.NewBlockHashesDatas

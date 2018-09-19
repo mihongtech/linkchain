@@ -208,14 +208,14 @@ func (q *queue) Schedule(blocks []block.IBlock, from uint64) []block.IBlock {
 	for _, block := range blocks {
 		// Make sure chain order is honoured and preserved throughout
 		hash := block.GetBlockID()
-		if uint64(block.GetHeight()) != from {
-			log.Warn("Header broke chain ordering", "number", block.GetHeight(), "hash", hash, "expected", from)
-			break
-		}
-		if q.blockHead != nil && q.blockHead != block.GetPrevBlockID() {
-			log.Warn("Header broke chain ancestry", "number", block.GetHeight(), "hash", hash)
-			break
-		}
+		//		if uint64(block.GetHeight()) != from {
+		//			log.Warn("Header broke chain ordering", "number", block.GetHeight(), "hash", hash, "expected", from)
+		//			break
+		//		}
+		//		if q.blockHead != nil && q.blockHead != block.GetPrevBlockID() {
+		//			log.Warn("Header broke chain ancestry", "number", block.GetHeight(), "hash", hash)
+		//			break
+		//		}
 
 		inserts = append(inserts, block)
 		q.blockHead = hash

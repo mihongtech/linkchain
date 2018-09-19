@@ -119,6 +119,7 @@ func (n *newBlockHashData) Serialize() serialize.SerializeStream {
 
 func (n *newBlockHashData) Deserialize(data serialize.SerializeStream) {
 	d := data.(*protobuf.NewBlockHashData)
+	n.Hash = &math.Hash{}
 	n.Hash.Deserialize(d.Hash)
 	n.Number = *(d.Number)
 }
