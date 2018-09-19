@@ -299,7 +299,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		for _, block := range unknown {
 			pm.fetcher.Notify(p.id, block.Hash, block.Number, time.Now(), p.RequestOneBlock)
 		}
-		log.Debug("Receive NewBlockHashesMsg", "block is", data)
+		// log.Debug("Receive NewBlockHashesMsg", "block is", data)
 
 	case msg.Code == NewBlockMsg:
 		// Retrieve and decode the propagated block
