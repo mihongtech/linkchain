@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
@@ -45,7 +46,7 @@ type peer struct {
 	version  int         // Protocol version negotiated
 	forkDrop *time.Timer // Timed connection dropper if forks aren't validated in time
 
-	head meta.DataID
+	head math.Hash
 	lock sync.RWMutex
 
 	knownTxs    set.Interface // Set of transaction hashes known to be known by this peer
@@ -82,7 +83,9 @@ func (p *peer) Head() (hash meta.DataID) {
 	defer p.lock.RUnlock()
 
 	// copy(hash[:], p.head[:])
-	hash.SetBytes(p.head.CloneBytes())
+	hash = &math.Hash{}
+	hash.SetBytes(p.head[:])
+
 	return hash
 }
 
@@ -91,8 +94,8 @@ func (p *peer) SetHead(hash meta.DataID) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	// copy(p.head[:], hash[:])
-	p.head.SetBytes(hash.CloneBytes())
+	copy(p.head[:], hash.CloneBytes())
+	// p.head.SetBytes(hash.CloneBytes())
 }
 
 // MarkBlock marks a block as known for the peer, ensuring that the block will
@@ -185,7 +188,7 @@ func (p *peer) Handshake(network uint64, head meta.DataID, genesis meta.DataID) 
 			return peer_error.DiscReadTimeout
 		}
 	}
-	p.head = status.CurrentBlock
+	copy(p.head[:], status.CurrentBlock.CloneBytes())
 	return nil
 }
 
