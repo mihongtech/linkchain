@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/consensus/manager"
 	"github.com/linkchain/poa"
 )
@@ -44,4 +45,8 @@ func (s *Service) GetAccountManager() manager.AccountManager {
 
 func (s *Service) GetChainManager() manager.ChainManager {
 	return service.GetManager().ChainManager
+}
+
+func (s *Service) GetBlockEvent() *event.TypeMux {
+	return service.GetManager().NewBlockEvent
 }

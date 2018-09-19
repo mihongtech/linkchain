@@ -15,7 +15,7 @@ type Service struct {
 
 func (s *Service) Init(i interface{}) bool {
 	//log.Info("sync service init...");
-	engine, err := full.NewProtocolManager(i, i.(*consensus.Service), 0, &(event.TypeMux{}), &(event.Feed{}))
+	engine, err := full.NewProtocolManager(i, i.(*consensus.Service), 0, i.(*consensus.Service).GetBlockEvent(), &(event.Feed{}))
 	if err != nil {
 		return false
 	}

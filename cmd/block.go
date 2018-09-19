@@ -1,10 +1,10 @@
 package cmd
 
-
 import (
-	"github.com/spf13/cobra"
-	"github.com/linkchain/poa/poamanager"
 	"github.com/linkchain/common/util/log"
+	meta_block "github.com/linkchain/meta/block"
+	"github.com/linkchain/poa/poamanager"
+	"github.com/spf13/cobra"
 	"strconv"
 )
 
@@ -23,10 +23,11 @@ var mineCmd = &cobra.Command{
 		txs := poamanager.GetManager().TransactionManager.GetAllTransaction()
 
 		block.SetTx(txs)
-		for _,tx := range txs {
+		for _, tx := range txs {
 			poamanager.GetManager().TransactionManager.RemoveTransaction(tx.GetTxID())
 		}
 		poamanager.GetManager().BlockManager.ProcessBlock(block)
+		poamanager.GetManager().NewBlockEvent.Post(meta_block.NewMinedBlockEvent{Block: block})
 	},
 }
 
@@ -55,27 +56,22 @@ var heightCmd = &cobra.Command{
 	Use:   "height",
 	Short: "get a block by height",
 	Run: func(cmd *cobra.Command, args []string) {
-		example := []string{"example","block height 0"}
+		example := []string{"example", "block height 0"}
 		if len(args) != 1 {
-			log.Error("getblockbyheight","error","please input height",example[0],example[1])
+			log.Error("getblockbyheight", "error", "please input height", example[0], example[1])
 			return
 		}
 
-		height,error := strconv.Atoi(args[0])
+		height, error := strconv.Atoi(args[0])
 		if error != nil {
-			log.Error("getblockbyheight ","error",error,example[0],example[1])
+			log.Error("getblockbyheight ", "error", error, example[0], example[1])
 			return
 		}
 
-		if uint32(height) > poamanager.GetManager().ChainManager.GetBestBlock().GetHeight() || height < 0{
-			log.Error("getblockbyheight ","error","height is out of range",example[0],example[1])
+		if uint32(height) > poamanager.GetManager().ChainManager.GetBestBlock().GetHeight() || height < 0 {
+			log.Error("getblockbyheight ", "error", "height is out of range", example[0], example[1])
 			return
 		}
-		log.Info("block","data",poamanager.GetManager().ChainManager.GetBlockByHeight(uint32(height)))
+		log.Info("block", "data", poamanager.GetManager().ChainManager.GetBlockByHeight(uint32(height)))
 	},
 }
-
-
-
-
-
