@@ -155,7 +155,7 @@ func (p *peer) SendBlock(blocks []block.IBlock) error {
 func (p *peer) RequestBlock(hashes []meta.DataID) error {
 	p.Log().Debug("Fetching batch of block bodies", "count", len(hashes))
 	for _, hash := range hashes {
-		data := &getBlockHeadersData{Hash: hash, Amount: 1}
+		data := &getBlockHeadersData{Hash: hash, Amount: 1, Reverse: true}
 		log.Debug("Send GetBlockMsg", "query data is", data)
 		message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 	}
@@ -165,7 +165,7 @@ func (p *peer) RequestBlock(hashes []meta.DataID) error {
 
 func (p *peer) RequestOneBlock(hash meta.DataID) error {
 	p.Log().Debug("Fetching single block", "hash", hash)
-	data := &getBlockHeadersData{Hash: hash, Amount: 1}
+	data := &getBlockHeadersData{Hash: hash, Amount: 1, Reverse: true}
 	log.Debug("Send GetBlockMsg", "query data is", data)
 	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 }

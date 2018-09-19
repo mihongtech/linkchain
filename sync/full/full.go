@@ -335,17 +335,17 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 
 		log.Debug("Receive BlockMsg", "block is", blocks)
-		filter := len(blocks) == 1
-		if filter {
-			pm.fetcher.FilterBlocks(p.id, blocks, time.Now())
-		}
-		if len(blocks) > 0 || !filter {
-			err := pm.downloader.DeliverBlocks(p.id, blocks)
-			if err != nil {
-				log.Debug("Failed to deliver blocks", "err", err)
-			}
-		}
-		return nil
+		//		filter := len(blocks) == 1
+		//		if filter {
+		//			pm.fetcher.FilterBlocks(p.id, blocks, time.Now())
+		//		}
+		//		if len(blocks) > 0 || !filter {
+		//			err := pm.downloader.DeliverBlocks(p.id, blocks)
+		//			if err != nil {
+		//				log.Debug("Failed to deliver blocks", "err", err)
+		//			}
+		//		}
+		return pm.downloader.ImportBlocks(p.id, blocks)
 
 	case msg.Code == NewBlockHashesMsg:
 		var announces protobuf.NewBlockHashesDatas
@@ -461,8 +461,8 @@ func (self *ProtocolManager) txBroadcastLoop() {
 			self.BroadcastTx(event.GetTxID(), event)
 
 			// Err() channel will be closed when unsubscribing.
-			//		case <-self.txSub.Err():
-			//			return
+		case <-self.txSub.Err():
+			return
 		}
 	}
 }

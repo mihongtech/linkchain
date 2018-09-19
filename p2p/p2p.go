@@ -130,7 +130,7 @@ type peerDrop struct {
 func (srv *Service) Init(i interface{}) bool {
 	log.Info("p2p service init...")
 	// TODO: init config
-	srv.ListenAddr = "127.0.0.1:40001"
+	srv.ListenAddr = "127.0.0.1:40000"
 	srv.sync = &data_sync.Service{}
 	srv.sync.Init(i)
 	return true

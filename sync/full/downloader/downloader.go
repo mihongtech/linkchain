@@ -977,6 +977,14 @@ func (d *Downloader) processFullSyncContent() error {
 	}
 }
 
+func (d *Downloader) ImportBlocks(id string, blocks []block.IBlock) error {
+	var results []*fetchResult
+	for _, block := range blocks {
+		results = append(results, &fetchResult{Hash: block.GetBlockID(), Block: block})
+	}
+	return d.importBlockResults(results)
+}
+
 func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	// Check for any early termination requests
 	if len(results) == 0 {
