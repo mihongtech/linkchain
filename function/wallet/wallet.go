@@ -13,8 +13,7 @@ import (
 	poameta "github.com/linkchain/poa/meta"
 )
 
-var minePriv, _ = hex.DecodeString("fe38240982f313ae5afb3e904fb8215fb11af1200592b" +
-	"fca26c96c4738e4bf8f")
+var minePriv, _ = hex.DecodeString("55b55e136cc6671014029dcbefc42a7db8ad9b9d11f62677a47fd2ed77eeef7b")
 
 type WAccount struct {
 	privKey btcec.PrivateKey
@@ -52,7 +51,7 @@ func (wa *WAccount) ConvertAccount() account.IAccount {
 
 func (wa *WAccount) GetAccountInfo() {
 	log.Info("GetAccountInfo", "privkey", hex.EncodeToString(wa.privKey.Serialize()))
-	log.Info("GetAccountInfo", "pubkey", hex.EncodeToString(wa.privKey.PubKey().SerializeUncompressed()))
+	log.Info("GetAccountInfo", "pubkey", hex.EncodeToString(wa.privKey.PubKey().SerializeCompressed()))
 }
 
 func (wa *WAccount) Sign(messageHash []byte) []byte {

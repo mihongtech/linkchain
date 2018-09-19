@@ -8,6 +8,7 @@ import (
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/merkle"
 	"github.com/linkchain/common/serialize"
+	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/account"
 	"github.com/linkchain/meta/block"
@@ -47,11 +48,13 @@ type POABlockHeader struct {
 	Extra []byte
 
 	hash math.Hash
+
+	signer Signer
 }
 
 func NewPOABlock() (block.IBlock, error) {
-	block := &POABlock{}
-	return block, nil
+	b := &POABlock{}
+	return b, nil
 }
 
 func (b *POABlock) SetTx(newTXs []tx.ITx) error {
@@ -77,7 +80,7 @@ func (b *POABlock) GetMerkleRoot() meta.DataID {
 	return &b.Header.MerkleRoot
 }
 func (b *POABlock) Verify() error {
-	return nil
+	return b.Header.Verify()
 }
 
 //Serialize/Deserialize
@@ -111,6 +114,14 @@ func (b *POABlock) Deserialize(s serialize.SerializeStream) {
 	}
 }
 
+func (b *POABlock) ToString() string {
+	data, err := json.Marshal(b)
+	if err != nil {
+		return err.Error()
+	}
+	return string(data)
+}
+
 func (b *POABlock) GetTxs() []tx.ITx {
 	txs := make([]tx.ITx, 0)
 	for _, tx := range b.TXs {
@@ -137,29 +148,44 @@ func (b *POABlock) CalculateTxTreeRoot() meta.DataID {
 	return hash
 }
 
-//
-func (b *POABlock) ToString() string {
-	data, err := json.Marshal(b)
-	if err != nil {
-		return err.Error()
-	}
-	return string(data)
-}
-
 func (b *POABlock) IsGensis() bool {
 	return b.Header.IsGensis()
 }
 
 func (bh *POABlockHeader) GetBlockID() meta.DataID {
+	if bh.hash.IsEmpty() {
+		bh.Deserialize(bh.Serialize())
+	}
 	return &bh.hash
 }
 
-func (bh *POABlockHeader) GetMineAccount() account.IAccountID {
-	return NewAccountId(bh.Extra)
+func (bh *POABlockHeader) GetSignerID() (account.IAccountID, error) {
+	signer := Signer{}
+	err := signer.Encode(bh.Extra)
+	if err != nil {
+		log.Error("POABlockHeader", "Encode Signer failed", err)
+		return nil, err
+	}
+	return &signer.AccountID, nil
 }
 
-func (bh *POABlockHeader) SetMineAccount(id account.IAccountID) {
-	bh.Extra = append(bh.Extra, id.(*POAAccountID).ID.SerializeCompressed()...)
+func (bh *POABlockHeader) GetSigner() (Signer, error) {
+	return bh.signer, nil
+}
+
+func (bh *POABlockHeader) SetSignerPub(signerPub string) error {
+	signer := NewSigner(signerPub)
+	return bh.SetSigner(signer)
+}
+
+func (bh *POABlockHeader) SetSigner(signer Signer) error {
+	buf, err := signer.Decode()
+	if err != nil {
+		return err
+	}
+	bh.Extra = buf
+	bh.signer = signer
+	return nil
 }
 
 func (bh *POABlockHeader) GetMerkleRoot() meta.DataID {
@@ -198,9 +224,39 @@ func (bh *POABlockHeader) Deserialize(s serialize.SerializeStream) {
 	bh.Height = *data.Height
 	bh.Extra = data.Extra
 
-	bh.hash = math.MakeHash(s)
+	signer := Signer{}
+	err := signer.Encode(bh.Extra)
+	//TODO need handle error
+	if err != nil {
+		log.Error("POABlockHeader", "Deserialize Signer failed", err)
+	}
+	bh.signer = signer
+
+	t := protobuf.BlockHeader{
+		Version:    data.Version,
+		PrevHash:   data.PrevHash,
+		MerkleRoot: data.MerkleRoot,
+		Time:       data.Time,
+		Difficulty: data.Difficulty,
+		Nounce:     data.Nounce,
+		Height:     data.Height,
+		Extra:      proto.NewBuffer(signer.AccountID.ID.SerializeCompressed()).Bytes(),
+	}
+	bh.hash = math.MakeHash(&t)
 }
 
 func (b *POABlockHeader) IsGensis() bool {
 	return b.Height == 0 && b.PrevBlock.IsEmpty()
+}
+
+func (b *POABlockHeader) Verify() error {
+	signer, err := b.GetSigner()
+	if err != nil {
+		return err
+	}
+	err = signer.Verify(*b.GetBlockID().(*math.Hash))
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/function/wallet"
 	"github.com/linkchain/meta/tx"
 	"github.com/linkchain/node"
 	"github.com/linkchain/poa/meta"
@@ -142,5 +143,7 @@ var testTxCmd = &cobra.Command{
 		tx.Deserialize(tx.Serialize())
 		node.GetWallet().SignTransaction(tx)
 		poamanager.GetManager().TransactionManager.ProcessTx(tx)
+		account := wallet.NewWSAccount()
+		account.GetAccountInfo()
 	},
 }

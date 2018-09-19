@@ -38,7 +38,10 @@ func main() {
 
 	cmd.RootCmd.SetArgs(mine)
 	cmd.RootCmd.Execute()*/
+	mine := strings.Fields("mine")
 
+	cmd.RootCmd.SetArgs(mine)
+	cmd.RootCmd.Execute()
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
