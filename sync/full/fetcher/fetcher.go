@@ -486,7 +486,7 @@ func (f *Fetcher) insert(peer string, block block.IBlock) {
 		}
 
 		go f.broadcastBlock(block, true)
-
+		log.Debug("insert block to chain", "block", block)
 		if err := f.insertChain.AddBlock(block); err != nil {
 			log.Debug("Propagated block import failed", "peer", peer, "number", block.GetHeight(), "hash", hash, "err", err)
 			return

@@ -183,6 +183,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		hash    = current.GetBlockID()
 		// number  = current.GetHeight()
 	)
+	p.Log().Debug("Linkchain handshake data", "genesis", genesis, "number", current.GetHeight(), "current", hash)
 	if err := p.Handshake(pm.networkId, hash, genesis.GetBlockID()); err != nil {
 		p.Log().Debug("Linkchain handshake failed", "err", err)
 		return err
@@ -248,9 +249,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		var err error
 		if data.Hash.IsEmpty() {
 			block = pm.blockchain.GetBlockByHeight(uint32(data.Number))
+			log.Debug("get block by height", "number", data.Number, "block", block)
 		} else {
 			block, err = pm.blockmanager.GetBlockByID(data.Hash)
+			log.Debug("get block by id", "Hash", data.Hash, "block", block)
 		}
+
 		if err != nil || block == nil {
 			log.Error("get block msg error", "query data", data, "err", err)
 			return err
