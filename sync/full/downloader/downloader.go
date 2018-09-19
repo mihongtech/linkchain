@@ -63,7 +63,7 @@ var (
 	errCancelBlockProcessing   = errors.New("block processing canceled (requested)")
 	errCancelContentProcessing = errors.New("content processing canceled (requested)")
 	errNoSyncActive            = errors.New("no sync active")
-	errTooOld                  = errors.New("peer doesn't speak recent enough protocol version (need version >= 62)")
+	errTooOld                  = errors.New("peer doesn't speak recent enough protocol version")
 )
 
 type Downloader struct {
@@ -304,7 +304,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash meta.DataID) (err erro
 			d.mux.Post(DoneEvent{})
 		}
 	}()
-	if p.version < 62 {
+	if p.version < 1 {
 		return errTooOld
 	}
 

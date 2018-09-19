@@ -129,7 +129,7 @@ type getBlockHeadersData struct {
 }
 
 func (n *getBlockHeadersData) Serialize() serialize.SerializeStream {
-	data := &protobuf.NewBlockHashData{
+	data := &protobuf.GetBlockHeadersData{
 		Hash:   n.Hash.Serialize().(*protobuf.Hash),
 		Number: &(n.Number),
 	}
@@ -137,7 +137,8 @@ func (n *getBlockHeadersData) Serialize() serialize.SerializeStream {
 }
 
 func (n *getBlockHeadersData) Deserialize(data serialize.SerializeStream) {
-	d := data.(*protobuf.NewBlockHashData)
+	d := data.(*protobuf.GetBlockHeadersData)
+	n.Hash = &math.Hash{}
 	n.Hash.Deserialize(d.Hash)
 	n.Number = *(d.Number)
 }

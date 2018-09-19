@@ -18,6 +18,7 @@ import (
 	p2p_node "github.com/linkchain/p2p/node"
 	p2p_peer "github.com/linkchain/p2p/peer"
 	"github.com/linkchain/p2p/peer_error"
+	poa_meta "github.com/linkchain/poa/meta"
 	"github.com/linkchain/protobuf"
 	"github.com/linkchain/sync/full/downloader"
 	"github.com/linkchain/sync/full/fetcher"
@@ -261,7 +262,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if err := msg.Decode(&b); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		var data block.IBlock
+		data := &poa_meta.POABlock{}
 		data.Deserialize(&b)
 
 		pm.fetcher.FilterBlocks(p.id, []block.IBlock{data}, time.Now())
@@ -326,7 +327,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if err := msg.Decode(&t); err != nil {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		var transaction tx.ITx
+		transaction := &poa_meta.POATransaction{}
 		transaction.Deserialize(&t)
 		p.MarkTransaction(transaction.GetTxID())
 
