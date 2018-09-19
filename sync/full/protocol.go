@@ -136,6 +136,9 @@ func (n *getBlockHeadersData) Serialize() serialize.SerializeStream {
 	var hashdata *protobuf.Hash
 	if n.Hash != nil {
 		hashdata = n.Hash.Serialize().(*protobuf.Hash)
+	} else {
+		empty := &math.Hash{}
+		hashdata = empty.Serialize().(*protobuf.Hash)
 	}
 	data := &protobuf.GetBlockHeadersData{
 		Hash:    hashdata,

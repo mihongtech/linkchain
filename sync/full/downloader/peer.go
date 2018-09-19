@@ -100,7 +100,7 @@ func (p *peerConnection) Reset() {
 // FetchHeaders sends a header retrieval request to the remote peer.
 func (p *peerConnection) FetchBlocks(from uint64, count int) error {
 	// Sanity check the protocol version
-	if p.version < 62 {
+	if p.version < 1 {
 		panic(fmt.Sprintf("header fetch [eth/62+] requested on eth/%d", p.version))
 	}
 	// Short circuit if the peer is already fetching
