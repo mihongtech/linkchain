@@ -333,7 +333,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash meta.DataID) (err erro
 
 	d.committed = 1
 	d.queue.Prepare(origin+1, d.mode)
-
+	pivot := uint64(0)
 	fetchers := []func() error{
 		func() error { return d.fetchBlocks(p, origin+1, pivot) },
 		func() error { return d.processBlocks(origin+1, pivot) },
@@ -675,7 +675,7 @@ func (d *Downloader) fetchBlocks(p *peerConnection, from uint64, pivot uint64) e
 				p.log.Trace("Scheduling new blocks", "count", len(blocks), "from", from)
 				select {
 				case d.blockProcCh <- blocks:
-				case <-d.cancewlCh:
+				case <-d.cancelCh:
 					return errCancelBlockFetch
 				}
 				from += uint64(len(blocks))
