@@ -123,6 +123,7 @@ func (p *peer) MarkTransaction(hash meta.DataID) {
 func (p *peer) SendTransactions(txs []tx.ITx) error {
 	for _, tx := range txs {
 		p.knownTxs.Add(tx.GetTxID())
+		log.Debug("Send TxMsg", "transaction is", tx)
 		message.Send(p.rw, TxMsg, tx.Serialize())
 	}
 	return nil
@@ -131,11 +132,13 @@ func (p *peer) SendTransactions(txs []tx.ITx) error {
 // SendNewBlock propagates an entire block to a remote peer.
 func (p *peer) SendNewBlock(block block.IBlock) error {
 	p.knownBlocks.Add(block.GetBlockID())
+	log.Debug("Send NewBlockMsg", "block is", block)
 	return message.Send(p.rw, NewBlockMsg, block.Serialize())
 }
 
 func (p *peer) SendBlock(block block.IBlock) error {
 	p.knownBlocks.Add(block.GetBlockID())
+	log.Debug("Send BlockMsg", "block is", block)
 	return message.Send(p.rw, BlockMsg, block.Serialize())
 }
 
@@ -145,6 +148,7 @@ func (p *peer) RequestBlock(hashes []meta.DataID) error {
 	p.Log().Debug("Fetching batch of block bodies", "count", len(hashes))
 	for _, hash := range hashes {
 		data := &getBlockHeadersData{Hash: hash}
+		log.Debug("Send GetBlockMsg", "query data is", data)
 		message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 	}
 
@@ -154,6 +158,7 @@ func (p *peer) RequestBlock(hashes []meta.DataID) error {
 func (p *peer) RequestOneBlock(hash meta.DataID) error {
 	p.Log().Debug("Fetching single block", "hash", hash)
 	data := &getBlockHeadersData{Hash: hash}
+	log.Debug("Send GetBlockMsg", "query data is", data)
 	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 }
 
@@ -171,6 +176,7 @@ func (p *peer) Handshake(network uint64, head meta.DataID, genesis meta.DataID) 
 			CurrentBlock:    head,
 			GenesisBlock:    genesis,
 		}
+		log.Debug("Send StatusMsg", "data is", data)
 		errc <- message.Send(p.rw, StatusMsg, data.Serialize())
 	}()
 	go func() {
@@ -236,11 +242,13 @@ func (p *peer) String() string {
 func (p *peer) RequestBlocksByHash(h meta.DataID, amount int, skip int, reverse bool) error {
 	p.Log().Debug("Fetching block by hash", "hash", h)
 	data := &getBlockHeadersData{Hash: h}
+	log.Debug("Send GetBlockMsg", "query data is", data)
 	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 }
 func (p *peer) RequestBlocksByNumber(i uint64, amount int, skip int, reverse bool) error {
 	p.Log().Debug("Fetching block by number", "number", i)
 	data := &getBlockHeadersData{Number: i}
+	log.Debug("Send GetBlockMsg", "query data is", data)
 	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 }
 
@@ -256,6 +264,7 @@ func (p *peer) SendNewBlockHashes(hashes []meta.DataID, numbers []uint64) error 
 		}
 		msg = append(msg, request.Serialize().(*protobuf.NewBlockHashData))
 	}
+	log.Debug("Send NewBlockHashesMsg", "block hash is", msg)
 	return message.Send(p.rw, NewBlockHashesMsg, &(protobuf.NewBlockHashesDatas{Data: msg}))
 }
 

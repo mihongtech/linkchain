@@ -231,6 +231,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	// Handle the message depending on its contents
 	switch {
 	case msg.Code == StatusMsg:
+		log.Error("uncontrolled status message")
 		// Status messages should never arrive after the handshake
 		return errResp(ErrExtraStatusMsg, "uncontrolled status message")
 
@@ -254,7 +255,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			log.Error("get block msg error", "query data", data, "err", err)
 			return err
 		}
-
+		log.Debug("Receive GetBlockMsg", "query is", data, "block is", block)
 		return p.SendBlock(block)
 
 	case msg.Code == BlockMsg:
@@ -266,12 +267,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		data.Deserialize(&b)
 
 		pm.fetcher.FilterBlocks(p.id, []block.IBlock{data}, time.Now())
-		//		if len(headers) > 0 || !filter {
-		//			err := pm.downloader.DeliverHeaders(p.id, headers)
-		//			if err != nil {
-		//				log.Debug("Failed to deliver headers", "err", err)
-		//			}
-		//		}
+		log.Debug("Receive BlockMsg", "block is", data)
 
 		return nil
 
@@ -285,6 +281,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			b := &newBlockHashData{}
 			b.Deserialize(block)
 			p.MarkBlock(b.Hash)
+			log.Debug("Receive NewBlockHashesMsg", "block hash is", b)
 		}
 		// Schedule all the unknown hashes for retrieval
 		unknown := make(newBlockHashesData, 0, len(announces.Data))
@@ -298,6 +295,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		for _, block := range unknown {
 			pm.fetcher.Notify(p.id, block.Hash, block.Number, time.Now(), p.RequestOneBlock)
 		}
+		log.Debug("Receive NewBlockHashesMsg", "block is", data)
 
 	case msg.Code == NewBlockMsg:
 		// Retrieve and decode the propagated block
@@ -305,7 +303,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if err := msg.Decode(&b); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		var block block.IBlock
+		block := &poa_meta.POABlock{}
 		block.Deserialize(&b)
 
 		// Mark the peer as owning the block and schedule it for import
@@ -315,7 +313,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		var (
 			trueHead = block.GetPrevBlockID()
 		)
-
+		log.Debug("Receive NewBlockMsg", "block is", block)
 		p.SetHead(trueHead)
 
 		go pm.synchronise(p)
@@ -330,7 +328,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		transaction := &poa_meta.POATransaction{}
 		transaction.Deserialize(&t)
 		p.MarkTransaction(transaction.GetTxID())
-
+		log.Debug("Receive TxMsg", "transaction is", transaction)
 		pm.txmanager.AddTransaction(transaction)
 
 	default:
