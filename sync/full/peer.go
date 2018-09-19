@@ -241,13 +241,13 @@ func (p *peer) String() string {
 
 func (p *peer) RequestBlocksByHash(h meta.DataID, amount int, skip int, reverse bool) error {
 	p.Log().Debug("Fetching block by hash", "hash", h)
-	data := &getBlockHeadersData{Hash: h}
+	data := &getBlockHeadersData{Hash: h, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse}
 	log.Debug("Send GetBlockMsg", "query data is", data)
 	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 }
 func (p *peer) RequestBlocksByNumber(i uint64, amount int, skip int, reverse bool) error {
 	p.Log().Debug("Fetching block by number", "number", i)
-	data := &getBlockHeadersData{Number: i}
+	data := &getBlockHeadersData{Number: i, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse}
 	log.Debug("Send GetBlockMsg", "query data is", data)
 	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 }

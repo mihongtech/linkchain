@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/linkchain/common/util/log"
+	meta_block "github.com/linkchain/meta/block"
 	"github.com/linkchain/poa/poamanager"
 	"github.com/spf13/cobra"
 	"strconv"
@@ -23,6 +24,7 @@ var mineCmd = &cobra.Command{
 		block.SetTx(txs)
 
 		poamanager.GetManager().BlockManager.ProcessBlock(block)
+		poamanager.GetManager().NewBlockEvent.Post(meta_block.NewMinedBlockEvent{Block: block})
 	},
 }
 

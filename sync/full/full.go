@@ -133,7 +133,7 @@ func (pm *ProtocolManager) Start() bool {
 	go pm.txBroadcastLoop()
 	//
 	//	 broadcast mined blocks
-	pm.minedBlockSub = pm.eventMux.Subscribe([]block.IBlock{})
+	pm.minedBlockSub = pm.eventMux.Subscribe(block.NewMinedBlockEvent{})
 	go pm.minedBroadcastLoop()
 	//
 	//	 start sync handlers
@@ -399,9 +399,9 @@ func (self *ProtocolManager) minedBroadcastLoop() {
 	// automatically stops if unsubscribe
 	for obj := range self.minedBlockSub.Chan() {
 		switch ev := obj.Data.(type) {
-		case block.IBlock:
-			self.BroadcastBlock(ev, true)  // First propagate block to peers
-			self.BroadcastBlock(ev, false) // Only then announce to the rest
+		case block.NewMinedBlockEvent:
+			self.BroadcastBlock(ev.Block, true)  // First propagate block to peers
+			self.BroadcastBlock(ev.Block, false) // Only then announce to the rest
 		}
 	}
 }

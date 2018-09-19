@@ -23,6 +23,9 @@ message NewBlockHashesDatas{
 message GetBlockHeadersData {
   required Hash    hash = 1;
   required uint64  number = 2;
+  required uint64  amount = 3;
+  required uint64  skip   = 4;
+  required bool    reverse = 5;
 }
 
 message Msg {

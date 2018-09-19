@@ -457,7 +457,7 @@ func (d *Downloader) fetchHeight(p *peerConnection) (block.IBlock, error) {
 			return block, nil
 
 		case <-timeout:
-			p.log.Debug("Waiting for head header timed out", "elapsed", ttl)
+			p.log.Debug("Waiting for head height header timed out", "elapsed", ttl)
 			return nil, errTimeout
 		}
 	}
@@ -492,6 +492,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 	if count > limit {
 		count = limit
 	}
+	log.Debug("findAncestor RequestBlocksByNumber", "from", from, "count", count)
 	go p.peer.RequestBlocksByNumber(uint64(from), count, 15, false)
 
 	// Wait for the remote response to the head fetch
@@ -546,7 +547,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 			}
 
 		case <-timeout:
-			p.log.Debug("Waiting for head header timed out", "elapsed", ttl)
+			p.log.Debug("Waiting for Ancestor head header timed out", "elapsed", ttl)
 			return 0, errTimeout
 		}
 	}

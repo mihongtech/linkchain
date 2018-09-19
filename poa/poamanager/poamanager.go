@@ -3,6 +3,7 @@ package poamanager
 import (
 	"sync"
 
+	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/consensus/manager"
 )
@@ -15,7 +16,8 @@ func GetManager() *POAManager {
 		m = &POAManager{BlockManager: &POABlockManager{},
 			AccountManager:     &POAAccountManager{},
 			TransactionManager: &POATxManager{},
-			ChainManager:       &POAChainManager{}}
+			ChainManager:       &POAChainManager{},
+			NewBlockEvent:      new(event.TypeMux)}
 	})
 	return m
 }
@@ -25,6 +27,7 @@ type POAManager struct {
 	AccountManager     manager.AccountManager
 	TransactionManager manager.TransactionManager
 	ChainManager       manager.ChainManager
+	NewBlockEvent      *event.TypeMux
 }
 
 func (m *POAManager) Init(i interface{}) bool {
