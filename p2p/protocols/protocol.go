@@ -36,9 +36,9 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/p2p/message"
-	"github.com/linkchain/p2p/message/protobufmsg"
 	"github.com/linkchain/p2p/peer"
 	"github.com/linkchain/p2p/peer_error"
+	"github.com/linkchain/protobuf"
 )
 
 // error codes used by this  protocol scheme
