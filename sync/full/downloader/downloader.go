@@ -947,14 +947,6 @@ func (d *Downloader) processBlocks(origin uint64, pivot uint64) error {
 
 				// Unless we're doing light chains, schedule the headers for associated content retrieval
 				if d.mode == FullSync {
-					// If we've reached the allowed number of pending headers, stall a bit
-					for d.queue.PendingBlocks() >= maxQueuedBlocks {
-						select {
-						case <-d.cancelCh:
-							return errCancelBlockProcessing
-						case <-time.After(time.Second):
-						}
-					}
 					// Otherwise insert the headers for content retrieval
 					inserts := d.queue.Schedule(chunk, origin)
 					if len(inserts) != len(chunk) {
