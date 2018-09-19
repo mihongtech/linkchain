@@ -179,9 +179,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 	// Execute the Linkchain handshake
 	var (
-		genesis, err = pm.blockchain.GetBlockByHeight(0)
-		current      = pm.blockchain.GetBestBlock()
-		hash         = current.GetBlockID()
+		genesis, _ = pm.blockchain.GetBlockByHeight(0)
+		current    = pm.blockchain.GetBestBlock()
+		hash       = current.GetBlockID()
 		// number  = current.GetHeight()
 	)
 	p.Log().Debug("Linkchain handshake data", "genesis", genesis, "number", current.GetHeight(), "current", hash)
@@ -256,7 +256,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			var block block.IBlock
 			var err error
 			if data.Hash.IsEmpty() {
-				block = pm.blockchain.GetBlockByHeight(uint32(data.Number))
+				block, err = pm.blockchain.GetBlockByHeight(uint32(data.Number))
 				log.Debug("get block by height", "number", data.Number, "block", block)
 			} else {
 				block, err = pm.blockmanager.GetBlockByID(data.Hash)
@@ -293,7 +293,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 					p.Log().Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
 					unknown = true
 				} else {
-					if b := pm.blockchain.GetBlockByHeight(uint32(next)); b != nil {
+					if b, e := pm.blockchain.GetBlockByHeight(uint32(next)); (b != nil) && (e == nil) {
 						log.Error("get block by height", "number", current, "skip", data.Skip, "next", next)
 						unknown = true
 					} else {
@@ -433,9 +433,10 @@ type NodeInfo struct {
 
 // NodeInfo retrieves some protocol metadata about the running host node.
 func (self *ProtocolManager) NodeInfo() *NodeInfo {
+	genesis, _ := self.blockchain.GetBlockByHeight(0)
 	return &NodeInfo{
 		Network: self.networkId,
-		Genesis: self.blockchain.GetBlockByHeight(0).GetBlockID(),
+		Genesis: genesis.GetBlockID(),
 		Head:    self.blockchain.GetBestBlock().GetBlockID(),
 	}
 }
