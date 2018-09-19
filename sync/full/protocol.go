@@ -5,6 +5,7 @@ import (
 	_ "io"
 	_ "math/big"
 
+	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/protobuf"
@@ -92,8 +93,12 @@ func (s *statusData) Deserialize(data serialize.SerializeStream) {
 	d := data.(*protobuf.StatusData)
 	s.ProtocolVersion = *d.ProtocolVersion
 	s.NetworkId = *d.NetworkId
-	s.GenesisBlock.Deserialize(d.GenesisBlock)
-	s.CurrentBlock.Deserialize(d.CurrentBlock)
+	genesis := &math.Hash{}
+	genesis.Deserialize(d.GenesisBlock)
+	s.GenesisBlock = genesis
+	current := &math.Hash{}
+	current.Deserialize(d.CurrentBlock)
+	s.CurrentBlock = current
 }
 
 // newBlockHashesData is the network packet for the block announcements.

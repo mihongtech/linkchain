@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
 	"github.com/linkchain/meta/tx"
@@ -208,6 +209,7 @@ func (p *peer) readStatus(network uint64, status *statusData, genesis meta.DataI
 	if err := msg.Decode(&data); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
+	log.Debug("read status data is", "data", data, "current status is", status)
 	status.Deserialize(&data)
 	if !status.GenesisBlock.IsEqual(genesis) {
 		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status.GenesisBlock, genesis)
