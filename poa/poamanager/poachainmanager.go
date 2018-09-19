@@ -92,6 +92,9 @@ func (m *POAChainManager) GetBlockByHash(hash math.Hash) (block.IBlock, error) {
 }
 
 func (m *POAChainManager) GetBlockByHeight(height uint32) (block.IBlock, error) {
+	if height < 0 || height > uint32(len(m.mainChainIndex)-1) {
+		return nil, errors.New("POAChainManager: GetBlockByHeight->height is error")
+	}
 	block, err := GetManager().BlockManager.GetBlockByID(m.mainChainIndex[height].GetNodeHash())
 	if err != nil {
 		return block, err
