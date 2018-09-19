@@ -28,10 +28,10 @@ const (
 	handshakeTimeout = 5 * time.Second
 )
 
-// PeerInfo represents a short summary of the Ethereum sub-protocol metadata known
+// PeerInfo represents a short summary of the Linkchain sub-protocol metadata known
 // about a connected peer.
 type PeerInfo struct {
-	Version int    `json:"version"` // Ethereum protocol version negotiated
+	Version int    `json:"version"` // Linkchain protocol version negotiated
 	Head    string `json:"head"`    // SHA3 hash of the peer's best owned block
 }
 

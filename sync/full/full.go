@@ -60,7 +60,7 @@ type ProtocolManager struct {
 	wg sync.WaitGroup
 }
 
-// NewProtocolManager returns a new ethereum sub protocol manager. The Ethereum sub protocol manages peers capable
+// NewProtocolManager returns a new ethereum sub protocol manager. The Linkchain sub protocol manages peers capable
 // with the ethereum network.
 func NewProtocolManager(config interface{}, consensus *consensus.Service, networkId uint64, mux *event.TypeMux, tx *event.Feed) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
@@ -142,7 +142,7 @@ func (pm *ProtocolManager) Start() bool {
 }
 
 func (pm *ProtocolManager) Stop() {
-	log.Info("Stopping Ethereum protocol")
+	log.Info("Stopping Linkchain protocol")
 
 	pm.txSub.Unsubscribe()         // quits txBroadcastLoop
 	pm.minedBlockSub.Unsubscribe() // quits blockBroadcastLoop
@@ -163,7 +163,7 @@ func (pm *ProtocolManager) Stop() {
 	// Wait for all peer handler goroutines and the loops to come down.
 	pm.wg.Wait()
 
-	log.Info("Ethereum protocol stopped")
+	log.Info("Linkchain protocol stopped")
 }
 
 // handle is the callback invoked to manage the life cycle of an eth peer. When
@@ -173,9 +173,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		return peer_error.DiscTooManyPeers
 	}
-	p.Log().Debug("Ethereum peer connected", "name", p.Name())
+	p.Log().Debug("Linkchain peer connected", "name", p.Name())
 
-	// Execute the Ethereum handshake
+	// Execute the Linkchain handshake
 	var (
 		genesis = pm.blockchain.GetBlockByHeight(0)
 		current = pm.blockchain.GetBestBlock()
@@ -189,7 +189,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 	// Register the peer locally
 	if err := pm.peers.Register(p); err != nil {
-		p.Log().Error("Ethereum peer registration failed", "err", err)
+		p.Log().Error("Linkchain peer registration failed", "err", err)
 		return err
 	}
 	defer pm.removePeer(p.id)
@@ -348,9 +348,9 @@ func (pm *ProtocolManager) removePeer(id string) {
 	if peer == nil {
 		return
 	}
-	log.Debug("Removing Ethereum peer", "peer", id)
+	log.Debug("Removing Linkchain peer", "peer", id)
 
-	// Unregister the peer from the downloader and Ethereum peer set
+	// Unregister the peer from the downloader and Linkchain peer set
 	pm.downloader.UnregisterPeer(id)
 	if err := pm.peers.Unregister(id); err != nil {
 		log.Error("Peer removal failed", "peer", id, "err", err)
@@ -361,10 +361,10 @@ func (pm *ProtocolManager) removePeer(id string) {
 	}
 }
 
-// NodeInfo represents a short summary of the Ethereum sub-protocol metadata
+// NodeInfo represents a short summary of the Linkchain sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {
-	Network uint64      `json:"network"` // Ethereum network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
+	Network uint64      `json:"network"` // Linkchain network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
 	Genesis meta.DataID `json:"genesis"` // hash of the host's genesis block
 	Head    meta.DataID `json:"head"`    // hash of the host's best owned block
 }
