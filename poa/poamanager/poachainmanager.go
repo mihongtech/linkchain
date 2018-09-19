@@ -3,31 +3,31 @@ package poamanager
 import (
 	"errors"
 
-	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/common/math"
+	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
 	poameta "github.com/linkchain/poa/meta"
-	"github.com/linkchain/meta"
 )
 
 type POAChainManager struct {
-	chains []poameta.POAChain	//the chain tree for storing all chains
+	chains         []poameta.POAChain     //the chain tree for storing all chains
 	mainChainIndex []poameta.POAChainNode //the mainChain is slice for search block
-	mainChain poameta.BlockChain	//the mainChain is linked list for converting chain
+	mainChain      poameta.BlockChain     //the mainChain is linked list for converting chain
 }
 
-func (m *POAChainManager) Init(i interface{}) bool{
-	log.Info("POAChainManager init...");
+func (m *POAChainManager) Init(i interface{}) bool {
+	log.Info("POAChainManager init...")
 
 	//create gensis chain
 	gensisBlock := GetManager().BlockManager.GetGensisBlock()
 
-	gensisChain := poameta.NewPOAChain(gensisBlock,nil)
-	m.chains = make([]poameta.POAChain,0)
-	m.chains = append(m.chains,gensisChain)
+	gensisChain := poameta.NewPOAChain(gensisBlock, nil)
+	m.chains = make([]poameta.POAChain, 0)
+	m.chains = append(m.chains, gensisChain)
 
 	gensisChainNode := poameta.NewPOAChainNode(gensisBlock)
-	m.mainChainIndex = make([]poameta.POAChainNode,0)
+	m.mainChainIndex = make([]poameta.POAChainNode, 0)
 
 	m.mainChain = poameta.NewBlockChain(gensisChainNode)
 
@@ -37,37 +37,37 @@ func (m *POAChainManager) Init(i interface{}) bool{
 	return m.UpdateChain()
 }
 
-func (m *POAChainManager) Start() bool{
-	log.Info("POAChainManager start...");
+func (m *POAChainManager) Start() bool {
+	log.Info("POAChainManager start...")
 	//TODO need to updateMainChain
 	return true
 }
 
-func (m *POAChainManager) Stop(){
-	log.Info("POAChainManager stop...");
+func (m *POAChainManager) Stop() {
+	log.Info("POAChainManager stop...")
 }
 
-func (m *POAChainManager) GetBestBlock() block.IBlock  {
-	bestHeight,error := m.GetBestHeight()
+func (m *POAChainManager) GetBestBlock() block.IBlock {
+	bestHeight, error := m.GetBestHeight()
 	if error != nil {
 		return nil
 	}
-	log.Info("GetBestBlock","bestHeight",bestHeight)
+	log.Info("GetBestBlock", "bestHeight", bestHeight)
 	hash := m.mainChainIndex[bestHeight].GetNodeHash()
-	bestBlock,_ := GetManager().BlockManager.GetBlockByID(hash)
+	bestBlock, _ := GetManager().BlockManager.GetBlockByID(hash)
 	return bestBlock
 }
 
-func (m *POAChainManager) GetBestNode() (poameta.POAChainNode,error)  {
-	bestHeight,error := m.GetBestHeight()
+func (m *POAChainManager) GetBestNode() (poameta.POAChainNode, error) {
+	bestHeight, error := m.GetBestHeight()
 	if error != nil {
-		return poameta.POAChainNode{},errors.New("the chain is not init")
+		return poameta.POAChainNode{}, errors.New("the chain is not init")
 	}
-	return m.mainChainIndex[bestHeight],nil
+	return m.mainChainIndex[bestHeight], nil
 }
 
-func (m *POAChainManager) GetBestBlockHash() meta.DataID  {
-	bestHeight,error := m.GetBestHeight()
+func (m *POAChainManager) GetBestBlockHash() meta.DataID {
+	bestHeight, error := m.GetBestHeight()
 	if error != nil {
 		return nil
 	}
@@ -75,76 +75,76 @@ func (m *POAChainManager) GetBestBlockHash() meta.DataID  {
 	return hash
 }
 
-func (m *POAChainManager) GetBestHeight() (uint32,error) {
+func (m *POAChainManager) GetBestHeight() (uint32, error) {
 	bestHeight := len(m.mainChainIndex) - 1
 	if bestHeight < 0 {
-		return uint32(0),errors.New("thechain is not Init")
+		return uint32(0), errors.New("thechain is not Init")
 	}
-	return uint32(bestHeight),nil
+	return uint32(bestHeight), nil
 }
 
-func (m *POAChainManager) GetBlockByHash(hash math.Hash) block.IBlock  {
-	block,_ := GetManager().BlockManager.GetBlockByID(&hash)
+func (m *POAChainManager) GetBlockByHash(hash math.Hash) block.IBlock {
+	block, _ := GetManager().BlockManager.GetBlockByID(&hash)
 	return block
 }
 
-func (m *POAChainManager) GetBlockByHeight(height uint32) block.IBlock  {
-	block,_ := GetManager().BlockManager.GetBlockByID(m.mainChainIndex[height].GetNodeHash())
+func (m *POAChainManager) GetBlockByHeight(height uint32) block.IBlock {
+	block, _ := GetManager().BlockManager.GetBlockByID(m.mainChainIndex[height].GetNodeHash())
 	return block
 }
 
-func (m *POAChainManager) GetBlockNodeByHeight(height uint32) (poameta.POAChainNode,error)  {
-	if height > uint32(len(m.mainChainIndex)-1){
-		return poameta.POAChainNode{},errors.New("the height is too large")
+func (m *POAChainManager) GetBlockNodeByHeight(height uint32) (poameta.POAChainNode, error) {
+	if height > uint32(len(m.mainChainIndex)-1) {
+		return poameta.POAChainNode{}, errors.New("the height is too large")
 	}
-	return m.mainChainIndex[height],nil
+	return m.mainChainIndex[height], nil
 }
 
-func (m *POAChainManager) GetBlockChainInfo() string  {
+func (m *POAChainManager) GetBlockChainInfo() string {
 
-	log.Info("POAChainManager chains","chains",len(m.chains))
-	for i,chain := range m.chains {
-		log.Info("POAChainManager chains","chainId",i,"chainHeight",chain.GetHeight(),"bestHash",chain.GetLastBlock().GetBlockID().GetString())
+	log.Info("POAChainManager chains", "chains", len(m.chains))
+	for i, chain := range m.chains {
+		log.Info("POAChainManager chains", "chainId", i, "chainHeight", chain.GetHeight(), "bestHash", chain.GetLastBlock().GetBlockID().GetString())
 	}
 
 	for e := m.mainChain.GetLastElement(); e != nil; e = e.Prev() {
 		currentNode := e.Value.(poameta.POAChainNode)
-		log.Info("POAChainManager mainchain","Height",currentNode.GetNodeHeight(), "current hash",currentNode.GetNodeHash(),"prev hash",currentNode.GetPrevHash())
+		log.Info("POAChainManager mainchain", "Height", currentNode.GetNodeHeight(), "current hash", currentNode.GetNodeHash(), "prev hash", currentNode.GetPrevHash())
 	}
 
-	for _,block := range m.mainChainIndex {
-		log.Info("POAChainManager mainchainIndex","chainHeight",block.GetNodeHeight(),"bestHash",block.GetNodeHash())
+	for _, block := range m.mainChainIndex {
+		log.Info("POAChainManager mainchainIndex", "chainHeight", block.GetNodeHeight(), "bestHash", block.GetNodeHash())
 	}
 
-	return "this is poa chain";
+	return "this is poa chain"
 }
 
-func (m *POAChainManager) AddBlock(block block.IBlock)  {
+func (m *POAChainManager) AddBlock(block block.IBlock) {
 	newblock := *block.(*poameta.POABlock)
 
 	GetManager().BlockManager.AddBlock(&newblock)
 
-	_,error := m.GetBestNode()
+	_, error := m.GetBestNode()
 	if error != nil {
-		log.Error("POAChainManager","error",error)
+		log.Error("POAChainManager", "error", error)
 		return
 	}
 	m.sortChains(newblock)
-	longest,_ := m.GetLongestChain()
-	log.Info("AddBlock","Longest Chain height",len(longest.Blocks),"Longest Chain bestHash",longest.GetLastBlock().GetBlockID().GetString())
+	longest, _ := m.GetLongestChain()
+	log.Info("AddBlock", "Longest Chain height", len(longest.Blocks), "Longest Chain bestHash", longest.GetLastBlock().GetBlockID().GetString())
 }
 
-func (m *POAChainManager) GetBlockAncestor(block block.IBlock,height uint32) block.IBlock {
-	if height > block.GetHeight(){
-		log.Error("POAChainManager","GetBlockAncestor error", "height is plus block's height")
+func (m *POAChainManager) GetBlockAncestor(block block.IBlock, height uint32) block.IBlock {
+	if height > block.GetHeight() {
+		log.Error("POAChainManager", "GetBlockAncestor error", "height is plus block's height")
 		return nil
-	}else {
+	} else {
 		ancestor := block
 		var e error
 		for height < block.GetHeight() {
-			ancestor,e = GetManager().BlockManager.GetBlockByID(ancestor.GetPrevBlockID())
-			if e != nil{
-				log.Error("POAChainManager","GetBlockAncestor error", "can not find ancestor")
+			ancestor, e = GetManager().BlockManager.GetBlockByID(ancestor.GetPrevBlockID())
+			if e != nil {
+				log.Error("POAChainManager", "GetBlockAncestor error", "can not find ancestor")
 				return nil
 			}
 		}
@@ -152,36 +152,36 @@ func (m *POAChainManager) GetBlockAncestor(block block.IBlock,height uint32) blo
 	}
 }
 
-func (m *POAChainManager) GetLongestChain() (poameta.POAChain,int)  {
-	var mainChainIndex poameta.POAChain
-	bestHeight := uint32(0);
+func (m *POAChainManager) GetLongestChain() (poameta.POAChain, int) {
+	var lc poameta.POAChain
+	bestHeight := uint32(0)
 	position := 0
-	for i,chain := range m.chains {
+	for i, chain := range m.chains {
 		if bestHeight <= chain.GetHeight() {
 			bestHeight = chain.GetHeight()
-			mainChainIndex = chain
+			lc = chain
 			position = i
 		}
 	}
-	return mainChainIndex,position
+	return lc, position
 }
 
-func (m *POAChainManager) UpdateChain() bool  {
+func (m *POAChainManager) UpdateChain() bool {
 	return m.updateChain() && m.updateChainIndex()
 }
 
-func (m *POAChainManager) sortChains(block poameta.POABlock) bool  {
+func (m *POAChainManager) sortChains(block poameta.POABlock) bool {
 	isUpdated := false
-	deletIndex := make([]int,0)
+	deletIndex := make([]int, 0)
 	blockNode := poameta.NewPOAChainNode(&block)
 
-	prevBlock,error := GetManager().BlockManager.GetBlockByID(blockNode.GetPrevHash())
+	prevBlock, error := GetManager().BlockManager.GetBlockByID(blockNode.GetPrevHash())
 	//check the block's parent, if parent is not exist, the create is incomplete chain for create a chain when the parent is coming
 	if error != nil {
-		log.Error("POAChainManager sortChains","error",error)
-		newChain := poameta.NewPOAChain(nil,prevBlock)
+		log.Error("POAChainManager sortChains", "error", error)
+		newChain := poameta.NewPOAChain(nil, prevBlock)
 		newChain.AddNewBlock(&block)
-		m.chains = append(m.chains,newChain)
+		m.chains = append(m.chains, newChain)
 		return isUpdated
 	}
 
@@ -190,18 +190,18 @@ func (m *POAChainManager) sortChains(block poameta.POABlock) bool  {
 	//1.find block Prev from mainChain
 	if m.mainChain.IsOnChain(prevNode) {
 		//If prevNodeInMain is bestNode: update chain; else : add new chain
-		_,index := m.GetLongestChain()
+		_, index := m.GetLongestChain()
 		error = m.chains[index].UpdateChainTop(&block)
 		if error != nil {
 			newChain := m.chains[index].GetNewChain(prevBlock)
 			newChain.AddNewBlock(&block)
-			m.chains = append(m.chains,newChain)
+			m.chains = append(m.chains, newChain)
 			isUpdated = true
 		}
 	} else {
 		//3.find block Prev from other sideChain,If cannot find then give up
 		// a.update sidechain
-		for index,_ := range m.chains {
+		for index, _ := range m.chains {
 			error = m.chains[index].UpdateChainTop(&block)
 			if error == nil {
 				// if update chain then check complete chain is the chain next
@@ -209,86 +209,87 @@ func (m *POAChainManager) sortChains(block poameta.POABlock) bool  {
 			}
 		}
 		// b.add new sidechain
-		for index,chain := range m.chains{
+		for index, chain := range m.chains {
 
 			if !chain.IsInComplete {
 				continue
 			}
 
-			ancestorBlock := m.GetBlockAncestor(chain.GetLastBlock(),prevNode.GetNodeHeight())
+			ancestorBlock := m.GetBlockAncestor(chain.GetLastBlock(), prevNode.GetNodeHeight())
 			if ancestorBlock == nil {
 				log.Info("sortChains :the chain is bad chain ,because the data of chain is imcomplete. the give up the chain")
-				deletIndex = append(deletIndex,index)
+				deletIndex = append(deletIndex, index)
 				index--
 			}
 			ancestorNode := poameta.NewPOAChainNode(ancestorBlock)
 
-			if ancestorNode.IsEuqal(prevNode){
+			if ancestorNode.IsEuqal(prevNode) {
 				newChain := m.chains[index].GetNewChain(ancestorBlock)
 				newChain.AddNewBlock(&block)
-				m.chains = append(m.chains,newChain)
+				m.chains = append(m.chains, newChain)
 				isUpdated = true
 			}
 		}
 	}
 
 	//sort InCompleteChain
-	for index,_ := range m.chains {
+	for index, _ := range m.chains {
 		// if update chain then check complete chain is the chain next
-		for i,imcompletchain := range m.chains{
+		for i, imcompletchain := range m.chains {
 			if imcompletchain.IsInComplete {
-				if m.chains[index].CanLink(imcompletchain){m.chains[index].AddChain(imcompletchain)
-					deletIndex = append(deletIndex,i)
+				if m.chains[index].CanLink(imcompletchain) {
+					m.chains[index].AddChain(imcompletchain)
+					deletIndex = append(deletIndex, i)
 				}
 			}
 		}
 	}
 	//delete  imcomplete chain which have been added, or chain which need to giving up
-	for _,index := range deletIndex {
-		m.chains = append(m.chains[:index],m.chains[index+1:]...)
+	for _, index := range deletIndex {
+		m.chains = append(m.chains[:index], m.chains[index+1:]...)
 	}
 	return true
 }
 
 /**
-	updateChainIndex
-	aim:update mainChainIndex from mainChain
-	TODO need to test
- */
-func (m *POAChainManager) updateChainIndex() bool  {
+updateChainIndex
+aim:update mainChainIndex from mainChain
+TODO need to test
+*/
+func (m *POAChainManager) updateChainIndex() bool {
 	forkNode := m.mainChain.GetLastElement()
 	forkPosition := len(m.mainChainIndex) - 1
 	endNode := forkNode.Value.(poameta.POAChainNode)
 	defer GetManager().AccountManager.GetAllAccounts()
 	if forkPosition < 0 {
 		//init mainchain index
-		for e := m.mainChain.GetFristElement(); e != nil; e = e.Next(){
+		for e := m.mainChain.GetFristElement(); e != nil; e = e.Next() {
 			node := e.Value.(poameta.POAChainNode)
 
 			//add indexs(block status)
-			block,error := GetManager().BlockManager.GetBlockByID(node.GetNodeHash())
+			block, error := GetManager().BlockManager.GetBlockByID(node.GetNodeHash())
 			if error != nil {
-				log.Error("POAChainManager","add new chain account failed. block hash",block.GetBlockID().GetString())
+				log.Error("POAChainManager", "add new chain account failed. block hash", block.GetBlockID().GetString())
 				return false
 			}
-			errorStatus := m.updateStatus(block,true)
+			errorStatus := m.updateStatus(block, true)
 			if errorStatus != nil {
-				log.Error("POAChainManager","add new chain account failed",errorStatus)
+				log.Error("POAChainManager", "add new chain account failed", errorStatus)
 				m.removeErrorNode(endNode)
 				return false
 			}
 
-			m.mainChainIndex = append(m.mainChainIndex,node)
+			m.mainChainIndex = append(m.mainChainIndex, node)
 		}
 		return true
 	}
 
-	for ; forkNode != nil && forkPosition >= 0 ; forkNode = forkNode.Prev() {
+	for ; forkNode != nil && forkPosition >= 0; forkNode = forkNode.Prev() {
 		node := forkNode.Value.(poameta.POAChainNode)
 		nodeHash := node.GetNodeHash()
 		if node.GetNodeHeight() > uint32(forkPosition) {
 			continue
-		} else if int(node.GetNodeHeight()) < forkPosition{
+		} else if int(node.GetNodeHeight()) < forkPosition {
 			forkPosition--
 			continue
 		}
@@ -301,67 +302,65 @@ func (m *POAChainManager) updateChainIndex() bool  {
 
 	//delete indexs after forkpoint
 	//delete indexs(block status)
-	for i := len(m.mainChainIndex) - 1 ; i >= forkPosition+1; i-- {
-		block,error := GetManager().BlockManager.GetBlockByID(m.mainChainIndex[i].GetNodeHash())
+	for i := len(m.mainChainIndex) - 1; i >= forkPosition+1; i-- {
+		block, error := GetManager().BlockManager.GetBlockByID(m.mainChainIndex[i].GetNodeHash())
 		if error != nil {
-			log.Error("POAChainManager","remove old chain account failed. block hash",block.GetBlockID().GetString())
+			log.Error("POAChainManager", "remove old chain account failed. block hash", block.GetBlockID().GetString())
 			return false
 		}
-		errorStatus := m.updateStatus(block,false)
+		errorStatus := m.updateStatus(block, false)
 		if errorStatus != nil {
-			log.Error("POAChainManager","remove old chain account failed",errorStatus)
+			log.Error("POAChainManager", "remove old chain account failed", errorStatus)
 			m.removeErrorNode(endNode)
 			return false
 		}
 	}
 	m.mainChainIndex = m.mainChainIndex[:forkPosition+1]
 
-
 	//push index from the behind of forkNode which from mainChain
 	for forkNode = forkNode.Next(); forkNode != nil; forkNode = forkNode.Next() {
 		node := forkNode.Value.(poameta.POAChainNode)
 
 		//add indexs(block status)
-		block,error := GetManager().BlockManager.GetBlockByID(node.GetNodeHash())
+		block, error := GetManager().BlockManager.GetBlockByID(node.GetNodeHash())
 		if error != nil {
-			log.Error("POAChainManager","add new chain account failed. block hash",block.GetBlockID().GetString())
+			log.Error("POAChainManager", "add new chain account failed. block hash", block.GetBlockID().GetString())
 			return false
 		}
-		errorStatus := m.updateStatus(block,true)
+		errorStatus := m.updateStatus(block, true)
 		if errorStatus != nil {
-			log.Error("POAChainManager","add new chain account failed",errorStatus)
+			log.Error("POAChainManager", "add new chain account failed", errorStatus)
 			m.removeErrorNode(endNode)
 			return false
 		}
 
-		m.mainChainIndex = append(m.mainChainIndex,node)
+		m.mainChainIndex = append(m.mainChainIndex, node)
 	}
 	return true
 }
 
-
 /**
-	updateChain
-	aim:update mainChain from chains
-	TODO need to test
+updateChain
+aim:update mainChain from chains
+TODO need to test
 */
-func (m *POAChainManager) updateChain() bool  {
-	longestChain,_ := m.GetLongestChain()
+func (m *POAChainManager) updateChain() bool {
+	longestChain, _ := m.GetLongestChain()
 	bestBlock := longestChain.GetLastBlock()
-	log.Info("POAChainManager updateChain","bestblock",bestBlock.GetBlockID().GetString())
+	log.Info("POAChainManager updateChain", "bestblock", bestBlock.GetBlockID().GetString())
 	m.mainChain.AddNode(poameta.NewPOAChainNode(bestBlock))
 
 	error := m.mainChain.FillChain(GetManager().BlockManager)
 	if error != nil {
-		log.Error("POAChainManager","updateChain failed",error)
+		log.Error("POAChainManager", "updateChain failed", error)
 		return false
 	}
 	return true
 }
 
-func (m *POAChainManager) updateStatus(block block.IBlock,isAdd bool) error {
+func (m *POAChainManager) updateStatus(block block.IBlock, isAdd bool) error {
 	//check all from account
-	for _,tx := range block.GetTxs() {
+	for _, tx := range block.GetTxs() {
 		error := GetManager().AccountManager.CheckTxFromAccount(tx)
 		if error != nil {
 			return error
@@ -372,11 +371,11 @@ func (m *POAChainManager) updateStatus(block block.IBlock,isAdd bool) error {
 	mineAccountId := poablock.Header.GetMineAccount()
 	var amount poameta.POAAmount
 	if isAdd {
-		amount = poameta.POAAmount{Value:50}
+		amount = poameta.POAAmount{Value: 50}
 	} else {
-		amount = poameta.POAAmount{Value:-50}
+		amount = poameta.POAAmount{Value: -50}
 	}
-	account := poameta.NewPOAAccount(mineAccountId,&amount,uint32(0))
+	account := poameta.NewPOAAccount(mineAccountId, &amount, uint32(0))
 
 	error := GetManager().AccountManager.UpdateAccount(&account)
 	if error != nil {
@@ -384,7 +383,7 @@ func (m *POAChainManager) updateStatus(block block.IBlock,isAdd bool) error {
 	}
 
 	//update normal account status
-	for _,tx := range block.GetTxs() {
+	for _, tx := range block.GetTxs() {
 		var actualTx poameta.POATransaction
 		if isAdd {
 			actualTx = *tx.(*poameta.POATransaction)
@@ -396,15 +395,25 @@ func (m *POAChainManager) updateStatus(block block.IBlock,isAdd bool) error {
 			return err
 		}
 	}
+
+	//update tx pool
+	//update normal account status
+	for _, tx := range block.GetTxs() {
+		if isAdd {
+			GetManager().TransactionManager.RemoveTransaction(tx.GetTxID())
+		} else {
+			GetManager().TransactionManager.AddTransaction(tx)
+		}
+	}
 	return nil
 }
 
-func (m *POAChainManager) removeErrorNode(node poameta.POAChainNode)  {
+func (m *POAChainManager) removeErrorNode(node poameta.POAChainNode) {
 	deleteChain := -1
 	deleteNode := -1
-	for chainId,chain := range m.chains {
-		for index,checkNode := range chain.Blocks {
-			if node.IsEuqal(poameta.NewPOAChainNode(&checkNode)){
+	for chainId, chain := range m.chains {
+		for index, checkNode := range chain.Blocks {
+			if node.IsEuqal(poameta.NewPOAChainNode(&checkNode)) {
 				deleteChain = chainId
 				deleteNode = index
 				break
@@ -416,9 +425,7 @@ func (m *POAChainManager) removeErrorNode(node poameta.POAChainNode)  {
 	}
 
 	if deleteChain >= 0 && deleteNode >= 0 {
-		m.chains[deleteChain].Blocks = append(m.chains[deleteChain].Blocks[:deleteNode],m.chains[deleteChain].Blocks[deleteNode+1:]...)
+		m.chains[deleteChain].Blocks = append(m.chains[deleteChain].Blocks[:deleteNode], m.chains[deleteChain].Blocks[deleteNode+1:]...)
 		return
 	}
 }
-
-

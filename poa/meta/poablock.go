@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/math"
+	"github.com/linkchain/common/merkle"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/account"
@@ -57,6 +58,7 @@ func (b *POABlock) SetTx(newTXs []tx.ITx) error {
 	for _, tx := range newTXs {
 		b.TXs = append(b.TXs, *tx.(*POATransaction))
 	}
+	b.Header.SetMerkleRoot(b.CalculateTxTreeRoot()) //calculate merkle root
 	return nil
 }
 
@@ -71,7 +73,9 @@ func (b *POABlock) GetBlockID() meta.DataID {
 func (b *POABlock) GetPrevBlockID() meta.DataID {
 	return &b.Header.PrevBlock
 }
-
+func (b *POABlock) GetMerkleRoot() meta.DataID {
+	return &b.Header.MerkleRoot
+}
 func (b *POABlock) Verify() error {
 	return nil
 }
@@ -115,6 +119,24 @@ func (b *POABlock) GetTxs() []tx.ITx {
 	return txs
 }
 
+func (b *POABlock) CalculateTxTreeRoot() meta.DataID {
+	//var txHash [32]byte
+	//var txHashes [][]byte
+	var transactions [][]byte
+
+	for _, tx := range b.TXs {
+		//txHashes = append(txHashes,tx.Hash())
+		txbuff, _ := proto.Marshal(tx.Serialize())
+		transactions = append(transactions, txbuff)
+	}
+	//txHash = sha256.Sum256(bytes.Join(txHashes,[]byte{}))
+	mTree := merkle.NewMerkleTree(transactions)
+
+	//return txHash[:]
+	hash, _ := math.NewHash(mTree.RootNode.Data)
+	return hash
+}
+
 //
 func (b *POABlock) ToString() string {
 	data, err := json.Marshal(b)
@@ -138,6 +160,14 @@ func (bh *POABlockHeader) GetMineAccount() account.IAccountID {
 
 func (bh *POABlockHeader) SetMineAccount(id account.IAccountID) {
 	bh.Extra = append(bh.Extra, id.(*POAAccountID).ID.SerializeCompressed()...)
+}
+
+func (bh *POABlockHeader) GetMerkleRoot() meta.DataID {
+	return &bh.MerkleRoot
+}
+
+func (bh *POABlockHeader) SetMerkleRoot(root meta.DataID) {
+	bh.MerkleRoot = *root.(*math.Hash)
 }
 
 //Serialize/Deserialize

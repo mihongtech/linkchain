@@ -1,14 +1,14 @@
 package block
 
 import (
-	"github.com/linkchain/meta/tx"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/meta"
+	"github.com/linkchain/meta/tx"
 )
 
 type IBlock interface {
 	//block content
-	SetTx([]tx.ITx)(error)
+	SetTx([]tx.ITx) error
 
 	GetTxs() []tx.ITx
 
@@ -17,8 +17,13 @@ type IBlock interface {
 	GetBlockID() meta.DataID
 
 	GetPrevBlockID() meta.DataID
+
+	GetMerkleRoot() meta.DataID
+
+	CalculateTxTreeRoot() meta.DataID
+
 	//verifiy
-	Verify()(error)
+	Verify() error
 
 	IsGensis() bool
 
