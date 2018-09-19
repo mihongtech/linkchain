@@ -6,6 +6,8 @@ import (
 	"github.com/linkchain/meta/tx"
 )
 
+type NewMinedBlockEvent struct{ Block IBlock }
+
 type IBlock interface {
 	//block content
 	SetTx([]tx.ITx) error
