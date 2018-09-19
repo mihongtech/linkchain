@@ -109,11 +109,6 @@ type Downloader struct {
 
 	quitCh   chan struct{} // Quit channel to signal termination
 	quitLock sync.RWMutex  // Lock to prevent double closes
-
-	// Testing hooks
-	syncInitHook    func(uint64, uint64) // Method to call upon initiating a new sync run
-	blockFetchHook  func([]block.IBlock) // Method to call upon starting a block body fetch
-	chainInsertHook func([]*fetchResult) // Method to call upon inserting a chain of blocks (possibly in multiple invocations)
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
@@ -974,9 +969,6 @@ func (d *Downloader) processFullSyncContent() error {
 		results := d.queue.Results(true)
 		if len(results) == 0 {
 			return nil
-		}
-		if d.chainInsertHook != nil {
-			d.chainInsertHook(results)
 		}
 		if err := d.importBlockResults(results); err != nil {
 			return err
