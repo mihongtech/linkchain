@@ -332,7 +332,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		pm.fetcher.FilterBlocks(p.id, []block.IBlock{data}, time.Now())
 		log.Debug("Receive BlockMsg", "block is", data)
 
-		return nil
+		return pm.downloader.DeliverBlocks(p.id, []block.IBlock{data})
 
 	case msg.Code == NewBlockHashesMsg:
 		var announces protobuf.NewBlockHashesDatas

@@ -130,8 +130,8 @@ func New(getBlock blockRetrievalFn, broadcastBlock blockBroadcasterFn, chainHeig
 		// verifyHeader:   verifyHeader,
 		broadcastBlock: broadcastBlock,
 		chainHeight:    chainHeight,
-		// insertChain:    insertChain,
-		dropPeer: dropPeer,
+		insertChain:    insertChain,
+		dropPeer:       dropPeer,
 	}
 }
 
@@ -487,7 +487,7 @@ func (f *Fetcher) insert(peer string, block block.IBlock) {
 
 		go f.broadcastBlock(block, true)
 		log.Debug("insert block to chain", "block", block)
-		if err := f.insertChain.AddBlock(block); err != nil {
+		if err := f.insertChain.ProcessBlock(block); err != nil {
 			log.Debug("Propagated block import failed", "peer", peer, "number", block.GetHeight(), "hash", hash, "err", err)
 			return
 		}

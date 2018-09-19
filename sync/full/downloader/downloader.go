@@ -443,7 +443,7 @@ func (d *Downloader) fetchHeight(p *peerConnection) (block.IBlock, error) {
 		case packet := <-d.blockCh:
 			// Discard anything not from the origin peer
 			if packet.PeerId() != p.id {
-				log.Debug("Received headers from incorrect peer", "peer", packet.PeerId())
+				log.Debug("Received blocks from incorrect peer", "peer", packet.PeerId())
 				break
 			}
 			// Make sure the peer actually gave something valid

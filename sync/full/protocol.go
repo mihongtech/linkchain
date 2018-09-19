@@ -133,8 +133,12 @@ type getBlockHeadersData struct {
 }
 
 func (n *getBlockHeadersData) Serialize() serialize.SerializeStream {
+	var hashdata *protobuf.Hash
+	if n.Hash != nil {
+		hashdata = n.Hash.Serialize().(*protobuf.Hash)
+	}
 	data := &protobuf.GetBlockHeadersData{
-		Hash:    n.Hash.Serialize().(*protobuf.Hash),
+		Hash:    hashdata,
 		Number:  &(n.Number),
 		Amount:  &(n.Amount),
 		Skip:    &(n.Skip),
