@@ -137,9 +137,14 @@ func (p *peer) SendNewBlock(block block.IBlock) error {
 }
 
 func (p *peer) SendBlock(block block.IBlock) error {
-	p.knownBlocks.Add(block.GetBlockID())
-	log.Debug("Send BlockMsg", "block is", block)
-	return message.Send(p.rw, BlockMsg, block.Serialize())
+	if block != nil {
+		p.knownBlocks.Add(block.GetBlockID())
+		log.Debug("Send BlockMsg", "block is", block)
+		return message.Send(p.rw, BlockMsg, block.Serialize())
+	} else {
+		log.Debug("Send empty BlockMsg")
+		return message.Send(p.rw, BlockMsg, nil)
+	}
 }
 
 // RequestBodies fetches a batch of blocks' bodies corresponding to the hashes

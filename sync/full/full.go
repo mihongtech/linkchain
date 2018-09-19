@@ -319,20 +319,27 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		for _, b := range blocks {
 			p.SendBlock(b)
 		}
+		if len(blocks) == 0 {
+			p.SendBlock(nil)
+		}
 		return nil
 
 	case msg.Code == BlockMsg:
-		var b protobuf.Block
-		if err := msg.Decode(&b); err != nil {
-			return errResp(ErrDecode, "%v: %v", msg, err)
-		}
 		data := &poa_meta.POABlock{}
-		data.Deserialize(&b)
+		blocks := []block.IBlock{}
+		if msg.Size > 0 {
+			var b protobuf.Block
+			if err := msg.Decode(&b); err != nil {
+				return errResp(ErrDecode, "%v: %v", msg, err)
+			}
+			data.Deserialize(&b)
+			blocks = append(blocks, data)
 
-		pm.fetcher.FilterBlocks(p.id, []block.IBlock{data}, time.Now())
-		log.Debug("Receive BlockMsg", "block is", data)
+		}
+		pm.fetcher.FilterBlocks(p.id, blocks, time.Now())
+		log.Debug("Receive BlockMsg", "block is", blocks)
 
-		return pm.downloader.DeliverBlocks(p.id, []block.IBlock{data})
+		return pm.downloader.DeliverBlocks(p.id, blocks)
 
 	case msg.Code == NewBlockHashesMsg:
 		var announces protobuf.NewBlockHashesDatas
