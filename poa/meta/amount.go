@@ -8,47 +8,49 @@ import (
 	"strconv"
 )
 
-type POAAmount struct {
+type Amount struct {
 	Value int32
 }
 
-func NewPOAAmout(value int32) POAAmount {
-	return POAAmount{Value: value}
+func NewAmout(value int32) *Amount {
+	return &Amount{Value: value}
 }
 
-func (a *POAAmount) GetInt() int {
+func (a *Amount) GetInt() int {
 	return int(a.Value)
 }
 
-func (a *POAAmount) GetFloat() float32 {
+func (a *Amount) GetFloat() float32 {
 	return float32(a.Value)
 }
 
-func (a *POAAmount) GetString() string {
+func (a *Amount) GetString() string {
 	return strconv.Itoa(a.GetInt())
 }
 
-func (a *POAAmount) IsLessThan(otherAmount meta.IAmount) bool {
+func (a *Amount) IsLessThan(otherAmount meta.IAmount) bool {
 	return a.GetFloat() < otherAmount.GetFloat()
 }
 
-func (a *POAAmount) Subtraction(otherAmount meta.IAmount) {
+func (a *Amount) Subtraction(otherAmount meta.IAmount) meta.IAmount {
 	a.Value = int32(a.GetInt() - otherAmount.GetInt())
+	return a
 }
 
-func (a *POAAmount) Addition(otherAmount meta.IAmount) {
+func (a *Amount) Addition(otherAmount meta.IAmount) meta.IAmount {
 	a.Value = int32(a.GetInt() + otherAmount.GetInt())
+	return a
 }
 
 //Serialize/Deserialize
-func (a *POAAmount) Serialize() serialize.SerializeStream {
+func (a *Amount) Serialize() serialize.SerializeStream {
 	amount := protobuf.Amount{
 		Value: proto.Int32(a.Value),
 	}
 	return &amount
 }
 
-func (a *POAAmount) Deserialize(s serialize.SerializeStream) {
+func (a *Amount) Deserialize(s serialize.SerializeStream) {
 	data := s.(*protobuf.Amount)
 	a.Value = *data.Value
 }

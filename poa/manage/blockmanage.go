@@ -1,4 +1,4 @@
-package poamanager
+package manage
 
 import (
 	"errors"
@@ -14,26 +14,26 @@ import (
 	poameta "github.com/linkchain/poa/meta"
 )
 
-type POABlockManager struct {
+type BlockManage struct {
 	blockMtx            sync.RWMutex
-	mapBlockIndexByHash map[math.Hash]poameta.POABlock
+	mapBlockIndexByHash map[math.Hash]poameta.Block
 }
 
-func (m *POABlockManager) readBlock(key math.Hash) (poameta.POABlock, bool) {
+func (m *BlockManage) readBlock(key math.Hash) (poameta.Block, bool) {
 	m.blockMtx.RLock()
 	defer m.blockMtx.RUnlock()
 	value, ok := m.mapBlockIndexByHash[key]
 	return value, ok
 }
 
-func (m *POABlockManager) writeBlock(key math.Hash, value poameta.POABlock) {
+func (m *BlockManage) writeBlock(key math.Hash, value poameta.Block) {
 	m.blockMtx.Lock()
 	defer m.blockMtx.Unlock()
 
 	m.mapBlockIndexByHash[key] = value
 }
 
-func (m *POABlockManager) removeBlock(key math.Hash) {
+func (m *BlockManage) removeBlock(key math.Hash) {
 	m.blockMtx.Lock()
 	defer m.blockMtx.Unlock()
 
@@ -41,9 +41,9 @@ func (m *POABlockManager) removeBlock(key math.Hash) {
 }
 
 /** interface: common.IService **/
-func (m *POABlockManager) Init(i interface{}) bool {
-	log.Info("POABlockManager init...")
-	m.mapBlockIndexByHash = make(map[math.Hash]poameta.POABlock)
+func (m *BlockManage) Init(i interface{}) bool {
+	log.Info("BlockManage init...")
+	m.mapBlockIndexByHash = make(map[math.Hash]poameta.Block)
 	//load gensis block
 	gensisBlock := GetManager().BlockManager.GetGensisBlock()
 	m.AddBlock(gensisBlock)
@@ -52,23 +52,23 @@ func (m *POABlockManager) Init(i interface{}) bool {
 	return true
 }
 
-func (m *POABlockManager) Start() bool {
-	log.Info("POABlockManager start...")
+func (m *BlockManage) Start() bool {
+	log.Info("BlockManage start...")
 	return true
 }
 
-func (m *POABlockManager) Stop() {
-	log.Info("POABlockManager stop...")
+func (m *BlockManage) Stop() {
+	log.Info("BlockManage stop...")
 }
 
 /** interface: BlockBaseManager **/
-func (m *POABlockManager) NewBlock() (block.IBlock, error) {
+func (m *BlockManage) NewBlock() (block.IBlock, error) {
 	bestBlock := GetManager().ChainManager.GetBestBlock()
 	if bestBlock != nil {
 		bestHash := bestBlock.GetBlockID()
-		txs := []poameta.POATransaction{}
-		b := &poameta.POABlock{
-			Header: poameta.POABlockHeader{Version: 0, PrevBlock: *bestHash.(*math.Hash), MerkleRoot: math.Hash{}, Timestamp: time.Now(), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: bestBlock.GetHeight() + 1},
+		txs := []poameta.Transaction{}
+		b := &poameta.Block{
+			Header: poameta.BlockHeader{Version: 0, PrevBlock: *bestHash.(*math.Hash), MerkleRoot: math.Hash{}, Timestamp: time.Now(), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: bestBlock.GetHeight() + 1},
 			TXs:    txs,
 		}
 		return m.RebuildBlock(b)
@@ -77,28 +77,33 @@ func (m *POABlockManager) NewBlock() (block.IBlock, error) {
 	}
 }
 
-func (m *POABlockManager) RebuildBlock(block block.IBlock) (block.IBlock, error) {
+func (m *BlockManage) RebuildBlock(block block.IBlock) (block.IBlock, error) {
 	bestBlock := GetManager().ChainManager.GetBestBlock()
 	if bestBlock != nil {
-		pb := *block.(*poameta.POABlock)
+		pb := *block.(*poameta.Block)
 		root := pb.CalculateTxTreeRoot()
 		pb.Header.SetMerkleRoot(root)
 
-		ls, err := bestBlock.(*poameta.POABlock).Header.GetSignerID()
+		ls, err := bestBlock.(*poameta.Block).Header.GetSignerID()
 		if err != nil {
-			log.Error("POABlockManager", "NewBlock", err)
+			log.Error("BlockManage", "NewBlock", err)
 			return &pb, err
 		}
 		lf, err := hex.DecodeString(ls.GetString())
 		if err != nil {
-			log.Error("POABlockManager", "NewBlock", err)
+			log.Error("BlockManage", "NewBlock", err)
 			return &pb, err
 		}
 		pubIndex := ChooseNextSigner(lf)
-		pb.Header.SetSignerPub(poameta.PubSigners[pubIndex])
+		s, err := poameta.CreateSignerIdByPubKey(poameta.PubSigners[pubIndex])
+		if err != nil {
+			log.Error("BlockManage", "NewBlock Create Signer", err)
+			return nil, err
+		}
+		pb.Header.SetSigner(*s)
 		signer, err := pb.Header.GetSigner()
 		if err != nil {
-			log.Error("POABlockManager", "NewBlock", err)
+			log.Error("BlockManage", "NewBlock", err)
 			return &pb, err
 		}
 		pb.Deserialize(pb.Serialize())
@@ -110,29 +115,34 @@ func (m *POABlockManager) RebuildBlock(block block.IBlock) (block.IBlock, error)
 	}
 }
 
-func (m *POABlockManager) RebuildTestBlock(block block.IBlock) (block.IBlock, error) {
+func (m *BlockManage) RebuildTestBlock(block block.IBlock) (block.IBlock, error) {
 	bestBlock := GetManager().ChainManager.GetBestBlock()
 	if bestBlock != nil {
-		pb := *block.(*poameta.POABlock)
+		pb := *block.(*poameta.Block)
 		root := pb.CalculateTxTreeRoot()
 		pb.Header.SetMerkleRoot(root)
 
-		ls, err := bestBlock.(*poameta.POABlock).Header.GetSignerID()
+		ls, err := bestBlock.(*poameta.Block).Header.GetSignerID()
 		if err != nil {
-			log.Error("POABlockManager", "NewBlock", err)
+			log.Error("BlockManage", "NewBlock", err)
 			return &pb, err
 		}
 		lf, err := hex.DecodeString(ls.GetString())
 		if err != nil {
-			log.Error("POABlockManager", "NewBlock", err)
+			log.Error("BlockManage", "NewBlock", err)
 			return &pb, err
 		}
 		pubIndex := ChooseNextSigner(lf)
 		pubIndex = 0
-		pb.Header.SetSignerPub(poameta.PubSigners[pubIndex])
+		s, err := poameta.CreateSignerIdByPubKey(poameta.PubSigners[pubIndex])
+		if err != nil {
+			log.Error("BlockManage", "NewBlock Create Signer", err)
+			return nil, err
+		}
+		pb.Header.SetSigner(*s)
 		signer, err := pb.Header.GetSigner()
 		if err != nil {
-			log.Error("POABlockManager", "NewBlock", err)
+			log.Error("BlockManage", "NewBlock", err)
 			return &pb, err
 		}
 		pb.Deserialize(pb.Serialize())
@@ -145,19 +155,24 @@ func (m *POABlockManager) RebuildTestBlock(block block.IBlock) (block.IBlock, er
 }
 
 /** interface: BlockBaseManager **/
-func (m *POABlockManager) GetGensisBlock() block.IBlock {
-	txs := []poameta.POATransaction{}
-	b := &poameta.POABlock{
-		Header: poameta.POABlockHeader{Version: 0, PrevBlock: math.Hash{}, MerkleRoot: math.Hash{}, Timestamp: time.Unix(1487780010, 0), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: 0},
+func (m *BlockManage) GetGensisBlock() block.IBlock {
+	txs := []poameta.Transaction{}
+	b := &poameta.Block{
+		Header: poameta.BlockHeader{Version: 0, PrevBlock: math.Hash{}, MerkleRoot: math.Hash{}, Timestamp: time.Unix(1487780010, 0), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: 0},
 		TXs:    txs,
 	}
 	root := b.CalculateTxTreeRoot()
 	b.Header.SetMerkleRoot(root)
-	b.Header.SetSignerPub(poameta.PubSigners[0])
+	s, err := poameta.CreateSignerIdByPubKey(poameta.PubSigners[0])
+	if err != nil {
+		log.Error("BlockManage", "NewBlock Create Signer", err)
+		return nil
+	}
+	b.Header.SetSigner(*s)
 	//TODO test
 	signer, err := b.Header.GetSigner()
 	if err != nil {
-		log.Error("POABlockManager", "NewBlock", err)
+		log.Error("BlockManage", "NewBlock", err)
 		return b
 	}
 	b.Deserialize(b.Serialize())
@@ -167,45 +182,45 @@ func (m *POABlockManager) GetGensisBlock() block.IBlock {
 }
 
 /** interface: BlockPoolManager **/
-func (m *POABlockManager) GetBlockByID(hash meta.DataID) (block.IBlock, error) {
+func (m *BlockManage) GetBlockByID(hash meta.DataID) (block.IBlock, error) {
 	index, ok := m.readBlock(*hash.(*math.Hash))
 	if ok {
 		return &index, nil
 	}
 	//TODO need to storage
-	return nil, errors.New("POABlockManager can not find block by hash:" + hash.GetString())
+	return nil, errors.New("BlockManage can not find block by hash:" + hash.GetString())
 }
 
-func (m *POABlockManager) GetBlockByHeight(height uint32) ([]block.IBlock, error) {
+func (m *BlockManage) GetBlockByHeight(height uint32) ([]block.IBlock, error) {
 	//TODO may not be need
 	return nil, nil
 }
 
-func (m *POABlockManager) AddBlock(block block.IBlock) error {
+func (m *BlockManage) AddBlock(block block.IBlock) error {
 	hash := *block.GetBlockID().(*math.Hash)
-	m.writeBlock(hash, *(block.(*poameta.POABlock)))
+	m.writeBlock(hash, *(block.(*poameta.Block)))
 	return nil
 }
 
-func (m *POABlockManager) AddBlocks(blocks []block.IBlock) error {
+func (m *BlockManage) AddBlocks(blocks []block.IBlock) error {
 	for _, b := range blocks {
 		m.AddBlock(b)
 	}
 	return nil
 }
 
-func (m *POABlockManager) RemoveBlock(hash meta.DataID) error {
+func (m *BlockManage) RemoveBlock(hash meta.DataID) error {
 	m.removeBlock(*hash.(*math.Hash))
 	return nil
 }
 
-func (m *POABlockManager) HasBlock(hash meta.DataID) bool {
+func (m *BlockManage) HasBlock(hash meta.DataID) bool {
 	_, ok := m.readBlock(*hash.(*math.Hash))
 	return ok
 }
 
 /** interface: BlockValidator **/
-func (m *POABlockManager) CheckBlock(block block.IBlock) bool {
+func (m *BlockManage) CheckBlock(block block.IBlock) bool {
 	log.Info("POA CheckBlock ...")
 	croot := block.CalculateTxTreeRoot()
 	if !block.GetMerkleRoot().IsEqual(croot) {
@@ -213,25 +228,29 @@ func (m *POABlockManager) CheckBlock(block block.IBlock) bool {
 		return false
 	}
 	//check poa
-	ls, err := GetManager().ChainManager.GetBestBlock().(*poameta.POABlock).Header.GetSignerID()
+	ls, err := GetManager().ChainManager.GetBestBlock().(*poameta.Block).Header.GetSignerID()
 	if err != nil {
-		log.Error("POABlockManager", "CheckBlock", err)
+		log.Error("BlockManage", "CheckBlock", err)
 		return false
 	}
 	lf, err := hex.DecodeString(ls.GetString())
 	if err != nil {
-		log.Error("POABlockManager", "CheckBlock", err)
+		log.Error("BlockManage", "CheckBlock", err)
 		return false
 	}
-	nextSigner := poameta.NewSigner(poameta.PubSigners[ChooseNextSigner(lf)])
-	b := block.(*poameta.POABlock)
+	nextSigner, err := poameta.CreateSignerIdByPubKey(poameta.PubSigners[ChooseNextSigner(lf)])
+	if err != nil {
+		log.Error("BlockManage", "NewBlock Create Signer", err)
+		return false
+	}
+	b := block.(*poameta.Block)
 	currentS, err := b.Header.GetSigner()
 	if err != nil {
-		log.Error("POABlockManager", "CheckBlock", err)
+		log.Error("BlockManage", "CheckBlock", err)
 		return false
 	}
 	if !nextSigner.IsEqual(currentS) {
-		log.Error("POABlockManager", "CheckBlock", "the block is error miner")
+		log.Error("BlockManage", "CheckBlock", "the block is error miner")
 		return false
 	}
 	//check block sign
@@ -243,7 +262,7 @@ func (m *POABlockManager) CheckBlock(block block.IBlock) bool {
 	return true
 }
 
-func (s *POABlockManager) ProcessBlock(block block.IBlock) error {
+func (s *BlockManage) ProcessBlock(block block.IBlock) error {
 	log.Info("POA ProcessBlock ...")
 	//1.checkBlock
 	if !GetManager().BlockManager.CheckBlock(block) {

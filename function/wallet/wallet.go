@@ -44,9 +44,9 @@ func (wa *WAccount) UpdateWAccount(iAccount account.IAccount) error {
 }
 
 func (wa *WAccount) ConvertAccount() account.IAccount {
-	accountID := *poameta.NewAccountId(wa.privKey.PubKey().SerializeCompressed()).(*poameta.POAAccountID)
-	a := poameta.POAAccount{AccountID: accountID, Value: poameta.POAAmount{Value: int32(wa.amount)}}
-	return &a
+	id := *poameta.NewAccountId(wa.privKey.PubKey())
+	amount := *poameta.NewAmout(int32(wa.amount))
+	return poameta.NewAccount(id, amount, wa.nounce)
 }
 
 func (wa *WAccount) GetAccountInfo() {

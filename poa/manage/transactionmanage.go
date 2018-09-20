@@ -1,43 +1,43 @@
-package poamanager
+package manage
 
 import (
-	"time"
-
 	"errors"
+
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/account"
 	"github.com/linkchain/meta/tx"
 	poameta "github.com/linkchain/poa/meta"
+	"time"
 )
 
-type POATxManager struct {
-	txpool []poameta.POATransaction
+type TransactionManage struct {
+	txpool []poameta.Transaction
 }
 
 /** interface: common.IService **/
-func (m *POATxManager) Init(i interface{}) bool {
-	log.Info("POABlockManager init...")
-	m.txpool = make([]poameta.POATransaction, 0)
+func (m *TransactionManage) Init(i interface{}) bool {
+	log.Info("BlockManage init...")
+	m.txpool = make([]poameta.Transaction, 0)
 	return true
 }
 
-func (m *POATxManager) Start() bool {
-	log.Info("POABlockManager start...")
+func (m *TransactionManage) Start() bool {
+	log.Info("BlockManage start...")
 	return true
 }
 
-func (m *POATxManager) Stop() {
-	log.Info("POABlockManager stop...")
+func (m *TransactionManage) Stop() {
+	log.Info("BlockManage stop...")
 }
 
-func (m *POATxManager) AddTransaction(tx tx.ITx) error {
-	newTx := *tx.(*poameta.POATransaction)
+func (m *TransactionManage) AddTransaction(tx tx.ITx) error {
+	newTx := *tx.(*poameta.Transaction)
 	m.txpool = append(m.txpool, newTx)
 	return nil
 }
 
-func (m *POATxManager) GetAllTransaction() []tx.ITx {
+func (m *TransactionManage) GetAllTransaction() []tx.ITx {
 	txs := make([]tx.ITx, 0)
 	for _, tx := range m.txpool {
 		txs = append(txs, &tx)
@@ -45,7 +45,7 @@ func (m *POATxManager) GetAllTransaction() []tx.ITx {
 	return txs
 }
 
-func (m *POATxManager) RemoveTransaction(txid meta.DataID) error {
+func (m *TransactionManage) RemoveTransaction(txid meta.DataID) error {
 	deleteIndex := make([]int, 0)
 	for index, tx := range m.txpool {
 		txHash := tx.GetTxID()
@@ -59,17 +59,16 @@ func (m *POATxManager) RemoveTransaction(txid meta.DataID) error {
 	return nil
 }
 
-func (m *POATxManager) NewTransaction(from account.IAccount, to account.IAccount, amount meta.IAmount) tx.ITx {
-	newTx := poameta.POATransaction{Version: 0,
-		From:   poameta.GetPOATransactionPeer(from, nil),
-		To:     poameta.GetPOATransactionPeer(to, nil),
-		Amount: *amount.(*poameta.POAAmount),
-		Time:   time.Now(),
-		Nounce: (from.GetNounce() + 1)}
-	return &newTx
+func (m *TransactionManage) NewTransaction(from account.IAccount, to account.IAccount, amount meta.IAmount) tx.ITx {
+	fromId := *from.GetAccountID().(*poameta.AccountID)
+	toId := *to.GetAccountID().(*poameta.AccountID)
+	fp := *poameta.NewTransactionPeer(fromId, nil)
+	tp := *poameta.NewTransactionPeer(toId, nil)
+	newTx := poameta.NewTransaction(0, fp, tp, *amount.(*poameta.Amount), time.Now(), 0, nil, poameta.FromSign{})
+	return newTx
 }
 
-func (m *POATxManager) CheckTx(tx tx.ITx) bool {
+func (m *TransactionManage) CheckTx(tx tx.ITx) bool {
 	log.Info("POA CheckTx ...")
 	err := tx.Verify()
 	if err != nil {
@@ -94,7 +93,7 @@ func (m *POATxManager) CheckTx(tx tx.ITx) bool {
 	return true
 }
 
-func (m *POATxManager) ProcessTx(tx tx.ITx) error {
+func (m *TransactionManage) ProcessTx(tx tx.ITx) error {
 	log.Info("POA ProcessTx ...")
 	//1.checkTx
 	if !m.CheckTx(tx) {
@@ -107,6 +106,6 @@ func (m *POATxManager) ProcessTx(tx tx.ITx) error {
 	return nil
 }
 
-func (m *POATxManager) SignTransaction(tx tx.ITx) error {
+func (m *TransactionManage) SignTransaction(tx tx.ITx) error {
 	return nil
 }

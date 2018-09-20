@@ -7,8 +7,8 @@ import (
 	"github.com/linkchain/function/wallet"
 	"github.com/linkchain/meta/tx"
 	"github.com/linkchain/node"
+	"github.com/linkchain/poa/manage"
 	"github.com/linkchain/poa/meta"
-	"github.com/linkchain/poa/poamanager"
 	"github.com/linkchain/protobuf"
 	"github.com/spf13/cobra"
 )
@@ -33,8 +33,8 @@ var createTxCmd = &cobra.Command{
 			return
 		}
 		toAccount := node.GetConsensusService().GetAccountManager().NewAccount()
-		amount := &meta.POAAmount{Value: 10}
-		tx := poamanager.GetManager().TransactionManager.NewTransaction(fromAccount, toAccount, amount)
+		amount := &meta.Amount{Value: 10}
+		tx := manage.GetManager().TransactionManager.NewTransaction(fromAccount, toAccount, amount)
 		buffer, err := proto.Marshal(tx.Serialize())
 		if err != nil {
 			log.Error("tx Serialize failed", "Marshaling error", err)
@@ -67,7 +67,7 @@ var signTxCmd = &cobra.Command{
 		}
 		log.Info("signtx", txData.String())
 
-		var tx tx.ITx = &meta.POATransaction{}
+		var tx tx.ITx = &meta.Transaction{}
 		tx.Deserialize(&txData)
 
 		node.GetWallet().SignTransaction(tx)
@@ -109,7 +109,7 @@ var sendTxCmd = &cobra.Command{
 		}
 		log.Info("sendtx", txData.String())
 
-		var tx tx.ITx = &meta.POATransaction{}
+		var tx tx.ITx = &meta.Transaction{}
 		tx.Deserialize(&txData)
 
 		log.Info("sendtx", "data", tx)
@@ -124,7 +124,7 @@ var sendTxCmd = &cobra.Command{
 			log.Info("Verify tx", "successed", true)
 		}
 
-		poamanager.GetManager().TransactionManager.ProcessTx(tx)
+		manage.GetManager().TransactionManager.ProcessTx(tx)
 	},
 }
 
@@ -138,11 +138,11 @@ var testTxCmd = &cobra.Command{
 			return
 		}
 		toAccount := node.GetConsensusService().GetAccountManager().NewAccount()
-		amount := &meta.POAAmount{Value: 10}
-		tx := poamanager.GetManager().TransactionManager.NewTransaction(fromAccount, toAccount, amount)
+		amount := &meta.Amount{Value: 10}
+		tx := manage.GetManager().TransactionManager.NewTransaction(fromAccount, toAccount, amount)
 		tx.Deserialize(tx.Serialize())
 		node.GetWallet().SignTransaction(tx)
-		poamanager.GetManager().TransactionManager.ProcessTx(tx)
+		manage.GetManager().TransactionManager.ProcessTx(tx)
 		account := wallet.NewWSAccount()
 		account.GetAccountInfo()
 	},

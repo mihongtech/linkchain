@@ -16,18 +16,17 @@ import (
 	"github.com/linkchain/protobuf"
 )
 
-type POATransactionPeer struct {
-	AccountID POAAccountID
+type TransactionPeer struct {
+	AccountID AccountID
 	Extra     []byte
 }
 
-func GetPOATransactionPeer(iaccount account.IAccount, extra []byte) POATransactionPeer {
-	id := *iaccount.GetAccountID().(*POAAccountID)
-	return POATransactionPeer{AccountID: id, Extra: extra}
+func NewTransactionPeer(id AccountID, extra []byte) *TransactionPeer {
+	return &TransactionPeer{AccountID: id, Extra: extra}
 }
 
 //Serialize/Deserialize
-func (txpeer *POATransactionPeer) Serialize() serialize.SerializeStream {
+func (txpeer *TransactionPeer) Serialize() serialize.SerializeStream {
 	accountID := txpeer.AccountID.Serialize().(*protobuf.AccountID)
 	peer := protobuf.TransactionPeer{
 		AccountID: accountID,
@@ -36,13 +35,13 @@ func (txpeer *POATransactionPeer) Serialize() serialize.SerializeStream {
 	return &peer
 }
 
-func (txpeer *POATransactionPeer) Deserialize(s serialize.SerializeStream) {
+func (txpeer *TransactionPeer) Deserialize(s serialize.SerializeStream) {
 	data := *s.(*protobuf.TransactionPeer)
 	txpeer.AccountID.Deserialize(data.AccountID)
 	txpeer.Extra = data.Extra
 }
 
-func (txpeer *POATransactionPeer) GetID() account.IAccountID {
+func (txpeer *TransactionPeer) GetID() account.IAccountID {
 	return &txpeer.AccountID
 }
 
@@ -50,15 +49,15 @@ type FromSign struct {
 	Code []byte
 }
 
-type POATransaction struct {
+type Transaction struct {
 	// Version of the Transaction.  This is not the same as the Blocks version.
 	Version uint32
 
-	From POATransactionPeer
+	From TransactionPeer
 
-	To POATransactionPeer
+	To TransactionPeer
 
-	Amount POAAmount
+	Amount Amount
 
 	Time time.Time
 	// Extra used to extenion the block.
@@ -72,84 +71,97 @@ type POATransaction struct {
 	txid math.Hash
 }
 
-func (tx *POATransaction) GetTxID() meta.DataID {
+func NewTransaction(version uint32, from TransactionPeer, to TransactionPeer, amount Amount, time time.Time, nounce uint32, extra []byte, signs FromSign) *Transaction {
+	return &Transaction{
+		Version: version,
+		From:    from,
+		To:      to,
+		Amount:  amount,
+		Time:    time,
+		Nounce:  nounce,
+		Extra:   extra,
+		Signs:   signs,
+	}
+}
+
+func (tx *Transaction) GetTxID() meta.DataID {
 	if tx.txid.IsEmpty() {
 		tx.Deserialize(tx.Serialize())
 	}
 	return &tx.txid
 }
 
-func (tx *POATransaction) SetFrom(from tx.ITxPeer) {
-	txin := *from.(*POATransactionPeer)
+func (tx *Transaction) SetFrom(from tx.ITxPeer) {
+	txin := *from.(*TransactionPeer)
 	tx.From = txin
 }
 
-func (tx *POATransaction) SetTo(to tx.ITxPeer) {
-	txout := *to.(*POATransactionPeer)
+func (tx *Transaction) SetTo(to tx.ITxPeer) {
+	txout := *to.(*TransactionPeer)
 	tx.To = txout
 }
 
-func (tx *POATransaction) ChangeFromTo() tx.ITx {
+func (tx *Transaction) ChangeFromTo() tx.ITx {
 	temp := tx.From
 	tx.From = tx.To
 	tx.To = temp
 	return tx
 }
 
-func (tx *POATransaction) SetAmount(iAmount meta.IAmount) {
-	amount := *iAmount.(*POAAmount)
+func (tx *Transaction) SetAmount(iAmount meta.IAmount) {
+	amount := *iAmount.(*Amount)
 	tx.Amount = amount
 }
 
-func (tx *POATransaction) SetNounce(nounce uint32) {
+func (tx *Transaction) SetNounce(nounce uint32) {
 	tx.Nounce = nounce
 }
 
-func (tx *POATransaction) GetFrom() tx.ITxPeer {
+func (tx *Transaction) GetFrom() tx.ITxPeer {
 	return &tx.From
 }
 
-func (tx *POATransaction) GetTo() tx.ITxPeer {
+func (tx *Transaction) GetTo() tx.ITxPeer {
 	return &tx.To
 }
 
-func (tx *POATransaction) GetAmount() meta.IAmount {
+func (tx *Transaction) GetAmount() meta.IAmount {
 	return &tx.Amount
 }
 
-func (tx *POATransaction) GetNounce() uint32 {
+func (tx *Transaction) GetNounce() uint32 {
 	return tx.Nounce
 }
 
-func (tx *POATransaction) Sign() (math.ISignature, error) {
+func (tx *Transaction) Sign() (math.ISignature, error) {
 	//TODO sign need to finish
 	return nil, nil
 }
 
-func (tx *POATransaction) GetSignature() math.ISignature {
+func (tx *Transaction) GetSignature() math.ISignature {
 	return nil
 }
 
-func (tx *POATransaction) SetSignature(code []byte) {
+func (tx *Transaction) SetSignature(code []byte) {
 	tx.Signs = FromSign{Code: code}
 }
 
-func (tx *POATransaction) Verify() error {
+func (tx *Transaction) Verify() error {
 	signature, err := btcec.ParseSignature(tx.Signs.Code, btcec.S256())
 	if err != nil {
-		log.Error("POATransaction", "VerifySign", err)
+		log.Error("Transaction", "VerifySign", err)
 		return err
 	}
 	verified := signature.Verify(tx.GetTxID().CloneBytes(), &tx.From.AccountID.ID)
 	if verified {
 		return nil
 	} else {
-		return errors.New("POATransaction VerifySign failed: Error Sign")
+		return errors.New("Transaction VerifySign failed: Error Sign")
 	}
 }
 
 //Serialize/Deserialize
-func (tx *POATransaction) Serialize() serialize.SerializeStream {
+func (tx *Transaction) Serialize() serialize.SerializeStream {
 	from := tx.From.Serialize().(*protobuf.TransactionPeer)
 	to := tx.To.Serialize().(*protobuf.TransactionPeer)
 	amount := tx.Amount.Serialize().(*protobuf.Amount)
@@ -167,7 +179,7 @@ func (tx *POATransaction) Serialize() serialize.SerializeStream {
 	return &t
 }
 
-func (tx *POATransaction) Deserialize(s serialize.SerializeStream) {
+func (tx *Transaction) Deserialize(s serialize.SerializeStream) {
 	data := *s.(*protobuf.Transaction)
 	tx.Version = *data.Version
 	tx.From.Deserialize(data.From)
@@ -190,7 +202,7 @@ func (tx *POATransaction) Deserialize(s serialize.SerializeStream) {
 	tx.txid = math.MakeHash(&t)
 }
 
-func (tx *POATransaction) ToString() string {
+func (tx *Transaction) ToString() string {
 	data, err := json.Marshal(tx)
 	if err != nil {
 		return err.Error()
