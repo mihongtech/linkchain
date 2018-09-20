@@ -2,14 +2,14 @@ package manage
 
 import (
 	"errors"
-
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/meta/account"
-	"github.com/linkchain/meta/tx"
+	"sync"
 
 	"github.com/linkchain/common/btcec"
+	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/meta"
+	"github.com/linkchain/meta/account"
+	"github.com/linkchain/meta/tx"
 	poameta "github.com/linkchain/poa/meta"
-	"sync"
 )
 
 type AccountManage struct {
@@ -89,19 +89,12 @@ func (m *AccountManage) UpdateAccountByTX(tx tx.ITx, isMine bool) error {
 	if !isMine {
 		fromAccount, err := m.GetAccount(fromAccountId)
 		if err != nil {
-			log.Error("AccountManage", "UpdateAccountByTX", "can not find the account of the tx's")
 			return err
 		}
 
-		if fromAccount.GetAmount().IsLessThan(amount) {
-			log.Error("AccountManage", "UpdateAccountByTX", "the from of tx doesn't have enough money to pay")
-			return errors.New("UpdateAccountByTX the from of tx doesn't have enough money to pay")
-		}
-
-		log.Info("AccountManage", "fromAccount nounce", fromAccount.GetNounce(), "tx nounce", tx.GetNounce())
-		if !fromAccount.CheckNounce(tx.GetNounce()) {
-			log.Error("AccountManage", "CheckTxFromAccount", "the from of tx doesn't have corrent nounce")
-			return errors.New("CheckTxFromAccount the from of tx doesn't have corrent nounce")
+		err = m.checkFromAccount(fromAccountId, amount, tx.GetNounce(), true)
+		if err != nil {
+			return err
 		}
 
 		//update from an to Account Status
@@ -123,27 +116,20 @@ func (m *AccountManage) UpdateAccountByTX(tx tx.ITx, isMine bool) error {
 
 func (m *AccountManage) CheckTxFromAccount(tx tx.ITx) error {
 	fromAccountId := tx.GetFrom().GetID()
-	fromAccount, err := m.GetAccount(fromAccountId)
 	amount := tx.GetAmount()
 
+	err := m.checkFromAccount(fromAccountId, amount, tx.GetNounce(), true)
 	if err != nil {
-		log.Error("AccountManage", "CheckTxFromAccount", "can not find the account of the tx's")
-		log.Error("AccountManage", "tx from", fromAccountId.GetString())
 		return err
 	}
+	return nil
+}
 
-	if fromAccount.GetAmount().IsLessThan(amount) {
-		log.Error("AccountManage", "CheckTxFromAccount", "the from of tx doesn't have enough money to pay")
-		return errors.New("CheckTxFromAccount the from of tx doesn't have enough money to pay")
-	}
+func (m *AccountManage) CheckTxFromNounce(tx tx.ITx) error {
+	fromAccountId := tx.GetFrom().GetID()
+	amount := tx.GetAmount()
 
-	if !fromAccount.CheckNounce(tx.GetNounce()) {
-		log.Error("AccountManage", "CheckTxFromAccount", "the from of tx doesn't have corrent nounce")
-		return errors.New("CheckTxFromAccount the from of tx doesn't have corrent nounce")
-	}
-
-	//checkSign
-	err = tx.Verify()
+	err := m.checkFromAccount(fromAccountId, amount, tx.GetNounce(), false)
 	if err != nil {
 		return err
 	}
@@ -151,19 +137,28 @@ func (m *AccountManage) CheckTxFromAccount(tx tx.ITx) error {
 	return nil
 }
 
-func (m *AccountManage) CheckTxFromNounce(tx tx.ITx) error {
-	fromAccountId := tx.GetFrom().(*poameta.TransactionPeer).AccountID
-	fromAccount, err := m.GetAccount(&fromAccountId)
-
+func (m *AccountManage) checkFromAccount(fromId account.IAccountID, amount meta.IAmount, txNounce uint32, isStrict bool) error {
+	fromAccount, err := m.GetAccount(fromId)
 	if err != nil {
-		log.Error("AccountManage", "CheckTxFromNounce", "can not find the account of the tx's")
-		log.Error("AccountManage", "tx from", fromAccountId.GetString())
+		log.Error("AccountManage", "Check from account", "can not find the account of the tx's")
+		log.Error("AccountManage", "tx from", fromId.GetString())
 		return err
 	}
 
-	if fromAccount.GetNounce() >= tx.GetNounce() {
-		log.Error("AccountManage", "CheckTxFromNounce", "the from of tx should be more than fromAccount nounce")
-		return errors.New("CheckTxFromNounce the from of tx should be more than fromAccount nounce")
+	if fromAccount.GetAmount().IsLessThan(amount) {
+		return errors.New("Check from account the from of tx doesn't have enough money to pay")
+	}
+
+	if isStrict {
+		if !fromAccount.CheckNounce(txNounce) {
+
+			return errors.New("Check from account the from of tx doesn't have corrent nounce")
+		}
+	} else {
+		if fromAccount.GetNounce() >= txNounce {
+			log.Error("AccountManage", "Check from account", "the from of tx should be more than fromAccount nounce")
+			return errors.New("Check from account the from of tx should be more than fromAccount nounce")
+		}
 	}
 
 	return nil
@@ -174,6 +169,6 @@ func (m *AccountManage) GetAllAccounts() {
 	defer m.accountMtx.RUnlock()
 
 	for _, accountId := range m.accountMap {
-		log.Info("AccountManage", accountId.AccountID.GetString(), accountId.Value.GetString())
+		log.Info("AccountManage", accountId.AccountID.GetString(), accountId.Value.GetString(), "nounce", accountId.Nounce)
 	}
 }

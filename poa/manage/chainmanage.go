@@ -276,12 +276,12 @@ func (m *ChainManage) updateChainIndex() bool {
 			//add indexs(block status)
 			b, err := GetManager().BlockManager.GetBlockByID(node.GetNodeHash())
 			if err != nil {
-				log.Error("ChainManage", "add new chain account failed. block hash", b.GetBlockID().GetString())
+				log.Error("ChainManage", "init new chain account failed. block hash", b.GetBlockID().GetString())
 				return false
 			}
 			errorStatus := m.updateStatus(b, true)
 			if errorStatus != nil {
-				log.Error("ChainManage", "add new chain account failed", errorStatus)
+				log.Error("ChainManage", "init new chain account failed", errorStatus)
 				m.removeErrorNode(endNode)
 				return false
 			}
@@ -393,13 +393,11 @@ func (m *ChainManage) updateStatus(block block.IBlock, isAdd bool) error {
 
 	//update normal account status
 	for _, tx := range block.GetTxs() {
-		var actualTx poameta.Transaction
-		if isAdd {
-			actualTx = *tx.(*poameta.Transaction)
-		} else {
-			actualTx = *tx.ChangeFromTo().(*poameta.Transaction)
+		if !isAdd {
+			tx.ChangeFromTo()
 		}
-		err := GetManager().AccountManager.UpdateAccountByTX(&actualTx, false)
+
+		err := GetManager().AccountManager.UpdateAccountByTX(tx, false)
 		if err != nil {
 			return err
 		}

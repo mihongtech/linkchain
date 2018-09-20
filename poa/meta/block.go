@@ -107,6 +107,7 @@ func (b *Block) Serialize() serialize.SerializeStream {
 func (b *Block) Deserialize(s serialize.SerializeStream) {
 	data := *s.(*protobuf.Block)
 	b.Header.Deserialize(data.Header)
+	b.TXs = b.TXs[:0] // tx clear
 	for _, tx := range data.TxList.Txs {
 		newTx := Transaction{}
 		newTx.Deserialize(tx)

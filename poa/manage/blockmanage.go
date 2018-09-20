@@ -227,6 +227,7 @@ func (m *BlockManage) CheckBlock(block block.IBlock) bool {
 		log.Error("POA CheckBlock", "check merkle root", false)
 		return false
 	}
+
 	//check poa
 	ls, err := GetManager().ChainManager.GetBestBlock().(*poameta.Block).Header.GetSignerID()
 	if err != nil {
@@ -253,11 +254,19 @@ func (m *BlockManage) CheckBlock(block block.IBlock) bool {
 		log.Error("BlockManage", "CheckBlock", "the block is error miner")
 		return false
 	}
+
 	//check block sign
 	err = block.Verify()
 	if err != nil {
 		log.Error("POA CheckBlock", "check sign", false)
 		return false
+	}
+
+	//check TXs
+	for _, tx := range block.GetTxs() {
+		if !GetManager().TransactionManager.CheckTx(tx) {
+			log.Error("POA CheckBlock", "check tx", false)
+		}
 	}
 	return true
 }

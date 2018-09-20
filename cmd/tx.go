@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/function/wallet"
 	"github.com/linkchain/meta/tx"
 	"github.com/linkchain/node"
 	"github.com/linkchain/poa/manage"
@@ -15,7 +14,7 @@ import (
 
 func init() {
 	RootCmd.AddCommand(txCmd)
-	txCmd.AddCommand(createTxCmd, signTxCmd, sendTxCmd, testTxCmd)
+	txCmd.AddCommand(createTxCmd, signTxCmd, sendTxCmd, testTxCmd, accountCmd)
 }
 
 var txCmd = &cobra.Command{
@@ -132,8 +131,8 @@ var testTxCmd = &cobra.Command{
 	Use:   "test",
 	Short: "send a new tx to network",
 	Run: func(cmd *cobra.Command, args []string) {
-		fromAccount := node.GetWallet().GetWAccount()
-		if fromAccount == nil {
+		fromAccount, err := manage.GetManager().AccountManager.GetAccount(node.GetWallet().GetWAccount().GetAccountID())
+		if err != nil {
 			println("cmd :can not find from")
 			return
 		}
@@ -143,7 +142,13 @@ var testTxCmd = &cobra.Command{
 		tx.Deserialize(tx.Serialize())
 		node.GetWallet().SignTransaction(tx)
 		manage.GetManager().TransactionManager.ProcessTx(tx)
-		account := wallet.NewWSAccount()
-		account.GetAccountInfo()
+	},
+}
+
+var accountCmd = &cobra.Command{
+	Use:   "account",
+	Short: "send a new tx to network",
+	Run: func(cmd *cobra.Command, args []string) {
+		manage.GetManager().AccountManager.GetAllAccounts()
 	},
 }

@@ -64,20 +64,13 @@ func (m *TransactionManage) NewTransaction(from account.IAccount, to account.IAc
 	toId := *to.GetAccountID().(*poameta.AccountID)
 	fp := *poameta.NewTransactionPeer(fromId, nil)
 	tp := *poameta.NewTransactionPeer(toId, nil)
-	newTx := poameta.NewTransaction(0, fp, tp, *amount.(*poameta.Amount), time.Now(), 0, nil, poameta.FromSign{})
+	newTx := poameta.NewTransaction(0, fp, tp, *amount.(*poameta.Amount), time.Now(), (from.GetNounce() + 1), nil, poameta.FromSign{})
 	return newTx
 }
 
 func (m *TransactionManage) CheckTx(tx tx.ITx) bool {
 	log.Info("POA CheckTx ...")
 	err := tx.Verify()
-	if err != nil {
-		log.Error("POA CheckTx", "failed", err)
-		return false
-	}
-
-	err = GetManager().AccountManager.CheckTxFromAccount(tx)
-
 	if err != nil {
 		log.Error("POA CheckTx", "failed", err)
 		return false
