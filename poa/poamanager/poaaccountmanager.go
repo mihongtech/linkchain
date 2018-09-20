@@ -3,62 +3,81 @@ package poamanager
 import (
 	"errors"
 
-	"github.com/linkchain/meta/account"
 	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/meta/account"
 	"github.com/linkchain/meta/tx"
 
-	poameta "github.com/linkchain/poa/meta"
 	"github.com/linkchain/common/btcec"
+	poameta "github.com/linkchain/poa/meta"
+	"sync"
 )
 
 type POAAccountManager struct {
+	accountMtx sync.RWMutex
 	accountMap map[string]poameta.POAAccount
 }
 
+func (m *POAAccountManager) readAccount(key string) (poameta.POAAccount, bool) {
+	m.accountMtx.RLock()
+	defer m.accountMtx.RUnlock()
+	value, ok := m.accountMap[key]
+	return value, ok
+}
+
+func (m *POAAccountManager) writeAccount(key string, value poameta.POAAccount) {
+	m.accountMtx.Lock()
+	defer m.accountMtx.Unlock()
+	m.accountMap[key] = value
+}
+
+func (m *POAAccountManager) removeAccount(key string) {
+	m.accountMtx.Lock()
+	defer m.accountMtx.Unlock()
+	delete(m.accountMap, key)
+}
+
 /** interface: common.IService **/
-func (m *POAAccountManager) Init(i interface{}) bool{
-	log.Info("POAAccountManager init...");
+func (m *POAAccountManager) Init(i interface{}) bool {
+	log.Info("POAAccountManager init...")
 	m.accountMap = make(map[string]poameta.POAAccount)
 	return true
 }
 
-func (m *POAAccountManager) Start() bool{
-	log.Info("POAAccountManager start...");
+func (m *POAAccountManager) Start() bool {
+	log.Info("POAAccountManager start...")
 	return true
 }
 
-func (m *POAAccountManager) Stop(){
-	log.Info("POAAccountManager stop...");
+func (m *POAAccountManager) Stop() {
+	log.Info("POAAccountManager stop...")
 }
 
-
-func (m *POAAccountManager) NewAccount() account.IAccount  {
-	priv,err := btcec.NewPrivateKey(btcec.S256())
+func (m *POAAccountManager) NewAccount() account.IAccount {
+	priv, err := btcec.NewPrivateKey(btcec.S256())
 	if err != nil {
-		log.Info("POAAccountManager","NewAccount - generate private key failed",err)
+		log.Info("POAAccountManager", "NewAccount - generate private key failed", err)
 	}
 	accountID := *poameta.NewAccountId(priv.PubKey().SerializeCompressed()).(*poameta.POAAccountID)
-	a := poameta.POAAccount{AccountID:accountID,Value:poameta.POAAmount{Value:int32(0)}}
+	a := poameta.POAAccount{AccountID: accountID, Value: poameta.POAAmount{Value: int32(0)}}
 	return &a
 }
 
-
-func (m *POAAccountManager) AddAccount(iAccount account.IAccount) error  {
+func (m *POAAccountManager) AddAccount(iAccount account.IAccount) error {
 	a := *iAccount.(*poameta.POAAccount)
-	m.accountMap[iAccount.GetAccountID().GetString()] = a
+	m.writeAccount(iAccount.GetAccountID().GetString(), a)
 	return nil
 }
 
-func (m *POAAccountManager) GetAccount(id account.IAccountID) (account.IAccount,error) {
-	a,ok := m.accountMap[id.GetString()]
+func (m *POAAccountManager) GetAccount(id account.IAccountID) (account.IAccount, error) {
+	a, ok := m.readAccount(id.GetString())
 	if ok {
-		return &a,nil
+		return &a, nil
 	}
-	return nil,errors.New("Can not find Account ")
+	return nil, errors.New("Can not find Account ")
 }
 
-func (m *POAAccountManager) RemoveAccount(id account.IAccountID) error  {
-	delete(m.accountMap,id.GetString())
+func (m *POAAccountManager) RemoveAccount(id account.IAccountID) error {
+	m.removeAccount(id.GetString())
 	return nil
 }
 
@@ -66,22 +85,22 @@ func (m *POAAccountManager) UpdateAccountByTX(tx tx.ITx) error {
 	fromAccountId := tx.GetFrom().GetID()
 	toAccountId := tx.GetTo().GetID()
 
-	fromAccount,err := m.GetAccount(fromAccountId)
+	fromAccount, err := m.GetAccount(fromAccountId)
 	if err != nil {
-		log.Error("POAAccountManager","UpdateAccountByTX","can not find the account of the tx's")
+		log.Error("POAAccountManager", "UpdateAccountByTX", "can not find the account of the tx's")
 		return err
 	}
 
 	amount := tx.GetAmount()
 
 	if fromAccount.GetAmount().IsLessThan(amount) {
-		log.Error("POAAccountManager","UpdateAccountByTX","the from of tx doesn't have enough money to pay")
+		log.Error("POAAccountManager", "UpdateAccountByTX", "the from of tx doesn't have enough money to pay")
 		return errors.New("UpdateAccountByTX the from of tx doesn't have enough money to pay")
 	}
 
-	log.Info("POAAccountManager","fromAccount nounce",fromAccount.GetNounce(),"tx nounce",tx.GetNounce())
+	log.Info("POAAccountManager", "fromAccount nounce", fromAccount.GetNounce(), "tx nounce", tx.GetNounce())
 	if !fromAccount.CheckNounce(tx.GetNounce()) {
-		log.Error("POAAccountManager","CheckTxFromAccount","the from of tx doesn't have corrent nounce")
+		log.Error("POAAccountManager", "CheckTxFromAccount", "the from of tx doesn't have corrent nounce")
 		return errors.New("CheckTxFromAccount the from of tx doesn't have corrent nounce")
 	}
 
@@ -96,14 +115,14 @@ func (m *POAAccountManager) UpdateAccountByTX(tx tx.ITx) error {
 	if err == nil {
 		toNounce = toAccount.GetNounce()
 	}
-	a := poameta.NewPOAAccount(toAccountId,amount,toNounce)
+	a := poameta.NewPOAAccount(toAccountId, amount, toNounce)
 	m.UpdateAccount(&a)
 
 	return nil
 }
 
 func (m *POAAccountManager) UpdateAccount(iAccount account.IAccount) error {
-	newAccount,err := m.GetAccount(iAccount.GetAccountID())
+	newAccount, err := m.GetAccount(iAccount.GetAccountID())
 	if err == nil {
 		newAccount.GetAmount().Addition(iAccount.GetAmount())
 		m.AddAccount(newAccount)
@@ -116,22 +135,22 @@ func (m *POAAccountManager) UpdateAccount(iAccount account.IAccount) error {
 
 func (m *POAAccountManager) CheckTxFromAccount(tx tx.ITx) error {
 	fromAccountId := tx.GetFrom().(*poameta.POATransactionPeer).AccountID
-	fromAccount,err := m.GetAccount(&fromAccountId)
+	fromAccount, err := m.GetAccount(&fromAccountId)
 	amount := tx.GetAmount()
 
 	if err != nil {
-		log.Error("POAAccountManager","CheckTxFromAccount","can not find the account of the tx's")
-		log.Error("POAAccountManager","tx from",fromAccountId.GetString())
+		log.Error("POAAccountManager", "CheckTxFromAccount", "can not find the account of the tx's")
+		log.Error("POAAccountManager", "tx from", fromAccountId.GetString())
 		return err
 	}
 
 	if fromAccount.GetAmount().IsLessThan(amount) {
-		log.Error("POAAccountManager","CheckTxFromAccount","the from of tx doesn't have enough money to pay")
+		log.Error("POAAccountManager", "CheckTxFromAccount", "the from of tx doesn't have enough money to pay")
 		return errors.New("CheckTxFromAccount the from of tx doesn't have enough money to pay")
 	}
 
 	if !fromAccount.CheckNounce(tx.GetNounce()) {
-		log.Error("POAAccountManager","CheckTxFromAccount","the from of tx doesn't have corrent nounce")
+		log.Error("POAAccountManager", "CheckTxFromAccount", "the from of tx doesn't have corrent nounce")
 		return errors.New("CheckTxFromAccount the from of tx doesn't have corrent nounce")
 	}
 
@@ -146,27 +165,27 @@ func (m *POAAccountManager) CheckTxFromAccount(tx tx.ITx) error {
 
 func (m *POAAccountManager) CheckTxFromNounce(tx tx.ITx) error {
 	fromAccountId := tx.GetFrom().(*poameta.POATransactionPeer).AccountID
-	fromAccount,err := m.GetAccount(&fromAccountId)
+	fromAccount, err := m.GetAccount(&fromAccountId)
 
 	if err != nil {
-		log.Error("POAAccountManager","CheckTxFromNounce","can not find the account of the tx's")
-		log.Error("POAAccountManager","tx from",fromAccountId.GetString())
+		log.Error("POAAccountManager", "CheckTxFromNounce", "can not find the account of the tx's")
+		log.Error("POAAccountManager", "tx from", fromAccountId.GetString())
 		return err
 	}
 
 	if fromAccount.GetNounce() >= tx.GetNounce() {
-		log.Error("POAAccountManager","CheckTxFromNounce","the from of tx should be more than fromAccount nounce")
+		log.Error("POAAccountManager", "CheckTxFromNounce", "the from of tx should be more than fromAccount nounce")
 		return errors.New("CheckTxFromNounce the from of tx should be more than fromAccount nounce")
 	}
 
 	return nil
 }
 
+func (m *POAAccountManager) GetAllAccounts() {
+	m.accountMtx.RLock()
+	defer m.accountMtx.RUnlock()
 
-func (m *POAAccountManager) GetAllAccounts()  {
-	for _,accountId := range m.accountMap{
-		log.Info("POAAccountManager",accountId.AccountID.GetString(),accountId.Value.GetString())
+	for _, accountId := range m.accountMap {
+		log.Info("POAAccountManager", accountId.AccountID.GetString(), accountId.Value.GetString())
 	}
 }
-
-

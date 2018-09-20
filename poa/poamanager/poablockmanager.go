@@ -15,21 +15,29 @@ import (
 )
 
 type POABlockManager struct {
-	sync.RWMutex
+	blockMtx            sync.RWMutex
 	mapBlockIndexByHash map[math.Hash]poameta.POABlock
 }
 
-func (m *POABlockManager) readMap(key math.Hash) (poameta.POABlock, bool) {
-	m.RLock()
+func (m *POABlockManager) readBlock(key math.Hash) (poameta.POABlock, bool) {
+	m.blockMtx.RLock()
+	defer m.blockMtx.RUnlock()
 	value, ok := m.mapBlockIndexByHash[key]
-	m.RUnlock()
 	return value, ok
 }
 
-func (m *POABlockManager) writeMap(key math.Hash, value poameta.POABlock) {
-	m.Lock()
+func (m *POABlockManager) writeBlock(key math.Hash, value poameta.POABlock) {
+	m.blockMtx.Lock()
+	defer m.blockMtx.Unlock()
+
 	m.mapBlockIndexByHash[key] = value
-	m.Unlock()
+}
+
+func (m *POABlockManager) removeBlock(key math.Hash) {
+	m.blockMtx.Lock()
+	defer m.blockMtx.Unlock()
+
+	delete(m.mapBlockIndexByHash, key)
 }
 
 /** interface: common.IService **/
@@ -160,11 +168,10 @@ func (m *POABlockManager) GetGensisBlock() block.IBlock {
 
 /** interface: BlockPoolManager **/
 func (m *POABlockManager) GetBlockByID(hash meta.DataID) (block.IBlock, error) {
-	index, ok := m.readMap(*hash.(*math.Hash))
+	index, ok := m.readBlock(*hash.(*math.Hash))
 	if ok {
 		return &index, nil
 	}
-
 	//TODO need to storage
 	return nil, errors.New("POABlockManager can not find block by hash:" + hash.GetString())
 }
@@ -176,7 +183,7 @@ func (m *POABlockManager) GetBlockByHeight(height uint32) ([]block.IBlock, error
 
 func (m *POABlockManager) AddBlock(block block.IBlock) error {
 	hash := *block.GetBlockID().(*math.Hash)
-	m.writeMap(hash, *(block.(*poameta.POABlock)))
+	m.writeBlock(hash, *(block.(*poameta.POABlock)))
 	return nil
 }
 
@@ -188,18 +195,13 @@ func (m *POABlockManager) AddBlocks(blocks []block.IBlock) error {
 }
 
 func (m *POABlockManager) RemoveBlock(hash meta.DataID) error {
-	m.Lock()
-	delete(m.mapBlockIndexByHash, *(hash.(*math.Hash)))
-	m.Unlock()
+	m.removeBlock(*hash.(*math.Hash))
 	return nil
 }
 
 func (m *POABlockManager) HasBlock(hash meta.DataID) bool {
-	_, ok := m.readMap(*hash.(*math.Hash))
-	if ok {
-		return true
-	}
-	return false
+	_, ok := m.readBlock(*hash.(*math.Hash))
+	return ok
 }
 
 /** interface: BlockValidator **/
