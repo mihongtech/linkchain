@@ -116,6 +116,7 @@ func (m *AccountManage) ConvertAccount(tx tx.ITx, isMine bool) (account.IAccount
 	return fA, tA
 }
 
+//TODO need to test
 func (m *AccountManage) UpdateAccountsByTxs(txs []tx.ITx, mineIndex int) error {
 	cache := make(map[string]account.IAccount)
 	for index, t := range txs {
@@ -148,6 +149,63 @@ func (m *AccountManage) UpdateAccountsByTxs(txs []tx.ITx, mineIndex int) error {
 			err := m.checkAccount(cachefA, t.GetAmount(), t.GetNounce(), true)
 			if err != nil {
 				return err
+			}
+			cachefA.SetNounce(fA.GetNounce())
+			cachefA.ChangeAmount(cachefA.GetAmount().Addition(fA.GetAmount()))
+			cache[fKey] = cachefA
+		}
+		tKey := tA.GetAccountID().GetString()
+		cachetA, ok := cache[tKey]
+		if ok {
+			cachetA.ChangeAmount(cachetA.GetAmount().Addition(tA.GetAmount()))
+		} else {
+			cachetA = tA
+		}
+		cache[tKey] = cachetA
+	}
+
+	//Update Accounts
+	for _, a := range cache {
+		m.AddAccount(a)
+	}
+	return nil
+}
+
+//TODO need to test
+func (m *AccountManage) RevertAccountsByTxs(txs []tx.ITx, mineIndex int) error {
+	cache := make(map[string]account.IAccount)
+	for index, t := range txs {
+		txA, err := m.GetAccountRelateTXs(t, index == mineIndex)
+		if err != nil {
+			return err
+		}
+		for _, a := range txA {
+			key := a.GetAccountID().GetString()
+			cache[key] = a
+		}
+	}
+
+	//when cache is empty,only update mineTx
+	//if not txs only contain mineTx,then update
+	if len(cache) == 0 {
+		if len(txs) != 1 || mineIndex != 0 {
+			return errors.New("When cache is empty,only update mineTx")
+		}
+	}
+	//Check Tx Account
+	for index, t := range txs {
+		t.GetAmount().Reverse()
+		t.SetNounce(t.GetNounce() - 1)
+		fA, tA := m.ConvertAccount(t, index == mineIndex)
+		fKey := ""
+		var cachefA account.IAccount
+
+		if index != mineIndex {
+			fKey = fA.GetAccountID().GetString()
+			cachefA, _ = cache[fKey]
+
+			if cachefA.GetNounce()-t.GetNounce() != 1 {
+				return errors.New("RevertAccountsByTxs the from of tx doesn't have corrent nounce")
 			}
 			cachefA.SetNounce(fA.GetNounce())
 			cachefA.ChangeAmount(cachefA.GetAmount().Addition(fA.GetAmount()))

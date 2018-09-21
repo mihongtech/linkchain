@@ -371,21 +371,23 @@ func (m *ChainManage) updateStatus(block block.IBlock, isAdd bool) error {
 	//update mine account status
 	poablock := *block.(*poameta.Block)
 
-	var amount poameta.Amount
-	if isAdd {
-		amount = *poameta.NewAmout(50)
-	} else {
-		amount = *poameta.NewAmout(-50)
-	}
+	amount := poameta.NewAmout(50)
 	signer, _ := poablock.Header.GetSigner()
 	tp := poameta.NewTransactionPeer(signer.AccountID, signer.Extra)
-	mineTx := poameta.NewTransaction(0, poameta.TransactionPeer{}, *tp, amount, poablock.Header.Timestamp, poablock.Header.Nonce, nil, poameta.FromSign{})
+	mineTx := poameta.NewTransaction(0, poameta.TransactionPeer{}, *tp, *amount, poablock.Header.Timestamp, poablock.Header.Nonce, nil, poameta.FromSign{})
 	cachTxs := block.GetTxs()
 	mineIndex := len(cachTxs)
 	cachTxs = append(cachTxs, mineTx)
-	err := GetManager().AccountManager.UpdateAccountsByTxs(cachTxs, mineIndex)
-	if err != nil {
-		return err
+	if isAdd {
+		err := GetManager().AccountManager.UpdateAccountsByTxs(cachTxs, mineIndex)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := GetManager().AccountManager.RevertAccountsByTxs(cachTxs, mineIndex)
+		if err != nil {
+			return err
+		}
 	}
 
 	//update tx pool

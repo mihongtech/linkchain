@@ -22,6 +22,7 @@ type AccountPoolManager interface {
 	GetAccountRelateTXs(txs tx.ITx, isMine bool) ([]account.IAccount, error)
 	ConvertAccount(tx tx.ITx, isMine bool) (account.IAccount, account.IAccount)
 	UpdateAccountsByTxs(txs []tx.ITx, mineIndex int) error
+	RevertAccountsByTxs(txs []tx.ITx, mineIndex int) error
 
 	CheckTxAccount(tx tx.ITx) error
 
