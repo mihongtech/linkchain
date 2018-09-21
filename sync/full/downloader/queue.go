@@ -309,6 +309,7 @@ func (q *queue) ReserveBlocks(p *peerConnection, count int) *fetchRequest {
 		From: send,
 		Time: time.Now(),
 	}
+	log.Info("start to ReserveBlocks", "id", p.id, "request", request)
 	q.blockPendPool[p.id] = request
 	return request
 }
@@ -484,6 +485,7 @@ func (q *queue) DeliverBlocks(id string, blocks []block.IBlock, blockProcCh chan
 
 	// Short circuit if the data was never requested
 	request := q.blockPendPool[id]
+	log.Info("start to DeliverBlocks", "id", id, "len(blocks)", len(blocks))
 	if request == nil {
 		return 0, errNoFetchesPending
 	}
@@ -569,6 +571,7 @@ func (q *queue) deliver(id string, taskPool map[meta.DataID]block.IBlock, taskQu
 	results int, reconstruct func(block block.IBlock, index int, result *fetchResult) error) (int, error) {
 
 	// Short circuit if the data was never requested
+	log.Info("start to deliver", "id", id)
 	request := pendPool[id]
 	if request == nil {
 		return 0, errNoFetchesPending
