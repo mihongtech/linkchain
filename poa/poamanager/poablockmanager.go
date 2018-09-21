@@ -213,11 +213,13 @@ func (m *POABlockManager) CheckBlock(block block.IBlock) bool {
 		return false
 	}
 	//check poa
-	ls, err := GetManager().ChainManager.GetBestBlock().(*poameta.POABlock).Header.GetSignerID()
+	prevBlock, err := GetManager().BlockManager.GetBlockByID(block.GetPrevBlockID())
 	if err != nil {
 		log.Error("POABlockManager", "CheckBlock", err)
 		return false
 	}
+	ls, err := prevBlock.(*poameta.POABlock).Header.GetSignerID()
+
 	lf, err := hex.DecodeString(ls.GetString())
 	if err != nil {
 		log.Error("POABlockManager", "CheckBlock", err)
