@@ -37,9 +37,6 @@ type blockBroadcasterFn func(block block.IBlock, propagate bool)
 // chainHeightFn is a callback type to retrieve the current chain height.
 type chainHeightFn func() uint64
 
-// chainInsertFn is a callback type to insert a batch of blocks into the local chain.
-// type chainInsertFn func(types.Blocks) (int, error)
-
 // peerDropFn is a callback type for dropping a peer detected as malicious.
 type peerDropFn func(id string)
 
@@ -101,13 +98,6 @@ type Fetcher struct {
 	chainHeight    chainHeightFn      // Retrieves the current chain's height
 	insertChain    manager.BlockManager
 	dropPeer       peerDropFn // Drops a peer for misbehaving
-
-	// Testing hooks
-	announceChangeHook func(meta.DataID, bool) // Method to call upon adding or deleting a hash from the announce list
-	queueChangeHook    func(meta.DataID, bool) // Method to call upon adding or deleting a block from the import queue
-	fetchingHook       func([]meta.DataID)     // Method to call upon starting a block (eth/61) or header (eth/62) fetch
-	completingHook     func([]meta.DataID)     // Method to call upon starting a block body fetch (eth/62)
-	importedHook       func(block.IBlock)      // Method to call upon successful block import (both eth/61 and eth/62)
 }
 
 // New creates a block fetcher to retrieve blocks based on hash announcements.
@@ -226,16 +216,10 @@ func (f *Fetcher) loop() {
 		height := f.chainHeight()
 		for !f.queue.Empty() {
 			op := f.queue.PopItem().(*inject)
-			if f.queueChangeHook != nil {
-				f.queueChangeHook(op.block.GetBlockID(), false)
-			}
 			// If too high up the chain or phase, continue later
 			number := uint64(op.block.GetHeight())
 			if number > height+1 {
 				f.queue.Push(op, -float32(op.block.GetHeight()))
-				if f.queueChangeHook != nil {
-					f.queueChangeHook(op.block.GetBlockID(), true)
-				}
 				break
 			}
 			// Otherwise if fresh and still unknown, try and import
@@ -279,9 +263,6 @@ func (f *Fetcher) loop() {
 			}
 			f.announces[notification.origin] = count
 			f.announced[notification.hash] = append(f.announced[notification.hash], notification)
-			if f.announceChangeHook != nil && len(f.announced[notification.hash]) == 1 {
-				f.announceChangeHook(notification.hash, true)
-			}
 			if len(f.announced) == 1 {
 				f.rescheduleFetch(fetchTimer)
 			}
@@ -320,9 +301,6 @@ func (f *Fetcher) loop() {
 				// Create a closure of the fetch and schedule in on a new thread
 				fetchBlock, hashes := f.fetching[hashes[0]].fetchBlock, hashes
 				go func() {
-					if f.fetchingHook != nil {
-						f.fetchingHook(hashes)
-					}
 					for _, hash := range hashes {
 						fetchBlock(hash) // Suboptimal, but protocol doesn't allow batch header retrievals
 					}
@@ -350,11 +328,6 @@ func (f *Fetcher) loop() {
 			// Send out all block body requests
 			for peer, hashes := range request {
 				log.Trace("Fetching scheduled bodies", "peer", peer, "list", hashes)
-
-				// Create a closure of the fetch and schedule in on a new thread
-				if f.completingHook != nil {
-					f.completingHook(hashes)
-				}
 			}
 			// Schedule the next fetch if blocks are still pending
 			f.rescheduleComplete(completeTimer)
@@ -460,9 +433,6 @@ func (f *Fetcher) enqueue(peer string, block block.IBlock) {
 		f.queues[peer] = count
 		f.queued[hash] = op
 		f.queue.Push(op, -float32(block.GetHeight()))
-		if f.queueChangeHook != nil {
-			f.queueChangeHook(op.block.GetBlockID(), true)
-		}
 		log.Debug("Queued propagated block", "peer", peer, "number", block.GetHeight(), "hash", hash, "queued", f.queue.Size())
 	}
 }
@@ -493,11 +463,6 @@ func (f *Fetcher) insert(peer string, block block.IBlock) {
 		}
 
 		go f.broadcastBlock(block, false)
-
-		// Invoke the testing hook if needed
-		if f.importedHook != nil {
-			f.importedHook(block)
-		}
 	}()
 }
 
@@ -512,9 +477,6 @@ func (f *Fetcher) forgetHash(hash meta.DataID) {
 		}
 	}
 	delete(f.announced, hash)
-	if f.announceChangeHook != nil {
-		f.announceChangeHook(hash, false)
-	}
 	// Remove any pending fetches and decrement the DOS counters
 	if announce := f.fetching[hash]; announce != nil {
 		f.announces[announce.origin]--
