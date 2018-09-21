@@ -407,7 +407,7 @@ func (d *Downloader) fetchHeight(p *peerConnection) (block.IBlock, error) {
 
 	// Request the advertised remote head block and wait for the response
 	head := p.peer.Head()
-	go p.peer.RequestBlocksByHash(head, 1, 0, false)
+	go p.peer.RequestBlocksByHash(head, 1, 0)
 
 	ttl := d.requestTTL()
 	timeout := time.After(ttl)
@@ -469,7 +469,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 		count = limit
 	}
 	log.Debug("findAncestor RequestBlocksByNumber", "from", from, "count", count)
-	go p.peer.RequestBlocksByNumber(uint64(from), count, 15, false)
+	go p.peer.RequestBlocksByNumber(uint64(from), count, 15)
 
 	// Wait for the remote response to the head fetch
 	number := uint64(0)
@@ -542,7 +542,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 		ttl := d.requestTTL()
 		timeout := time.After(ttl)
 
-		go p.peer.RequestBlocksByNumber(check, 1, 0, false)
+		go p.peer.RequestBlocksByNumber(check, 1, 0)
 
 		// Wait until a reply arrives to this request
 		for arrived := false; !arrived; {
@@ -602,10 +602,10 @@ func (d *Downloader) fetchBlocks(p *peerConnection, from uint64, pivot uint64) e
 
 		if skeleton {
 			p.log.Trace("Fetching skeleton blocks", "count", MaxBlockFetch, "from", from)
-			go p.peer.RequestBlocksByNumber(from+uint64(MaxBlockFetch)-1, MaxSkeletonSize, MaxBlockFetch-1, false)
+			go p.peer.RequestBlocksByNumber(from+uint64(MaxBlockFetch)-1, MaxSkeletonSize, MaxBlockFetch-1)
 		} else {
 			p.log.Trace("Fetching full headers", "count", MaxBlockFetch, "from", from)
-			go p.peer.RequestBlocksByNumber(from, MaxBlockFetch, 0, false)
+			go p.peer.RequestBlocksByNumber(from, MaxBlockFetch, 0)
 		}
 	}
 	// Start pulling the header chain skeleton until all is done

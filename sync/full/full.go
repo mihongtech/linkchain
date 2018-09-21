@@ -267,23 +267,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				log.Error("get block msg error", "query data", data, "err", err)
 				break
 			}
-			number := uint64(block.GetHeight())
+			// number := uint64(block.GetHeight())
 			blocks = append(blocks, block)
 
 			// Advance to the next header of the query
 			switch {
-			case !data.Hash.IsEmpty() && data.Reverse:
-				// Hash based traversal towards the genesis block
-				for i := 0; i < int(data.Skip)+1; i++ {
-					if b, e := pm.blockmanager.GetBlockByID(data.Hash); (b != nil) && (e == nil) {
-						data.Hash = b.GetPrevBlockID()
-						number--
-					} else {
-						unknown = true
-						break
-					}
-				}
-			case !data.Hash.IsEmpty() && !data.Reverse:
+			case !data.Hash.IsEmpty():
 				// Hash based traversal towards the leaf block
 				var (
 					current = uint64(block.GetHeight())
@@ -302,15 +291,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 					}
 
 				}
-			case data.Reverse:
-				// Number based traversal towards the genesis block
-				if data.Number >= data.Skip+1 {
-					data.Number -= data.Skip + 1
-				} else {
-					unknown = true
-				}
-
-			case !data.Reverse:
+			case data.Hash.IsEmpty():
 				// Number based traversal towards the leaf block
 				data.Number += data.Skip + 1
 			}

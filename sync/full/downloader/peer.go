@@ -50,8 +50,8 @@ type peerConnection struct {
 // LightPeer encapsulates the methods required to synchronise with a remote light peer.
 type LightPeer interface {
 	Head() meta.DataID
-	RequestBlocksByHash(meta.DataID, int, int, bool) error
-	RequestBlocksByNumber(uint64, int, int, bool) error
+	RequestBlocksByHash(meta.DataID, int, int) error
+	RequestBlocksByNumber(uint64, int, int) error
 }
 
 // Peer encapsulates the methods required to synchronise with a remote full peer.
@@ -65,11 +65,11 @@ type lightPeerWrapper struct {
 }
 
 func (w *lightPeerWrapper) Head() meta.DataID { return w.peer.Head() }
-func (w *lightPeerWrapper) RequestBlocksByHash(h meta.DataID, amount int, skip int, reverse bool) error {
-	return w.peer.RequestBlocksByHash(h, amount, skip, reverse)
+func (w *lightPeerWrapper) RequestBlocksByHash(h meta.DataID, amount int, skip int) error {
+	return w.peer.RequestBlocksByHash(h, amount, skip)
 }
-func (w *lightPeerWrapper) RequestBlocksByNumber(i uint64, amount int, skip int, reverse bool) error {
-	return w.peer.RequestBlocksByNumber(i, amount, skip, reverse)
+func (w *lightPeerWrapper) RequestBlocksByNumber(i uint64, amount int, skip int) error {
+	return w.peer.RequestBlocksByNumber(i, amount, skip)
 }
 
 // newPeerConnection creates a new downloader peer.
@@ -110,7 +110,7 @@ func (p *peerConnection) FetchBlocks(from uint64, count int) error {
 	p.blockStarted = time.Now()
 
 	// Issue the header retrieval request (absolut upwards without gaps)
-	go p.peer.RequestBlocksByNumber(from, count, 0, false)
+	go p.peer.RequestBlocksByNumber(from, count, 0)
 
 	return nil
 }
