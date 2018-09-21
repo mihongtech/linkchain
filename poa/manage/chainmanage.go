@@ -142,24 +142,6 @@ func (m *ChainManage) AddBlock(block block.IBlock) {
 	//log.Info("AddBlock", "Longest Chain height", len(longest.Blocks), "Longest Chain bestHash", longest.GetLastBlock().GetBlockID().GetString())
 }
 
-func (m *ChainManage) GetBlockAncestor(block block.IBlock, height uint32) (block.IBlock, error) {
-	if height > block.GetHeight() {
-		log.Error("ChainManage", "GetBlockAncestor error", "height is plus block's height")
-		return nil, errors.New("ChainManage :GetBlockAncestor error->height is plus block's height")
-	} else {
-		ancestor := block
-		var e error
-		for height < block.GetHeight() {
-			ancestor, e = GetManager().BlockManager.GetBlockByID(ancestor.GetPrevBlockID())
-			if e != nil {
-				log.Error("ChainManage", "GetBlockAncestor error", "can not find ancestor")
-				return nil, errors.New("ChainManage :GetBlockAncestor error->can not find ancestor")
-			}
-		}
-		return ancestor, nil
-	}
-}
-
 func (m *ChainManage) GetLongestChain() (poameta.Chain, int) {
 	var lc poameta.Chain
 	bestHeight := uint32(0)
@@ -214,30 +196,34 @@ func (m *ChainManage) sortChains(block poameta.Block) bool {
 			if err == nil {
 				// if update chain then check complete chain is the chain next
 				isUpdated = true
+				break
 			}
 		}
-		// b.add new sidechain
-		for index, chain := range m.chains {
+		if !isUpdated {
+			// b.add new sidechain
+			for index, chain := range m.chains {
 
-			if !chain.IsInComplete {
-				continue
-			}
+				if !chain.IsInComplete {
+					continue
+				}
 
-			ancestorBlock, err := m.GetBlockAncestor(chain.GetLastBlock(), prevNode.GetNodeHeight())
-			if err != nil {
-				log.Info("sortChains :the chain is bad chain ,because the data of chain is imcomplete. the give up the chain")
-				deletIndex = append(deletIndex, index)
-				index--
-				continue
-			}
-			ancestorNode := poameta.NewPOAChainNode(ancestorBlock)
+				ancestorBlock, err := GetManager().BlockManager.GetBlockAncestor(chain.GetLastBlock(), prevNode.GetNodeHeight()) //find prevheight block
+				if err != nil {
+					log.Error("sortChains addNewSideChain", "GetBlockAncestor", err)
+					log.Info("sortChains :the chain is bad chain ,because the data of chain is imcomplete. the give up the chain")
+					deletIndex = append(deletIndex, index)
+					index--
+					continue
+				}
+				ancestorNode := poameta.NewPOAChainNode(ancestorBlock)
 
-			if ancestorNode.IsEuqal(prevNode) {
-				newChain := m.chains[index].GetNewChain(ancestorBlock)
-				newChain.AddNewBlock(&block)
-				m.chains = append(m.chains, newChain)
-				isUpdated = true
-				break
+				if ancestorNode.IsEuqal(prevNode) {
+					newChain := m.chains[index].GetNewChain(ancestorBlock)
+					newChain.AddNewBlock(&block)
+					m.chains = append(m.chains, newChain)
+					isUpdated = true
+					break
+				}
 			}
 		}
 	}

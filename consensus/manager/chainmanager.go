@@ -14,8 +14,6 @@ type ChainReader interface {
 	GetBlockByHeight(height uint32) (block.IBlock, error)
 
 	GetBlockChainInfo() string
-
-	GetBlockAncestor(block block.IBlock, height uint32) (block.IBlock, error)
 }
 
 type ChainWriter interface {

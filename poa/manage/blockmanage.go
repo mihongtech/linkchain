@@ -154,6 +154,25 @@ func (m *BlockManage) GetBlockByHeight(height uint32) ([]block.IBlock, error) {
 	return nil, nil
 }
 
+//Find block Ancestor by height.
+func (m *BlockManage) GetBlockAncestor(block block.IBlock, height uint32) (block.IBlock, error) {
+	if height > block.GetHeight() {
+		log.Error("ChainManage", "GetBlockAncestor error", "height is plus block's height")
+		return nil, errors.New("ChainManage :GetBlockAncestor error->height is plus block's height")
+	} else {
+		ancestor := block
+		var e error
+		for height < ancestor.GetHeight() {
+			ancestor, e = m.GetBlockByID(ancestor.GetPrevBlockID())
+			if e != nil {
+				log.Error("ChainManage", "GetBlockAncestor error", "can not find ancestor")
+				return nil, errors.New("ChainManage :GetBlockAncestor error->can not find ancestor")
+			}
+		}
+		return ancestor, nil
+	}
+}
+
 func (m *BlockManage) AddBlock(block block.IBlock) error {
 	hash := *block.GetBlockID().(*math.Hash)
 	m.writeBlock(hash, *(block.(*poameta.Block)))
