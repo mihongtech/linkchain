@@ -16,10 +16,8 @@ import (
 )
 
 var (
-	MaxHashFetch    = 512 // Amount of hashes to be fetched per retrieval request
-	MaxBlockFetch   = 128 // Amount of blocks to be fetched per retrieval request
+	MaxBlockFetch   = 192 // Amount of blocks to be fetched per retrieval request
 	MaxSkeletonSize = 128 // Number of header fetches to need for a skeleton assembly
-	MaxBodyFetch    = 128 // Amount of block bodies to be fetched per retrieval request
 
 	rttMinEstimate   = 2 * time.Second  // Minimum round-trip time to target for download requests
 	rttMaxEstimate   = 20 * time.Second // Maximum rount-trip time to target for download requests
@@ -54,12 +52,7 @@ var (
 	errInvalidAncestor         = errors.New("retrieved ancestor is invalid")
 	errInvalidChain            = errors.New("retrieved hash chain is invalid")
 	errInvalidBlock            = errors.New("retrieved block is invalid")
-	errInvalidBody             = errors.New("retrieved block body is invalid")
-	errInvalidReceipt          = errors.New("retrieved receipt is invalid")
 	errCancelBlockFetch        = errors.New("block download canceled (requested)")
-	errCancelBodyFetch         = errors.New("block body download canceled (requested)")
-	errCancelReceiptFetch      = errors.New("receipt download canceled (requested)")
-	errCancelStateFetch        = errors.New("state data download canceled (requested)")
 	errCancelBlockProcessing   = errors.New("block processing canceled (requested)")
 	errCancelContentProcessing = errors.New("content processing canceled (requested)")
 	errNoSyncActive            = errors.New("no sync active")
