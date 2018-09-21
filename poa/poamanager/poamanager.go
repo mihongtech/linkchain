@@ -17,7 +17,8 @@ func GetManager() *POAManager {
 			AccountManager:     &POAAccountManager{},
 			TransactionManager: &POATxManager{},
 			ChainManager:       &POAChainManager{},
-			NewBlockEvent:      new(event.TypeMux)}
+			NewBlockEvent:      new(event.TypeMux),
+			NewTxEvent:         new(event.Feed)}
 	})
 	return m
 }
@@ -28,6 +29,7 @@ type POAManager struct {
 	TransactionManager manager.TransactionManager
 	ChainManager       manager.ChainManager
 	NewBlockEvent      *event.TypeMux
+	NewTxEvent         *event.Feed
 }
 
 func (m *POAManager) Init(i interface{}) bool {

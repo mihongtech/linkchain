@@ -50,3 +50,7 @@ func (s *Service) GetChainManager() manager.ChainManager {
 func (s *Service) GetBlockEvent() *event.TypeMux {
 	return service.GetManager().NewBlockEvent
 }
+
+func (s *Service) GetTxEvent() *event.Feed {
+	return service.GetManager().NewTxEvent
+}
