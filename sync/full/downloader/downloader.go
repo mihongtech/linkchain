@@ -494,7 +494,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 		}
 	}
 	// If the head fetch already found an ancestor, return
-	if hash.IsEmpty() {
+	if hash == nil || hash.IsEmpty() {
 		p.log.Debug("Found common ancestor", "number", number, "hash", hash)
 		return number, nil
 	}
