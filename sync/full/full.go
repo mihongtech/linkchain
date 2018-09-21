@@ -47,7 +47,8 @@ type ProtocolManager struct {
 	txmanager     manager.TransactionManager
 	eventMux      *event.TypeMux
 	eventTx       *event.Feed
-	txCh          chan tx.ITx
+	scope         event.SubscriptionScope
+	txCh          chan tx.TxEvent
 	txSub         event.Subscription
 	minedBlockSub *event.TypeMuxSubscription
 
@@ -129,8 +130,8 @@ func NewProtocolManager(config interface{}, consensus *consensus.Service, networ
 
 func (pm *ProtocolManager) Start() bool {
 	// broadcast transactions
-	pm.txCh = make(chan tx.ITx, txChanSize)
-	pm.txSub = pm.eventTx.Subscribe(pm.txCh)
+	pm.txCh = make(chan tx.TxEvent, txChanSize)
+	pm.txSub = pm.scope.Track(pm.eventTx.Subscribe(pm.txCh))
 	go pm.txBroadcastLoop()
 	//
 	//	 broadcast mined blocks
@@ -145,7 +146,7 @@ func (pm *ProtocolManager) Start() bool {
 
 func (pm *ProtocolManager) Stop() {
 	log.Info("Stopping Linkchain protocol")
-
+	pm.scope.Close()
 	pm.txSub.Unsubscribe()         // quits txBroadcastLoop
 	pm.minedBlockSub.Unsubscribe() // quits blockBroadcastLoop
 
@@ -458,7 +459,7 @@ func (self *ProtocolManager) txBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.txCh:
-			self.BroadcastTx(event.GetTxID(), event)
+			self.BroadcastTx(event.Tx.GetTxID(), event.Tx)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-self.txSub.Err():

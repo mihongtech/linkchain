@@ -1,19 +1,19 @@
 package tx
+
 import (
+	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/meta"
-	"github.com/linkchain/common/math"
 	"github.com/linkchain/meta/account"
 )
 
-
-type ITxPeer interface{
+type ITxPeer interface {
 	GetID() account.IAccountID
 }
 
+type TxEvent struct{ Tx ITx }
 
 type ITx interface {
-
 	GetTxID() meta.DataID
 
 	//tx content
@@ -30,10 +30,10 @@ type ITx interface {
 	ChangeFromTo() ITx
 
 	//signature
-	Sign()(math.ISignature, error)
+	Sign() (math.ISignature, error)
 	SetSignature(code []byte)
-	GetSignature()(math.ISignature)
-	Verify()(error)
+	GetSignature() math.ISignature
+	Verify() error
 
 	//serialize
 	serialize.ISerialize

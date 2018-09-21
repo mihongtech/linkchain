@@ -5,7 +5,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/function/wallet"
-	"github.com/linkchain/meta/tx"
+	meta_tx "github.com/linkchain/meta/tx"
 	"github.com/linkchain/node"
 	"github.com/linkchain/poa/meta"
 	"github.com/linkchain/poa/poamanager"
@@ -67,7 +67,7 @@ var signTxCmd = &cobra.Command{
 		}
 		log.Info("signtx", txData.String())
 
-		var tx tx.ITx = &meta.POATransaction{}
+		var tx meta_tx.ITx = &meta.POATransaction{}
 		tx.Deserialize(&txData)
 
 		node.GetWallet().SignTransaction(tx)
@@ -109,7 +109,7 @@ var sendTxCmd = &cobra.Command{
 		}
 		log.Info("sendtx", txData.String())
 
-		var tx tx.ITx = &meta.POATransaction{}
+		var tx meta_tx.ITx = &meta.POATransaction{}
 		tx.Deserialize(&txData)
 
 		log.Info("sendtx", "data", tx)
@@ -125,6 +125,8 @@ var sendTxCmd = &cobra.Command{
 		}
 
 		poamanager.GetManager().TransactionManager.ProcessTx(tx)
+		poamanager.GetManager().NewTxEvent.Send(meta_tx.TxEvent{tx})
+
 	},
 }
 
