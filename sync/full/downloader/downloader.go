@@ -16,10 +16,8 @@ import (
 )
 
 var (
-	MaxHashFetch    = 512 // Amount of hashes to be fetched per retrieval request
-	MaxBlockFetch   = 128 // Amount of blocks to be fetched per retrieval request
+	MaxBlockFetch   = 192 // Amount of blocks to be fetched per retrieval request
 	MaxSkeletonSize = 128 // Number of header fetches to need for a skeleton assembly
-	MaxBodyFetch    = 128 // Amount of block bodies to be fetched per retrieval request
 
 	rttMinEstimate   = 2 * time.Second  // Minimum round-trip time to target for download requests
 	rttMaxEstimate   = 20 * time.Second // Maximum rount-trip time to target for download requests
@@ -31,15 +29,10 @@ var (
 	qosConfidenceCap = 10   // Number of peers above which not to modify RTT confidence
 	qosTuningImpact  = 0.25 // Impact that a new tuning target has on the previous value
 
-	maxQueuedBlocks   = 32 * 1024 // [eth/62] Maximum number of headers to queue for import (DOS protection)
-	maxBlocksProcess  = 2048      // Number of header download results to import at once into the chain
-	maxResultsProcess = 2048      // Number of content download results to import at once into the chain
+	maxBlocksProcess  = 2048 // Number of header download results to import at once into the chain
+	maxResultsProcess = 2048 // Number of content download results to import at once into the chain
 
-	fsHeaderCheckFrequency = 100             // Verification frequency of the downloaded headers during fast sync
-	fsHeaderSafetyNet      = 2048            // Number of headers to discard in case a chain violation is detected
-	fsHeaderForceVerify    = 24              // Number of headers to verify before and after the pivot to accept it
-	fsHeaderContCheck      = 3 * time.Second // Time interval to check for header continuations during state download
-	fsMinFullBlocks        = 64              // Number of blocks to retrieve fully even in fast sync
+	fsBlockContCheck = 3 * time.Second
 )
 
 var (
@@ -53,13 +46,7 @@ var (
 	errPeersUnavailable        = errors.New("no peers available or all tried for download")
 	errInvalidAncestor         = errors.New("retrieved ancestor is invalid")
 	errInvalidChain            = errors.New("retrieved hash chain is invalid")
-	errInvalidBlock            = errors.New("retrieved block is invalid")
-	errInvalidBody             = errors.New("retrieved block body is invalid")
-	errInvalidReceipt          = errors.New("retrieved receipt is invalid")
 	errCancelBlockFetch        = errors.New("block download canceled (requested)")
-	errCancelBodyFetch         = errors.New("block body download canceled (requested)")
-	errCancelReceiptFetch      = errors.New("receipt download canceled (requested)")
-	errCancelStateFetch        = errors.New("state data download canceled (requested)")
 	errCancelBlockProcessing   = errors.New("block processing canceled (requested)")
 	errCancelContentProcessing = errors.New("content processing canceled (requested)")
 	errNoSyncActive            = errors.New("no sync active")
@@ -407,7 +394,7 @@ func (d *Downloader) fetchHeight(p *peerConnection) (block.IBlock, error) {
 
 	// Request the advertised remote head block and wait for the response
 	head := p.peer.Head()
-	go p.peer.RequestBlocksByHash(head, 1, 0, false)
+	go p.peer.RequestBlocksByHash(head, 1, 0)
 
 	ttl := d.requestTTL()
 	timeout := time.After(ttl)
@@ -469,7 +456,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 		count = limit
 	}
 	log.Debug("findAncestor RequestBlocksByNumber", "from", from, "count", count)
-	go p.peer.RequestBlocksByNumber(uint64(from), count, 15, false)
+	go p.peer.RequestBlocksByNumber(uint64(from), count, 15)
 
 	// Wait for the remote response to the head fetch
 	number := uint64(0)
@@ -542,7 +529,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 		ttl := d.requestTTL()
 		timeout := time.After(ttl)
 
-		go p.peer.RequestBlocksByNumber(check, 1, 0, false)
+		go p.peer.RequestBlocksByNumber(check, 1, 0)
 
 		// Wait until a reply arrives to this request
 		for arrived := false; !arrived; {
@@ -602,10 +589,10 @@ func (d *Downloader) fetchBlocks(p *peerConnection, from uint64, pivot uint64) e
 
 		if skeleton {
 			p.log.Trace("Fetching skeleton blocks", "count", MaxBlockFetch, "from", from)
-			go p.peer.RequestBlocksByNumber(from+uint64(MaxBlockFetch)-1, MaxSkeletonSize, MaxBlockFetch-1, false)
+			go p.peer.RequestBlocksByNumber(from+uint64(MaxBlockFetch)-1, MaxSkeletonSize, MaxBlockFetch-1)
 		} else {
 			p.log.Trace("Fetching full headers", "count", MaxBlockFetch, "from", from)
-			go p.peer.RequestBlocksByNumber(from, MaxBlockFetch, 0, false)
+			go p.peer.RequestBlocksByNumber(from, MaxBlockFetch, 0)
 		}
 	}
 	// Start pulling the header chain skeleton until all is done
@@ -637,7 +624,7 @@ func (d *Downloader) fetchBlocks(p *peerConnection, from uint64, pivot uint64) e
 				if atomic.LoadInt32(&d.committed) == 0 && pivot <= from {
 					p.log.Debug("No headers, waiting for pivot commit")
 					select {
-					case <-time.After(fsHeaderContCheck):
+					case <-time.After(fsBlockContCheck):
 						getBlocks(from)
 						continue
 					case <-d.cancelCh:
@@ -713,7 +700,7 @@ func (d *Downloader) fillBlockSkeleton(from uint64, skeleton []block.IBlock) ([]
 			return d.queue.ReserveBlocks(p, count), false, nil
 		}
 		fetch    = func(p *peerConnection, req *fetchRequest) error { return p.FetchBlocks(req.From, MaxBlockFetch) }
-		capacity = func(p *peerConnection) int { return p.HeaderCapacity(d.requestRTT()) }
+		capacity = func(p *peerConnection) int { return p.BlockCapacity(d.requestRTT()) }
 		setIdle  = func(p *peerConnection, accepted int) { p.SetBlocksIdle(accepted) }
 	)
 	err := d.fetchParts(errCancelBlockFetch, d.blockCh, deliver, d.queue.blockContCh, expire,

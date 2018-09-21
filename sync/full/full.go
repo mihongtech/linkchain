@@ -122,8 +122,10 @@ func NewProtocolManager(config interface{}, consensus *consensus.Service, networ
 	heighter := func() uint64 {
 		return uint64(manager.blockchain.GetBestBlock().GetHeight())
 	}
-
-	manager.fetcher = fetcher.New(manager.blockmanager.GetBlockByID, manager.BroadcastBlock, heighter, manager.blockmanager, manager.removePeer)
+	validator := func(block block.IBlock) bool {
+		return manager.blockmanager.CheckBlock(block)
+	}
+	manager.fetcher = fetcher.New(manager.blockmanager.GetBlockByID, validator, manager.BroadcastBlock, heighter, manager.blockmanager, manager.removePeer)
 
 	return manager, nil
 }
@@ -267,23 +269,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				log.Error("get block msg error", "query data", data, "err", err)
 				break
 			}
-			number := uint64(block.GetHeight())
+			// number := uint64(block.GetHeight())
 			blocks = append(blocks, block)
 
 			// Advance to the next header of the query
 			switch {
-			case !data.Hash.IsEmpty() && data.Reverse:
-				// Hash based traversal towards the genesis block
-				for i := 0; i < int(data.Skip)+1; i++ {
-					if b, e := pm.blockmanager.GetBlockByID(data.Hash); (b != nil) && (e == nil) {
-						data.Hash = b.GetPrevBlockID()
-						number--
-					} else {
-						unknown = true
-						break
-					}
-				}
-			case !data.Hash.IsEmpty() && !data.Reverse:
+			case !data.Hash.IsEmpty():
 				// Hash based traversal towards the leaf block
 				var (
 					current = uint64(block.GetHeight())
@@ -302,15 +293,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 					}
 
 				}
-			case data.Reverse:
-				// Number based traversal towards the genesis block
-				if data.Number >= data.Skip+1 {
-					data.Number -= data.Skip + 1
-				} else {
-					unknown = true
-				}
-
-			case !data.Reverse:
+			case data.Hash.IsEmpty():
 				// Number based traversal towards the leaf block
 				data.Number += data.Skip + 1
 			}
@@ -336,17 +319,17 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 
 		log.Debug("Receive BlockMsg", "block is", blocks)
-		//		filter := len(blocks) == 1
-		//		if filter {
-		//			pm.fetcher.FilterBlocks(p.id, blocks, time.Now())
-		//		}
-		//		if len(blocks) > 0 || !filter {
-		//			err := pm.downloader.DeliverBlocks(p.id, blocks)
-		//			if err != nil {
-		//				log.Debug("Failed to deliver blocks", "err", err)
-		//			}
-		//		}
-		//		return pm.downloader.ImportBlocks(p.id, blocks)
+		filter := len(blocks) == 1
+		if filter {
+			pm.fetcher.FilterBlocks(p.id, blocks, time.Now())
+		}
+		if len(blocks) > 0 || !filter {
+			err := pm.downloader.DeliverBlocks(p.id, blocks)
+			if err != nil {
+				log.Debug("Failed to deliver blocks", "err", err)
+			}
+		}
+		// pm.downloader.ImportBlocks(p.id, blocks)
 
 	case msg.Code == NewBlockHashesMsg:
 		var announces protobuf.NewBlockHashesDatas
@@ -406,7 +389,11 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		transaction.Deserialize(&t)
 		p.MarkTransaction(transaction.GetTxID())
 		log.Debug("Receive TxMsg", "transaction is", transaction)
-		return pm.txmanager.AddTransaction(transaction)
+		pm.txmanager.AddTransaction(transaction)
+		//		for _, t := range pm.txmanager.GetAllTransaction() {
+		//			log.Debug("all txs is", "tx", t)
+		//		}
+
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
