@@ -311,17 +311,15 @@ func (d *Downloader) spawnSync(fetchers []func() error) error {
 	var wg sync.WaitGroup
 	errc := make(chan error, len(fetchers))
 	wg.Add(len(fetchers))
-	for _, fn := range fetchers {
+	for i, fn := range fetchers {
 		fn := fn
+		log.Info("start sync fetchers", "index", i)
 		go func() { defer wg.Done(); errc <- fn() }()
 	}
 	// Wait for the first error, then terminate the others.
 	var err error
 	for i := 0; i < len(fetchers); i++ {
 		if i == len(fetchers)-1 {
-			// Close the queue when all fetchers have exited.
-			// This will cause the block processor to end when
-			// it has processed the queue.
 			d.queue.Close()
 		}
 		if err = <-errc; err != nil {
@@ -967,10 +965,10 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	//blocks := make([]block.IBlock, len(results))
 
 	for _, result := range results {
-		log.Debug("Downloaded item processing block", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "block", result.Block)
+		log.Info("Downloaded item processing block", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "block", result.Block)
 
 		if err := d.blockmanager.ProcessBlock(result.Block); err != nil {
-			log.Debug("Downloaded item processing failed", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "err", err)
+			log.Error("Downloaded item processing failed", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "err", err)
 			return errInvalidChain
 		}
 	}

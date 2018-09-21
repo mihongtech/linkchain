@@ -298,8 +298,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				data.Number += data.Skip + 1
 			}
 		}
-
-		log.Debug("Receive GetBlockMsg", "query is", data, "blocks is", blocks)
+		for i, b := range blocks {
+			log.Debug("Receive GetBlockMsg", "query is", data, "index", i, "block", b)
+		}
 
 		p.SendBlock(blocks)
 
@@ -319,9 +320,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 
 		log.Debug("Receive BlockMsg", "len(block) is", len(blocks))
+		for i, b := range blocks {
+			log.Debug("Receive BlockMsg", "index", i, "block", b)
+		}
 		filter := len(blocks) == 1
 		if filter {
-			pm.fetcher.FilterBlocks(p.id, blocks, time.Now())
+			blocks = pm.fetcher.FilterBlocks(p.id, blocks, time.Now())
 		}
 		if len(blocks) > 0 || !filter {
 			err := pm.downloader.DeliverBlocks(p.id, blocks)
