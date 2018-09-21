@@ -335,7 +335,7 @@ func (f *Fetcher) loop() {
 			f.rescheduleComplete(completeTimer)
 
 		case filter := <-f.blockFilter:
-			log.Info("blockFilter arrived", "filter", filter)
+			log.Debug("blockFilter arrived", "filter", filter)
 			var task *blockFilterTask
 			select {
 			case task = <-filter:

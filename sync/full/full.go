@@ -334,33 +334,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				log.Debug("Failed to deliver blocks", "err", err)
 			}
 		}
-		// pm.downloader.ImportBlocks(p.id, blocks)
-
-		//	case msg.Code == NewBlockHashesMsg:
-		//		var announces protobuf.NewBlockHashesDatas
-		//		if err := msg.Decode(&announces); err != nil {
-		//			return errResp(ErrDecode, "%v: %v", msg, err)
-		//		}
-		//		// Mark the hashes as present at the remote node
-		//		for _, block := range announces.Data {
-		//			b := &newBlockHashData{}
-		//			b.Deserialize(block)
-		//			p.MarkBlock(b.Hash)
-		//			log.Debug("Receive NewBlockHashesMsg", "block hash is", b)
-		//		}
-		//		// Schedule all the unknown hashes for retrieval
-		//		unknown := make(newBlockHashesData, 0, len(announces.Data))
-		//		for _, block := range announces.Data {
-		//			b := &newBlockHashData{}
-		//			b.Deserialize(block)
-		//			if !pm.blockmanager.HasBlock(b.Hash) {
-		//				unknown = append(unknown, *b)
-		//			}
-		//		}
-		//		for _, block := range unknown {
-		//			pm.fetcher.Notify(p.id, block.Hash, block.Number, time.Now(), p.RequestOneBlock)
-		//		}
-		// log.Debug("Receive NewBlockHashesMsg", "block is", data)
+		pm.downloader.ImportBlocks(p.id, blocks)
 
 	case msg.Code == NewBlockMsg:
 		// Retrieve and decode the propagated block

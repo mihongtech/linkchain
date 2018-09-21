@@ -313,7 +313,7 @@ func (d *Downloader) spawnSync(fetchers []func() error) error {
 	wg.Add(len(fetchers))
 	for i, fn := range fetchers {
 		fn := fn
-		log.Info("start sync fetchers", "index", i)
+		log.Debug("start sync fetchers", "index", i)
 		go func() { defer wg.Done(); errc <- fn() }()
 	}
 	// Wait for the first error, then terminate the others.
@@ -432,7 +432,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 	if count > limit {
 		count = limit
 	}
-	log.Debug("findAncestor RequestBlocksByNumber", "from", from, "count", count)
+	log.Info("findAncestor RequestBlocksByNumber", "from", from, "count", count)
 	go p.peer.RequestBlocksByNumber(uint64(from), count, 15)
 
 	// Wait for the remote response to the head fetch
@@ -933,6 +933,7 @@ func (d *Downloader) processFullSyncContent() error {
 			return nil
 		}
 		if err := d.importBlockResults(results); err != nil {
+			log.Error("importBlockResults failed", "err", err)
 			return err
 		}
 	}
@@ -965,7 +966,10 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	//blocks := make([]block.IBlock, len(results))
 
 	for _, result := range results {
-		log.Info("Downloaded item processing block", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "block", result.Block)
+		log.Debug("Downloaded item processing block", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "block", result.Block)
+		if d.blockmanager.HasBlock(result.Block.GetBlockID()) {
+			continue
+		}
 
 		if err := d.blockmanager.ProcessBlock(result.Block); err != nil {
 			log.Error("Downloaded item processing failed", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "err", err)
