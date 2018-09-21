@@ -51,7 +51,6 @@ var (
 	errPeersUnavailable        = errors.New("no peers available or all tried for download")
 	errInvalidAncestor         = errors.New("retrieved ancestor is invalid")
 	errInvalidChain            = errors.New("retrieved hash chain is invalid")
-	errInvalidBlock            = errors.New("retrieved block is invalid")
 	errCancelBlockFetch        = errors.New("block download canceled (requested)")
 	errCancelBlockProcessing   = errors.New("block processing canceled (requested)")
 	errCancelContentProcessing = errors.New("content processing canceled (requested)")
@@ -706,7 +705,7 @@ func (d *Downloader) fillBlockSkeleton(from uint64, skeleton []block.IBlock) ([]
 			return d.queue.ReserveBlocks(p, count), false, nil
 		}
 		fetch    = func(p *peerConnection, req *fetchRequest) error { return p.FetchBlocks(req.From, MaxBlockFetch) }
-		capacity = func(p *peerConnection) int { return p.HeaderCapacity(d.requestRTT()) }
+		capacity = func(p *peerConnection) int { return p.BlockCapacity(d.requestRTT()) }
 		setIdle  = func(p *peerConnection, accepted int) { p.SetBlocksIdle(accepted) }
 	)
 	err := d.fetchParts(errCancelBlockFetch, d.blockCh, deliver, d.queue.blockContCh, expire,

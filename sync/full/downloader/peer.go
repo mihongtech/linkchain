@@ -150,7 +150,7 @@ func (p *peerConnection) setIdle(started time.Time, delivered int, throughput *f
 
 // HeaderCapacity retrieves the peers header download allowance based on its
 // previously discovered throughput.
-func (p *peerConnection) HeaderCapacity(targetRTT time.Duration) int {
+func (p *peerConnection) BlockCapacity(targetRTT time.Duration) int {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
