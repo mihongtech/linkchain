@@ -63,12 +63,6 @@ type Downloader struct {
 	rttEstimate   uint64 // Round trip time to target for download requests
 	rttConfidence uint64 // Confidence in the estimated RTT (unit: millionths to allow atomic ops)
 
-	// Statistics
-	syncStatsChainOrigin uint64 // Origin block number where syncing started at
-	syncStatsChainHeight uint64 // Highest block number known when syncing started
-	// syncStatsState       stateSyncStats
-	syncStatsLock sync.RWMutex // Lock protecting the sync stats fields
-
 	blockchain   manager.ChainManager
 	blockmanager manager.BlockManager
 
@@ -84,10 +78,6 @@ type Downloader struct {
 	// Channels
 	blockCh     chan dataPack       // [eth/62] Channel receiving inbound block headers
 	blockProcCh chan []block.IBlock // [eth/62] Channel to feed the header processor new tasks
-
-	// for stateFetcher
-	//	stateSyncStart chan *stateSync
-	//	trackStateReq  chan *stateReq
 
 	// Cancellation and termination
 	cancelPeer string        // Identifier of the peer currently being used as the master (cancel on drop)
@@ -306,12 +296,6 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash meta.DataID) (err erro
 	if err != nil {
 		return err
 	}
-	d.syncStatsLock.Lock()
-	if d.syncStatsChainHeight <= origin || d.syncStatsChainOrigin > origin {
-		d.syncStatsChainOrigin = origin
-	}
-	d.syncStatsChainHeight = height
-	d.syncStatsLock.Unlock()
 
 	d.committed = 1
 	d.queue.Prepare(origin+1, d.mode)
@@ -939,13 +923,6 @@ func (d *Downloader) processBlocks(origin uint64, pivot uint64) error {
 				blocks = blocks[limit:]
 				origin += uint64(limit)
 			}
-
-			// Update the highest block number we know if a higher one is found.
-			d.syncStatsLock.Lock()
-			if d.syncStatsChainHeight < origin {
-				d.syncStatsChainHeight = origin - 1
-			}
-			d.syncStatsLock.Unlock()
 		}
 	}
 	return nil

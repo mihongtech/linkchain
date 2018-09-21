@@ -24,13 +24,3 @@ type blockPack struct {
 func (p *blockPack) PeerId() string { return p.peerId }
 func (p *blockPack) Items() int     { return len(p.blocks) }
 func (p *blockPack) Stats() string  { return fmt.Sprintf("%d", len(p.blocks)) }
-
-// statePack is a batch of states returned by a peer.
-type statePack struct {
-	peerId string
-	states [][]byte
-}
-
-func (p *statePack) PeerId() string { return p.peerId }
-func (p *statePack) Items() int     { return len(p.states) }
-func (p *statePack) Stats() string  { return fmt.Sprintf("%d", len(p.states)) }
