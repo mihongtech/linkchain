@@ -243,6 +243,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	// Block header query, collect the requested headers and reply
 	case msg.Code == GetBlockMsg:
 		// Decode the complex header query
+
 		var query protobuf.GetBlockHeadersData
 		if err := msg.Decode(&query); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
@@ -335,30 +336,30 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		// pm.downloader.ImportBlocks(p.id, blocks)
 
-	case msg.Code == NewBlockHashesMsg:
-		var announces protobuf.NewBlockHashesDatas
-		if err := msg.Decode(&announces); err != nil {
-			return errResp(ErrDecode, "%v: %v", msg, err)
-		}
-		// Mark the hashes as present at the remote node
-		for _, block := range announces.Data {
-			b := &newBlockHashData{}
-			b.Deserialize(block)
-			p.MarkBlock(b.Hash)
-			log.Debug("Receive NewBlockHashesMsg", "block hash is", b)
-		}
-		// Schedule all the unknown hashes for retrieval
-		unknown := make(newBlockHashesData, 0, len(announces.Data))
-		for _, block := range announces.Data {
-			b := &newBlockHashData{}
-			b.Deserialize(block)
-			if !pm.blockmanager.HasBlock(b.Hash) {
-				unknown = append(unknown, *b)
-			}
-		}
-		for _, block := range unknown {
-			pm.fetcher.Notify(p.id, block.Hash, block.Number, time.Now(), p.RequestOneBlock)
-		}
+		//	case msg.Code == NewBlockHashesMsg:
+		//		var announces protobuf.NewBlockHashesDatas
+		//		if err := msg.Decode(&announces); err != nil {
+		//			return errResp(ErrDecode, "%v: %v", msg, err)
+		//		}
+		//		// Mark the hashes as present at the remote node
+		//		for _, block := range announces.Data {
+		//			b := &newBlockHashData{}
+		//			b.Deserialize(block)
+		//			p.MarkBlock(b.Hash)
+		//			log.Debug("Receive NewBlockHashesMsg", "block hash is", b)
+		//		}
+		//		// Schedule all the unknown hashes for retrieval
+		//		unknown := make(newBlockHashesData, 0, len(announces.Data))
+		//		for _, block := range announces.Data {
+		//			b := &newBlockHashData{}
+		//			b.Deserialize(block)
+		//			if !pm.blockmanager.HasBlock(b.Hash) {
+		//				unknown = append(unknown, *b)
+		//			}
+		//		}
+		//		for _, block := range unknown {
+		//			pm.fetcher.Notify(p.id, block.Hash, block.Number, time.Now(), p.RequestOneBlock)
+		//		}
 		// log.Debug("Receive NewBlockHashesMsg", "block is", data)
 
 	case msg.Code == NewBlockMsg:
@@ -489,7 +490,8 @@ func (pm *ProtocolManager) BroadcastBlock(block block.IBlock, propagate bool) {
 	// Otherwise if the block is indeed in out own chain, announce it
 	if pm.blockmanager.HasBlock(hash) {
 		for _, peer := range peers {
-			peer.SendNewBlockHashes([]meta.DataID{hash}, []uint64{uint64(block.GetHeight())})
+			peer.SendNewBlock(block)
+			// peer.SendNewBlockHashes([]meta.DataID{hash}, []uint64{uint64(block.GetHeight())})
 		}
 		log.Trace("Announced block", "hash", hash, "recipients", len(peers))
 	}

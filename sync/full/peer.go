@@ -261,21 +261,21 @@ func (p *peer) RequestBlocksByNumber(i uint64, amount int, skip int) error {
 	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 }
 
-func (p *peer) SendNewBlockHashes(hashes []meta.DataID, numbers []uint64) error {
-	for _, hash := range hashes {
-		p.knownBlocks.Add(hash)
-	}
-	msg := make([]*protobuf.NewBlockHashData, 0, len(hashes))
-	for i := 0; i < len(hashes); i++ {
-		request := &newBlockHashData{
-			hashes[i],
-			numbers[i],
-		}
-		msg = append(msg, request.Serialize().(*protobuf.NewBlockHashData))
-	}
-	log.Debug("Send NewBlockHashesMsg", "block hash is", msg)
-	return message.Send(p.rw, NewBlockHashesMsg, &(protobuf.NewBlockHashesDatas{Data: msg}))
-}
+//func (p *peer) SendNewBlockHashes(hashes []meta.DataID, numbers []uint64) error {
+//	for _, hash := range hashes {
+//		p.knownBlocks.Add(hash)
+//	}
+//	msg := make([]*protobuf.NewBlockHashData, 0, len(hashes))
+//	for i := 0; i < len(hashes); i++ {
+//		request := &newBlockHashData{
+//			hashes[i],
+//			numbers[i],
+//		}
+//		msg = append(msg, request.Serialize().(*protobuf.NewBlockHashData))
+//	}
+//	log.Debug("Send NewBlockHashesMsg", "block hash is", msg)
+//	return message.Send(p.rw, NewBlockHashesMsg, &(protobuf.NewBlockHashesDatas{Data: msg}))
+//}
 
 // peerSet represents the collection of active peers currently participating in
 // the Ethereum sub-protocol.
