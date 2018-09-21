@@ -70,10 +70,9 @@ type Downloader struct {
 	dropPeer peerDropFn // Drops a peer for misbehaving
 
 	// Status
-	synchroniseMock func(id string, hash meta.DataID) error // Replacement for synchronise during testing
-	synchronising   int32
-	notified        int32
-	committed       int32
+	synchronising int32
+	notified      int32
+	committed     int32
 
 	// Channels
 	blockCh     chan dataPack       // [eth/62] Channel receiving inbound block headers
@@ -214,10 +213,6 @@ func (d *Downloader) Synchronise(id string, head meta.DataID) error {
 // it will use the best peer possible and synchronize if its TD is higher than our own. If any of the
 // checks fail an error will be returned. This method is synchronous
 func (d *Downloader) synchronise(id string, hash meta.DataID) error {
-	// Mock out the synchronisation if testing
-	if d.synchroniseMock != nil {
-		return d.synchroniseMock(id, hash)
-	}
 	// Make sure only one goroutine is ever allowed past this point at once
 	if !atomic.CompareAndSwapInt32(&d.synchronising, 0, 1) {
 		return errBusy
