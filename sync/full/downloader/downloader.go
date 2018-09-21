@@ -412,7 +412,7 @@ func (d *Downloader) fetchHeight(p *peerConnection) (block.IBlock, error) {
 // the head links match), we do a binary search to find the common ancestor.
 func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, error) {
 	var ceil uint64
-
+	floor := int64(-1)
 	if d.mode == FullSync {
 		ceil = uint64(d.blockchain.GetBestBlock().GetHeight())
 	}
@@ -465,7 +465,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 			for i := 0; i < len(blocks); i++ {
 				if number := int64(blocks[i].GetHeight()); number != from+int64(i)*16 {
 					p.log.Warn("Head blocks broke chain ordering", "index", i, "requested", from+int64(i)*16, "received", number)
-					// return 0, errInvalidChain
+					return 0, errInvalidChain
 				}
 			}
 			// Check if a common ancestor was found
@@ -494,7 +494,11 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 		}
 	}
 	// If the head fetch already found an ancestor, return
-	if hash == nil || hash.IsEmpty() {
+	if hash != nil && hash.IsEmpty() {
+		if int64(number) <= floor {
+			p.log.Warn("Ancestor below allowance", "number", number, "hash", hash, "allowance", floor)
+			return 0, errInvalidAncestor
+		}
 		p.log.Debug("Found common ancestor", "number", number, "hash", hash)
 		return number, nil
 	}
