@@ -28,8 +28,11 @@ var (
 // blockRetrievalFn is a callback type for retrieving a block from the local chain.
 type blockRetrievalFn func(meta.DataID) (block.IBlock, error)
 
-// headerRequesterFn is a callback type for sending a header retrieval request.
+// blockRequesterFn is a callback type for sending a block retrieval request.
 type blockRequesterFn func(meta.DataID) error
+
+// blockVerifierFn is a callback type to verify a block for fast propagation.
+type blockVerifierFn func(block block.IBlock) bool
 
 // blockBroadcasterFn is a callback type for broadcasting a block to connected peers.
 type blockBroadcasterFn func(block block.IBlock, propagate bool)
@@ -74,7 +77,6 @@ type Fetcher struct {
 	inject chan *inject
 
 	blockFilter chan chan *blockFilterTask
-	// headerFilter chan chan *headerFilterTask
 
 	done chan meta.DataID
 	quit chan struct{}
@@ -92,8 +94,8 @@ type Fetcher struct {
 	queued map[meta.DataID]*inject // Set of already queued blocks (to dedup imports)
 
 	// Callbacks
-	getBlock blockRetrievalFn // Retrieves a block from the local chain
-	// verifyHeader   headerVerifierFn   // Checks if a block's headers have a valid proof of work
+	getBlock       blockRetrievalFn   // Retrieves a block from the local chain
+	verifyBlock    blockVerifierFn    // Checks if a block's headers have a valid proof of work
 	broadcastBlock blockBroadcasterFn // Broadcasts a block to connected peers
 	chainHeight    chainHeightFn      // Retrieves the current chain's height
 	insertChain    manager.BlockManager
@@ -101,23 +103,23 @@ type Fetcher struct {
 }
 
 // New creates a block fetcher to retrieve blocks based on hash announcements.
-func New(getBlock blockRetrievalFn, broadcastBlock blockBroadcasterFn, chainHeight chainHeightFn, insertChain manager.BlockManager, dropPeer peerDropFn) *Fetcher {
+func New(getBlock blockRetrievalFn, verifyBlock blockVerifierFn, broadcastBlock blockBroadcasterFn, chainHeight chainHeightFn, insertChain manager.BlockManager, dropPeer peerDropFn) *Fetcher {
 	return &Fetcher{
-		notify:      make(chan *announce),
-		inject:      make(chan *inject),
-		blockFilter: make(chan chan *blockFilterTask),
-		done:        make(chan meta.DataID),
-		quit:        make(chan struct{}),
-		announces:   make(map[string]int),
-		announced:   make(map[meta.DataID][]*announce),
-		fetching:    make(map[meta.DataID]*announce),
-		fetched:     make(map[meta.DataID][]*announce),
-		completing:  make(map[meta.DataID]*announce),
-		queue:       prque.New(),
-		queues:      make(map[string]int),
-		queued:      make(map[meta.DataID]*inject),
-		getBlock:    getBlock,
-		// verifyHeader:   verifyHeader,
+		notify:         make(chan *announce),
+		inject:         make(chan *inject),
+		blockFilter:    make(chan chan *blockFilterTask),
+		done:           make(chan meta.DataID),
+		quit:           make(chan struct{}),
+		announces:      make(map[string]int),
+		announced:      make(map[meta.DataID][]*announce),
+		fetching:       make(map[meta.DataID]*announce),
+		fetched:        make(map[meta.DataID][]*announce),
+		completing:     make(map[meta.DataID]*announce),
+		queue:          prque.New(),
+		queues:         make(map[string]int),
+		queued:         make(map[meta.DataID]*inject),
+		getBlock:       getBlock,
+		verifyBlock:    verifyBlock,
 		broadcastBlock: broadcastBlock,
 		chainHeight:    chainHeight,
 		insertChain:    insertChain,
@@ -454,8 +456,15 @@ func (f *Fetcher) insert(peer string, block block.IBlock) {
 			log.Debug("Unknown parent of propagated block", "peer", peer, "number", block.GetHeight(), "hash", hash, "parent", block.GetPrevBlockID())
 			return
 		}
-
-		go f.broadcastBlock(block, true)
+		// Quickly validate the block and propagate the block if it passes
+		valid := f.verifyBlock(block)
+		if valid {
+			go f.broadcastBlock(block, true)
+		} else {
+			log.Debug("Propagated block verification failed", "peer", peer, "number", block.GetHeight(), "hash", hash)
+			f.dropPeer(peer)
+			return
+		}
 		log.Debug("insert block to chain", "block", block)
 		if err := f.insertChain.ProcessBlock(block); err != nil {
 			log.Debug("Propagated block import failed", "peer", peer, "number", block.GetHeight(), "hash", hash, "err", err)

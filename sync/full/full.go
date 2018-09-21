@@ -122,8 +122,10 @@ func NewProtocolManager(config interface{}, consensus *consensus.Service, networ
 	heighter := func() uint64 {
 		return uint64(manager.blockchain.GetBestBlock().GetHeight())
 	}
-
-	manager.fetcher = fetcher.New(manager.blockmanager.GetBlockByID, manager.BroadcastBlock, heighter, manager.blockmanager, manager.removePeer)
+	validator := func(block block.IBlock) bool {
+		return manager.blockmanager.CheckBlock(block)
+	}
+	manager.fetcher = fetcher.New(manager.blockmanager.GetBlockByID, validator, manager.BroadcastBlock, heighter, manager.blockmanager, manager.removePeer)
 
 	return manager, nil
 }
