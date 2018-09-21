@@ -330,7 +330,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		for _, prob := range b.Block {
-			data := &poa_meta.POABlock{}
+			data := &poa_meta.Block{}
 			data.Deserialize(prob)
 			blocks = append(blocks, data)
 		}
@@ -380,7 +380,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if err := msg.Decode(&b); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		block := &poa_meta.POABlock{}
+		block := &poa_meta.Block{}
 		block.Deserialize(&b)
 
 		// Mark the peer as owning the block and schedule it for import
@@ -402,7 +402,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if err := msg.Decode(&t); err != nil {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		transaction := &poa_meta.POATransaction{}
+		transaction := &poa_meta.Transaction{}
 		transaction.Deserialize(&t)
 		p.MarkTransaction(transaction.GetTxID())
 		log.Debug("Receive TxMsg", "transaction is", transaction)

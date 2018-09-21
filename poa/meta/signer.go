@@ -25,12 +25,26 @@ var PubSigners = []string{firstPubMiner, secondPubMiner, thirdPubMiner}
 
 var PrivSigner = []string{fristPrivMiner, secondPrivMiner, thirdPrivMiner}
 
-type Signer POATransactionPeer
+type Signer TransactionPeer
 
-func NewSigner(signerPub string) Signer {
-	pub, _ := hex.DecodeString(signerPub)
-	id := *NewAccountId(pub).(*POAAccountID)
-	return Signer{AccountID: id, Extra: nil}
+func NewSigner(id AccountID, extra []byte) *Signer {
+	return &Signer{AccountID: id, Extra: extra}
+}
+
+func CreateSignerIdByPubKey(pubKey string) (*Signer, error) {
+	id, err := CreateAccountIdByPubKey(pubKey)
+	if err != nil {
+		return nil, err
+	}
+	return NewSigner(*id, nil), nil
+}
+
+func CreateSignerIdByPrivKey(privKey string) (*Signer, error) {
+	id, err := CreateAccountIdByPrivKey(privKey)
+	if err != nil {
+		return nil, err
+	}
+	return NewSigner(*id, nil), nil
 }
 
 func (s *Signer) Sign(signerPriv string, signHash math.Hash) error {

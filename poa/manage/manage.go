@@ -1,4 +1,4 @@
-package poamanager
+package manage
 
 import (
 	"sync"
@@ -8,22 +8,22 @@ import (
 	"github.com/linkchain/consensus/manager"
 )
 
-var m *POAManager
+var m *Manage
 var once sync.Once
 
-func GetManager() *POAManager {
+func GetManager() *Manage {
 	once.Do(func() {
-		m = &POAManager{BlockManager: &POABlockManager{},
-			AccountManager:     &POAAccountManager{},
-			TransactionManager: &POATxManager{},
-			ChainManager:       &POAChainManager{},
+		m = &Manage{BlockManager: &BlockManage{},
+			AccountManager:     &AccountManage{},
+			TransactionManager: &TransactionManage{},
+			ChainManager:       &ChainManage{},
 			NewBlockEvent:      new(event.TypeMux),
 			NewTxEvent:         new(event.Feed)}
 	})
 	return m
 }
 
-type POAManager struct {
+type Manage struct {
 	BlockManager       manager.BlockManager
 	AccountManager     manager.AccountManager
 	TransactionManager manager.TransactionManager
@@ -32,25 +32,22 @@ type POAManager struct {
 	NewTxEvent         *event.Feed
 }
 
-func (m *POAManager) Init(i interface{}) bool {
-	log.Info("POAManager init...")
-	//TODO Account init
+func (m *Manage) Init(i interface{}) bool {
+	log.Info("Manage init...")
 	m.AccountManager.Init(i)
 	m.BlockManager.Init(i)
 	m.ChainManager.Init(i)
 	m.TransactionManager.Init(i)
-
-	//TODO Transaction init
 	return true
 }
 
-func (m *POAManager) Start() bool {
-	log.Info("POAManager start...")
+func (m *Manage) Start() bool {
+	log.Info("Manage start...")
 	m.ChainManager.Start()
 	return true
 }
 
-func (m *POAManager) Stop() {
-	log.Info("POAManager stop...")
+func (m *Manage) Stop() {
+	log.Info("Manage stop...")
 	m.ChainManager.Stop()
 }

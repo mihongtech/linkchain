@@ -2,7 +2,7 @@ package poa
 
 import (
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/poa/poamanager"
+	"github.com/linkchain/poa/manage"
 )
 
 type Service struct {
@@ -25,6 +25,6 @@ func (s *Service) Stop() {
 	s.GetManager().Stop()
 }
 
-func (s *Service) GetManager() *poamanager.POAManager {
-	return poamanager.GetManager()
+func (s *Service) GetManager() *manage.Manage {
+	return manage.GetManager()
 }

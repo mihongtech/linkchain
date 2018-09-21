@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/linkchain/common/util/log"
 	meta_block "github.com/linkchain/meta/block"
-	"github.com/linkchain/poa/poamanager"
+	"github.com/linkchain/poa/manage"
 	"github.com/spf13/cobra"
 	"strconv"
 )
@@ -13,50 +13,27 @@ func init() {
 	RootCmd.AddCommand(chainInfoCmd)
 	RootCmd.AddCommand(blockCmd)
 	blockCmd.AddCommand(heightCmd)
-	RootCmd.AddCommand(minetestCmd)
 }
 
 var mineCmd = &cobra.Command{
 	Use:   "mine",
 	Short: "generate a new block",
 	Run: func(cmd *cobra.Command, args []string) {
-		block, err := poamanager.GetManager().BlockManager.NewBlock()
+		block, err := manage.GetManager().BlockManager.CreateBlock()
 		if err != nil {
 			log.Error("mine", "New Block error", err)
 			return
 		}
-		txs := poamanager.GetManager().TransactionManager.GetAllTransaction()
+		txs := manage.GetManager().TransactionManager.GetAllTransaction()
 		block.SetTx(txs)
 
-		block, err = poamanager.GetManager().BlockManager.RebuildBlock(block)
+		block, err = manage.GetManager().BlockManager.RebuildBlock(block)
 		if err != nil {
 			log.Error("mine", "Rebuild Block error", err)
 			return
 		}
-		poamanager.GetManager().BlockManager.ProcessBlock(block)
-		poamanager.GetManager().NewBlockEvent.Post(meta_block.NewMinedBlockEvent{Block: block})
-	},
-}
-
-var minetestCmd = &cobra.Command{
-	Use:   "test",
-	Short: "generate a new block",
-	Run: func(cmd *cobra.Command, args []string) {
-		block, err := poamanager.GetManager().BlockManager.NewBlock()
-		if err != nil {
-			log.Error("mine", "New Block error", err)
-			return
-		}
-		txs := poamanager.GetManager().TransactionManager.GetAllTransaction()
-		block.SetTx(txs)
-
-		block, err = poamanager.GetManager().BlockManager.RebuildTestBlock(block)
-		if err != nil {
-			log.Error("mine", "Rebuild Block error", err)
-			return
-		}
-		poamanager.GetManager().BlockManager.ProcessBlock(block)
-		poamanager.GetManager().NewBlockEvent.Post(meta_block.NewMinedBlockEvent{Block: block})
+		manage.GetManager().BlockManager.ProcessBlock(block)
+		manage.GetManager().NewBlockEvent.Post(meta_block.NewMinedBlockEvent{Block: block})
 	},
 }
 
@@ -64,7 +41,7 @@ var chainInfoCmd = &cobra.Command{
 	Use:   "chaininfo",
 	Short: "getBlockChainInfo",
 	Run: func(cmd *cobra.Command, args []string) {
-		poamanager.GetManager().ChainManager.GetBlockChainInfo()
+		manage.GetManager().ChainManager.GetBlockChainInfo()
 	},
 }
 
@@ -72,7 +49,7 @@ var loadChainCmd = &cobra.Command{
 	Use:   "loadchain",
 	Short: "loadchain",
 	Run: func(cmd *cobra.Command, args []string) {
-		poamanager.GetManager().ChainManager.UpdateChain()
+		manage.GetManager().ChainManager.UpdateChain()
 	},
 }
 
@@ -97,11 +74,11 @@ var heightCmd = &cobra.Command{
 			return
 		}
 
-		if uint32(height) > poamanager.GetManager().ChainManager.GetBestBlock().GetHeight() || height < 0 {
+		if uint32(height) > manage.GetManager().ChainManager.GetBestBlock().GetHeight() || height < 0 {
 			log.Error("getblockbyheight ", "error", "height is out of range", example[0], example[1])
 			return
 		}
-		block, err := poamanager.GetManager().ChainManager.GetBlockByHeight(uint32(height))
+		block, err := manage.GetManager().ChainManager.GetBlockByHeight(uint32(height))
 		if err != nil {
 			log.Error("getblockbyheight ", "error", err)
 		} else {

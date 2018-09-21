@@ -4,18 +4,17 @@ import (
 	"encoding/hex"
 	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/function/wallet"
 	meta_tx "github.com/linkchain/meta/tx"
 	"github.com/linkchain/node"
+	"github.com/linkchain/poa/manage"
 	"github.com/linkchain/poa/meta"
-	"github.com/linkchain/poa/poamanager"
 	"github.com/linkchain/protobuf"
 	"github.com/spf13/cobra"
 )
 
 func init() {
 	RootCmd.AddCommand(txCmd)
-	txCmd.AddCommand(createTxCmd, signTxCmd, sendTxCmd, testTxCmd)
+	txCmd.AddCommand(createTxCmd, signTxCmd, sendTxCmd, testTxCmd, accountCmd)
 }
 
 var txCmd = &cobra.Command{
@@ -33,8 +32,8 @@ var createTxCmd = &cobra.Command{
 			return
 		}
 		toAccount := node.GetConsensusService().GetAccountManager().NewAccount()
-		amount := &meta.POAAmount{Value: 10}
-		tx := poamanager.GetManager().TransactionManager.NewTransaction(fromAccount, toAccount, amount)
+		amount := &meta.Amount{Value: 10}
+		tx := manage.GetManager().TransactionManager.CreateTransaction(fromAccount, toAccount, amount)
 		buffer, err := proto.Marshal(tx.Serialize())
 		if err != nil {
 			log.Error("tx Serialize failed", "Marshaling error", err)
@@ -67,7 +66,7 @@ var signTxCmd = &cobra.Command{
 		}
 		log.Info("signtx", txData.String())
 
-		var tx meta_tx.ITx = &meta.POATransaction{}
+		var tx meta_tx.ITx = &meta.Transaction{}
 		tx.Deserialize(&txData)
 
 		node.GetWallet().SignTransaction(tx)
@@ -109,7 +108,7 @@ var sendTxCmd = &cobra.Command{
 		}
 		log.Info("sendtx", txData.String())
 
-		var tx meta_tx.ITx = &meta.POATransaction{}
+		var tx meta_tx.ITx = &meta.Transaction{}
 		tx.Deserialize(&txData)
 
 		log.Info("sendtx", "data", tx)
@@ -124,8 +123,8 @@ var sendTxCmd = &cobra.Command{
 			log.Info("Verify tx", "successed", true)
 		}
 
-		poamanager.GetManager().TransactionManager.ProcessTx(tx)
-		poamanager.GetManager().NewTxEvent.Send(meta_tx.TxEvent{tx})
+		manage.GetManager().TransactionManager.ProcessTx(tx)
+		manage.GetManager().NewTxEvent.Send(meta_tx.TxEvent{tx})
 
 	},
 }
@@ -134,19 +133,25 @@ var testTxCmd = &cobra.Command{
 	Use:   "test",
 	Short: "send a new tx to network",
 	Run: func(cmd *cobra.Command, args []string) {
-		fromAccount := node.GetWallet().GetWAccount()
-		if fromAccount == nil {
+		fromAccount, err := manage.GetManager().AccountManager.GetAccount(node.GetWallet().GetWAccount().GetAccountID())
+		if err != nil {
 			println("cmd :can not find from")
 			return
 		}
 		toAccount := node.GetConsensusService().GetAccountManager().NewAccount()
-		amount := &meta.POAAmount{Value: 10}
-		tx := poamanager.GetManager().TransactionManager.NewTransaction(fromAccount, toAccount, amount)
+		amount := &meta.Amount{Value: 10}
+		tx := manage.GetManager().TransactionManager.CreateTransaction(fromAccount, toAccount, amount)
 		tx.Deserialize(tx.Serialize())
 		node.GetWallet().SignTransaction(tx)
-		poamanager.GetManager().TransactionManager.ProcessTx(tx)
-		poamanager.GetManager().NewTxEvent.Send(meta_tx.TxEvent{tx})
-		account := wallet.NewWSAccount()
-		account.GetAccountInfo()
+		manage.GetManager().TransactionManager.ProcessTx(tx)
+		manage.GetManager().NewTxEvent.Send(meta_tx.TxEvent{tx})
+	},
+}
+
+var accountCmd = &cobra.Command{
+	Use:   "account",
+	Short: "send a new tx to network",
+	Run: func(cmd *cobra.Command, args []string) {
+		manage.GetManager().AccountManager.GetAllAccounts()
 	},
 }

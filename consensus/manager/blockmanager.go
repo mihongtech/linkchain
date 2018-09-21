@@ -16,10 +16,9 @@ type BlockManager interface {
 }
 
 type BlockBaseManager interface {
-	NewBlock() (block.IBlock, error)
+	CreateBlock() (block.IBlock, error)
 	GetGensisBlock() block.IBlock
 	RebuildBlock(block block.IBlock) (block.IBlock, error)
-	RebuildTestBlock(block block.IBlock) (block.IBlock, error)
 }
 
 /**

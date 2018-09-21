@@ -12,9 +12,9 @@ import (
 )
 
 func Test_Serialize_1(t *testing.T) {
-	txs := []POATransaction{}
-	block := POABlock{
-		Header: POABlockHeader{Version: 0, PrevBlock: math.Hash{}, MerkleRoot: math.Hash{}, Timestamp: time.Unix(1487780010, 0), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: 0},
+	txs := []Transaction{}
+	block := Block{
+		Header: BlockHeader{Version: 0, PrevBlock: math.Hash{}, MerkleRoot: math.Hash{}, Timestamp: time.Unix(1487780010, 0), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: 0},
 		TXs:    txs,
 	}
 
@@ -41,7 +41,7 @@ func Test_Deserialize_1(t *testing.T) {
 		t.Error("block 反序列化不通过 unmarshaling error: ", err)
 	}
 
-	newBlock := POABlock{}
+	newBlock := Block{}
 	newBlock.Deserialize(block)
 	newBlockHash := newBlock.GetBlockID()
 
@@ -55,10 +55,10 @@ func Test_Deserialize_1(t *testing.T) {
 func Test_Serialize_3(t *testing.T) {
 	fromAddress := math.Hash(sha256.Sum256([]byte("lf")))
 	toAddress := math.Hash(sha256.Sum256([]byte("lc")))
-	formAccount := &POAAccount{AccountID: POAAccountID{ID: fromAddress}}
-	toAccount := &POAAccount{AccountID: POAAccountID{ID: toAddress}}
-	amount := POAAmount{Value: 10}
-	tx := POATransaction{Version: 0,
+	formAccount := &Account{AccountID: AccountID{ID: fromAddress}}
+	toAccount := &Account{AccountID: AccountID{ID: toAddress}}
+	amount := Amount{Value: 10}
+	tx := Transaction{Version: 0,
 		From:   GetPOATransactionPeer(formAccount, nil),
 		To:     GetPOATransactionPeer(toAccount, nil),
 		Amount: amount,
@@ -87,7 +87,7 @@ func Test_Serialize_4(t *testing.T) {
 		t.Error("tx 反序列化不通过 unmarshaling error: ", err)
 	}
 
-	newTx := POATransaction{}
+	newTx := Transaction{}
 	newTx.Deserialize(tx)
 	newTxHash := newTx.GetTxID()
 
@@ -102,27 +102,27 @@ func Test_Serialize_5(t *testing.T) {
 
 	fromAddress := math.Hash(sha256.Sum256([]byte("lf")))
 	toAddress := math.Hash(sha256.Sum256([]byte("lc")))
-	formAccount := &POAAccount{AccountID: POAAccountID{ID: fromAddress}}
-	toAccount := &POAAccount{AccountID: POAAccountID{ID: toAddress}}
-	amount := POAAmount{Value: 10}
-	tx := POATransaction{Version: 0,
+	formAccount := &Account{AccountID: AccountID{ID: fromAddress}}
+	toAccount := &Account{AccountID: AccountID{ID: toAddress}}
+	amount := Amount{Value: 10}
+	tx := Transaction{Version: 0,
 		From:   GetPOATransactionPeer(formAccount, nil),
 		To:     GetPOATransactionPeer(toAccount, nil),
 		Amount: amount,
 		Time:   time.Now()}
 
-	txs := []POATransaction{}
+	txs := []Transaction{}
 	txs = append(txs, tx)
 
-	block := &POABlock{
-		Header: POABlockHeader{Version: 0, PrevBlock: math.Hash{}, MerkleRoot: math.Hash{}, Timestamp: time.Unix(1487780010, 0), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: 0},
+	block := &Block{
+		Header: BlockHeader{Version: 0, PrevBlock: math.Hash{}, MerkleRoot: math.Hash{}, Timestamp: time.Unix(1487780010, 0), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: 0},
 		TXs:    txs,
 	}
 
 	blockHash := block.GetBlockID()
 	s := block.Serialize()
 
-	newBlock := POABlock{}
+	newBlock := Block{}
 	newBlock.Deserialize(s)
 	newBlockHash := newBlock.GetBlockID()
 	if blockHash.IsEqual(&newBlockHash) {
