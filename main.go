@@ -20,28 +20,33 @@ func main() {
 	cmd.RootCmd.SetArgs(start)
 	cmd.RootCmd.Execute()
 
-	/*time.Sleep(time.Duration(2)*time.Second)
+	/*time.Sleep(time.Duration(1) * time.Second)
 
-	send := strings.Fields("tx send")
+	send := strings.Fields("tx test")
 
 	cmd.RootCmd.SetArgs(send)
 	cmd.RootCmd.Execute()
 
-	time.Sleep(time.Duration(2)*time.Second)
+	time.Sleep(time.Duration(1) * time.Second)
+
+	cmd.RootCmd.SetArgs(send)
+	cmd.RootCmd.Execute()
+
+	time.Sleep(time.Duration(1) * time.Second)
 
 	mine := strings.Fields("mine")
 
 	cmd.RootCmd.SetArgs(mine)
 	cmd.RootCmd.Execute()
 
-	time.Sleep(time.Duration(2)*time.Second)
+	time.Sleep(time.Duration(1) * time.Second)
 
 	cmd.RootCmd.SetArgs(mine)
 	cmd.RootCmd.Execute()*/
-	mine := strings.Fields("mine")
+	/*mine := strings.Fields("mine")
 
 	cmd.RootCmd.SetArgs(mine)
-	cmd.RootCmd.Execute()
+	cmd.RootCmd.Execute()*/
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for {

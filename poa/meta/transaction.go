@@ -105,6 +105,7 @@ func (tx *Transaction) ChangeFromTo() tx.ITx {
 	temp := tx.From
 	tx.From = tx.To
 	tx.To = temp
+	tx.Nounce -= 1
 	return tx
 }
 

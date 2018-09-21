@@ -249,7 +249,7 @@ func (s *BlockManage) ProcessBlock(block block.IBlock) error {
 	if !GetManager().ChainManager.UpdateChain() {
 		log.Info("POA Update chain failed")
 		GetManager().ChainManager.UpdateChain()
-		return errors.New("POA Update chain failed")
+		return errors.New("Update chain failed")
 	}
 	log.Info("POA ProcessBlock successed", "blockchaininfo", GetManager().ChainManager.GetBlockChainInfo())
 

@@ -42,6 +42,11 @@ func (a *Amount) Addition(otherAmount meta.IAmount) meta.IAmount {
 	return a
 }
 
+func (a *Amount) Reverse() meta.IAmount {
+	a.Value = int32(0 - a.GetInt())
+	return a
+}
+
 //Serialize/Deserialize
 func (a *Amount) Serialize() serialize.SerializeStream {
 	amount := protobuf.Amount{

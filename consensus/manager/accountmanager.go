@@ -18,9 +18,12 @@ type AccountPoolManager interface {
 	AddAccount(iAccount account.IAccount) error
 	GetAccount(id account.IAccountID) (account.IAccount, error)
 	RemoveAccount(id account.IAccountID) error
-	UpdateAccountByTX(tx tx.ITx, isMine bool) error
-	CheckTxFromAccount(tx tx.ITx) error
-	CheckTxFromNounce(tx tx.ITx) error
+
+	GetAccountRelateTXs(txs tx.ITx, isMine bool) ([]account.IAccount, error)
+	ConvertAccount(tx tx.ITx, isMine bool) (account.IAccount, account.IAccount)
+	UpdateAccountsByTxs(txs []tx.ITx, mineIndex int) error
+
+	CheckTxAccount(tx tx.ITx) error
 
 	GetAllAccounts()
 }

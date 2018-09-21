@@ -35,6 +35,13 @@ type MerkleTree struct {
 func NewMerkleTree(data [][]byte) *MerkleTree {
 	var nodes []MerkleNode
 
+	if len(data) <= 0 {
+		node := NewMerkleNode(nil, nil, nil)
+		nodes = append(nodes, *node)
+		mTree := MerkleTree{&nodes[0]}
+		return &mTree
+	}
+
 	if len(data)%2 != 0 {
 		data = append(data, data[len(data)-1])
 	}
@@ -53,11 +60,6 @@ func NewMerkleTree(data [][]byte) *MerkleTree {
 		}
 
 		nodes = newNodes
-	}
-
-	if len(data) <= 0 {
-		node := NewMerkleNode(nil, nil, nil)
-		nodes = append(nodes, *node)
 	}
 
 	mTree := MerkleTree{&nodes[0]}

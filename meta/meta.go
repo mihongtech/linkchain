@@ -1,6 +1,8 @@
 package meta
 
-import "github.com/linkchain/common/serialize"
+import (
+	"github.com/linkchain/common/serialize"
+)
 
 type IAmount interface {
 	GetInt() int
@@ -11,6 +13,7 @@ type IAmount interface {
 
 	Subtraction(otherAmount IAmount) IAmount
 	Addition(otherAmount IAmount) IAmount
+	Reverse() IAmount
 }
 
 type DataID interface {

@@ -77,7 +77,7 @@ func (m *TransactionManage) CheckTx(tx tx.ITx) bool {
 		return false
 	}
 
-	err = GetManager().AccountManager.CheckTxFromNounce(tx)
+	err = GetManager().AccountManager.CheckTxAccount(tx)
 
 	if err != nil {
 		log.Error("POA CheckTx", "failed", err)

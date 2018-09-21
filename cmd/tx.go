@@ -134,13 +134,17 @@ var testTxCmd = &cobra.Command{
 	Short: "send a new tx to network",
 	Run: func(cmd *cobra.Command, args []string) {
 		fromAccount, err := manage.GetManager().AccountManager.GetAccount(node.GetWallet().GetWAccount().GetAccountID())
+		node.GetWallet().UpdateWalletAccount(fromAccount)
 		if err != nil {
 			println("cmd :can not find from")
 			return
 		}
+
 		toAccount := node.GetConsensusService().GetAccountManager().NewAccount()
 		amount := &meta.Amount{Value: 10}
 		tx := manage.GetManager().TransactionManager.CreateTransaction(fromAccount, toAccount, amount)
+		fromAccount.SetNounce(fromAccount.GetNounce() + 1)
+		node.GetWallet().UpdateWalletAccount(fromAccount)
 		tx.Deserialize(tx.Serialize())
 		node.GetWallet().SignTransaction(tx)
 		manage.GetManager().TransactionManager.ProcessTx(tx)
