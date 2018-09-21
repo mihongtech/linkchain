@@ -235,14 +235,14 @@ func (rw *pbfFrameRW) ReadMsg() (msg message.Msg, err error) {
 	if _, err := io.ReadFull(rw.conn, headbuf); err != nil {
 		return msg, err
 	}
-	log.Trace("read msg", "headbuf is", headbuf)
+	//log.Trace("read msg", "headbuf is", headbuf)
 	dataSize := readInt24(headbuf)
 
 	framebuf := make([]byte, dataSize)
 	if _, err := io.ReadFull(rw.conn, framebuf); err != nil {
 		return msg, err
 	}
-	log.Trace("read msg", "framebuf is", framebuf)
+	//log.Trace("read msg", "framebuf is", framebuf)
 	protubufMsg := protobuf.Msg{}
 
 	if err := proto.Unmarshal(framebuf, &protubufMsg); err != nil {

@@ -335,9 +335,7 @@ func (f *Fetcher) loop() {
 			f.rescheduleComplete(completeTimer)
 
 		case filter := <-f.blockFilter:
-			// Headers arrived from a remote peer. Extract those that were explicitly
-			// requested by the fetcher, and return everything else so it's delivered
-			// to other parts of the system.
+			log.Info("blockFilter arrived", "filter", filter)
 			var task *blockFilterTask
 			select {
 			case task = <-filter:
@@ -347,7 +345,38 @@ func (f *Fetcher) loop() {
 
 			// Split the batch of headers into unknown ones (to return to the caller),
 			// known incomplete ones (requiring body retrievals) and completed blocks.
-			unknown, incomplete := []block.IBlock{}, []*announce{}
+			unknown, incomplete, complete := []block.IBlock{}, []*announce{}, []block.IBlock{}
+			for _, block := range task.blocks {
+				hash := block.GetBlockID()
+
+				// Filter fetcher-requested headers from other synchronisation algorithms
+				if announce := f.fetching[hash]; announce != nil && announce.origin == task.peer && f.fetched[hash] == nil && f.completing[hash] == nil && f.queued[hash] == nil {
+					// If the delivered header does not match the promised number, drop the announcer
+					if uint64(block.GetHeight()) != announce.number {
+						log.Trace("Invalid block number fetched", "peer", announce.origin, "hash", hash, "announced", announce.number, "provided", block.GetHeight())
+						f.dropPeer(announce.origin)
+						f.forgetHash(hash)
+						continue
+					}
+					// Only keep if not imported by other means
+					if bk, err := f.getBlock(hash); err != nil || bk == nil {
+						announce.b = block
+						announce.time = task.time
+
+						complete = append(complete, block)
+						f.completing[hash] = announce
+						continue
+						// Otherwise add to the list of blocks needing completion
+						incomplete = append(incomplete, announce)
+					} else {
+						// log.Trace("Block already imported, discarding header", "peer", announce.origin, "number", header.Number, "hash", header.Hash())
+						f.forgetHash(hash)
+					}
+				} else {
+					// Fetcher doesn't know about it, add to the return list
+					unknown = append(unknown, block)
+				}
+			}
 			select {
 			case filter <- &blockFilterTask{blocks: unknown, time: task.time}:
 			case <-f.quit:
@@ -365,7 +394,7 @@ func (f *Fetcher) loop() {
 				}
 			}
 			// Schedule the header-only blocks for import
-			for _, block := range task.blocks {
+			for _, block := range complete {
 				if announce := f.completing[block.GetBlockID()]; announce != nil {
 					f.enqueue(announce.origin, block)
 				}
