@@ -266,7 +266,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				log.Debug("get block by id", "Hash", data.Hash, "block", block)
 			}
 			if err != nil || block == nil {
-				log.Error("get block msg error", "query data", data, "err", err)
+				log.Debug("get block msg error", "query data", data, "err", err)
 				break
 			}
 			// number := uint64(block.GetHeight())
@@ -286,8 +286,8 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 					unknown = true
 				} else {
 					if b, e := pm.blockchain.GetBlockByHeight(uint32(next)); (b != nil) && (e == nil) {
-						log.Error("get block by height", "number", current, "skip", data.Skip, "next", next)
-						unknown = true
+						log.Debug("get block by height", "number", current, "skip", data.Skip, "next", next)
+						data.Hash.SetBytes(b.GetBlockID().CloneBytes())
 					} else {
 						unknown = true
 					}
@@ -298,8 +298,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				data.Number += data.Skip + 1
 			}
 		}
-
-		log.Debug("Receive GetBlockMsg", "query is", data, "blocks is", blocks)
+		for i, b := range blocks {
+			log.Debug("Receive GetBlockMsg", "query is", data, "index", i, "block", b)
+		}
 
 		p.SendBlock(blocks)
 
@@ -318,10 +319,13 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			blocks = append(blocks, data)
 		}
 
-		log.Debug("Receive BlockMsg", "block is", blocks)
+		log.Debug("Receive BlockMsg", "len(block) is", len(blocks))
+		for i, b := range blocks {
+			log.Debug("Receive BlockMsg", "index", i, "block", b)
+		}
 		filter := len(blocks) == 1
 		if filter {
-			pm.fetcher.FilterBlocks(p.id, blocks, time.Now())
+			blocks = pm.fetcher.FilterBlocks(p.id, blocks, time.Now())
 		}
 		if len(blocks) > 0 || !filter {
 			err := pm.downloader.DeliverBlocks(p.id, blocks)

@@ -63,12 +63,6 @@ type Downloader struct {
 	rttEstimate   uint64 // Round trip time to target for download requests
 	rttConfidence uint64 // Confidence in the estimated RTT (unit: millionths to allow atomic ops)
 
-	// Statistics
-	syncStatsChainOrigin uint64 // Origin block number where syncing started at
-	syncStatsChainHeight uint64 // Highest block number known when syncing started
-	// syncStatsState       stateSyncStats
-	syncStatsLock sync.RWMutex // Lock protecting the sync stats fields
-
 	blockchain   manager.ChainManager
 	blockmanager manager.BlockManager
 
@@ -76,18 +70,13 @@ type Downloader struct {
 	dropPeer peerDropFn // Drops a peer for misbehaving
 
 	// Status
-	synchroniseMock func(id string, hash meta.DataID) error // Replacement for synchronise during testing
-	synchronising   int32
-	notified        int32
-	committed       int32
+	synchronising int32
+	notified      int32
+	committed     int32
 
 	// Channels
 	blockCh     chan dataPack       // [eth/62] Channel receiving inbound block headers
 	blockProcCh chan []block.IBlock // [eth/62] Channel to feed the header processor new tasks
-
-	// for stateFetcher
-	//	stateSyncStart chan *stateSync
-	//	trackStateReq  chan *stateReq
 
 	// Cancellation and termination
 	cancelPeer string        // Identifier of the peer currently being used as the master (cancel on drop)
@@ -224,10 +213,6 @@ func (d *Downloader) Synchronise(id string, head meta.DataID) error {
 // it will use the best peer possible and synchronize if its TD is higher than our own. If any of the
 // checks fail an error will be returned. This method is synchronous
 func (d *Downloader) synchronise(id string, hash meta.DataID) error {
-	// Mock out the synchronisation if testing
-	if d.synchroniseMock != nil {
-		return d.synchroniseMock(id, hash)
-	}
 	// Make sure only one goroutine is ever allowed past this point at once
 	if !atomic.CompareAndSwapInt32(&d.synchronising, 0, 1) {
 		return errBusy
@@ -306,12 +291,6 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash meta.DataID) (err erro
 	if err != nil {
 		return err
 	}
-	d.syncStatsLock.Lock()
-	if d.syncStatsChainHeight <= origin || d.syncStatsChainOrigin > origin {
-		d.syncStatsChainOrigin = origin
-	}
-	d.syncStatsChainHeight = height
-	d.syncStatsLock.Unlock()
 
 	d.committed = 1
 	d.queue.Prepare(origin+1, d.mode)
@@ -332,17 +311,15 @@ func (d *Downloader) spawnSync(fetchers []func() error) error {
 	var wg sync.WaitGroup
 	errc := make(chan error, len(fetchers))
 	wg.Add(len(fetchers))
-	for _, fn := range fetchers {
+	for i, fn := range fetchers {
 		fn := fn
+		log.Info("start sync fetchers", "index", i)
 		go func() { defer wg.Done(); errc <- fn() }()
 	}
 	// Wait for the first error, then terminate the others.
 	var err error
 	for i := 0; i < len(fetchers); i++ {
 		if i == len(fetchers)-1 {
-			// Close the queue when all fetchers have exited.
-			// This will cause the block processor to end when
-			// it has processed the queue.
 			d.queue.Close()
 		}
 		if err = <-errc; err != nil {
@@ -433,7 +410,7 @@ func (d *Downloader) fetchHeight(p *peerConnection) (block.IBlock, error) {
 // the head links match), we do a binary search to find the common ancestor.
 func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, error) {
 	var ceil uint64
-
+	floor := int64(-1)
 	if d.mode == FullSync {
 		ceil = uint64(d.blockchain.GetBestBlock().GetHeight())
 	}
@@ -486,7 +463,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 			for i := 0; i < len(blocks); i++ {
 				if number := int64(blocks[i].GetHeight()); number != from+int64(i)*16 {
 					p.log.Warn("Head blocks broke chain ordering", "index", i, "requested", from+int64(i)*16, "received", number)
-					// return 0, errInvalidChain
+					return 0, errInvalidChain
 				}
 			}
 			// Check if a common ancestor was found
@@ -515,7 +492,11 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 		}
 	}
 	// If the head fetch already found an ancestor, return
-	if hash.IsEmpty() {
+	if hash != nil && hash.IsEmpty() {
+		if int64(number) <= floor {
+			p.log.Warn("Ancestor below allowance", "number", number, "hash", hash, "allowance", floor)
+			return 0, errInvalidAncestor
+		}
 		p.log.Debug("Found common ancestor", "number", number, "hash", hash)
 		return number, nil
 	}
@@ -939,13 +920,6 @@ func (d *Downloader) processBlocks(origin uint64, pivot uint64) error {
 				blocks = blocks[limit:]
 				origin += uint64(limit)
 			}
-
-			// Update the highest block number we know if a higher one is found.
-			d.syncStatsLock.Lock()
-			if d.syncStatsChainHeight < origin {
-				d.syncStatsChainHeight = origin - 1
-			}
-			d.syncStatsLock.Unlock()
 		}
 	}
 	return nil
@@ -991,10 +965,10 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	//blocks := make([]block.IBlock, len(results))
 
 	for _, result := range results {
-		log.Debug("Downloaded item processing block", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "block", result.Block)
+		log.Info("Downloaded item processing block", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "block", result.Block)
 
 		if err := d.blockmanager.ProcessBlock(result.Block); err != nil {
-			log.Debug("Downloaded item processing failed", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "err", err)
+			log.Error("Downloaded item processing failed", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "err", err)
 			return errInvalidChain
 		}
 	}

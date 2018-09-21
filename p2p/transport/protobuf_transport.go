@@ -193,7 +193,7 @@ func (rw *pbfFrameRW) WriteMsg(msg message.Msg) error {
 	if msg.Payload != nil {
 		var err error
 		content, err = ioutil.ReadAll(msg.Payload)
-		log.Trace("write msg", "content is", content, "code", msg.Code)
+		// log.Trace("write msg", "content is", content, "code", msg.Code)
 		if err != nil {
 			log.Error("read msg paload error", "err", err)
 			return err
@@ -201,7 +201,7 @@ func (rw *pbfFrameRW) WriteMsg(msg message.Msg) error {
 	}
 
 	protobufMsg := &protobuf.Msg{Code: &msg.Code, Payload: content}
-	log.Trace("write msg", "protobufMsg.Code", protobufMsg.Code, "protobufMsg.Payload", protobufMsg.Payload)
+	// log.Trace("write msg", "protobufMsg.Code", protobufMsg.Code, "protobufMsg.Payload", protobufMsg.Payload)
 	data, err := proto.Marshal(protobufMsg)
 	if err != nil {
 		log.Error("Marshal msg paload error", "err", err)
@@ -216,11 +216,11 @@ func (rw *pbfFrameRW) WriteMsg(msg message.Msg) error {
 	}
 
 	putInt24(uint32(dataSize), headbuf)
-	log.Trace("write msg", "dataSize", dataSize, "headbuf", headbuf)
+	// log.Trace("write msg", "dataSize", dataSize, "headbuf", headbuf)
 	if _, err := rw.conn.Write(headbuf); err != nil {
 		return err
 	}
-	log.Trace("write msg", "dataSize", dataSize, "data", data)
+	// log.Trace("write msg", "dataSize", dataSize, "data", data)
 	if _, err := rw.conn.Write(data); err != nil {
 		return err
 	}
@@ -235,14 +235,14 @@ func (rw *pbfFrameRW) ReadMsg() (msg message.Msg, err error) {
 	if _, err := io.ReadFull(rw.conn, headbuf); err != nil {
 		return msg, err
 	}
-	log.Trace("read msg", "headbuf is", headbuf)
+	//log.Trace("read msg", "headbuf is", headbuf)
 	dataSize := readInt24(headbuf)
 
 	framebuf := make([]byte, dataSize)
 	if _, err := io.ReadFull(rw.conn, framebuf); err != nil {
 		return msg, err
 	}
-	log.Trace("read msg", "framebuf is", framebuf)
+	//log.Trace("read msg", "framebuf is", framebuf)
 	protubufMsg := protobuf.Msg{}
 
 	if err := proto.Unmarshal(framebuf, &protubufMsg); err != nil {
