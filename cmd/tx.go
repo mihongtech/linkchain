@@ -145,6 +145,7 @@ var testTxCmd = &cobra.Command{
 		tx.Deserialize(tx.Serialize())
 		node.GetWallet().SignTransaction(tx)
 		poamanager.GetManager().TransactionManager.ProcessTx(tx)
+		poamanager.GetManager().NewTxEvent.Send(meta_tx.TxEvent{tx})
 		account := wallet.NewWSAccount()
 		account.GetAccountInfo()
 	},
