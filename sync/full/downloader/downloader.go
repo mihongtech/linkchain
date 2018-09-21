@@ -29,15 +29,10 @@ var (
 	qosConfidenceCap = 10   // Number of peers above which not to modify RTT confidence
 	qosTuningImpact  = 0.25 // Impact that a new tuning target has on the previous value
 
-	maxQueuedBlocks   = 32 * 1024 // [eth/62] Maximum number of headers to queue for import (DOS protection)
-	maxBlocksProcess  = 2048      // Number of header download results to import at once into the chain
-	maxResultsProcess = 2048      // Number of content download results to import at once into the chain
+	maxBlocksProcess  = 2048 // Number of header download results to import at once into the chain
+	maxResultsProcess = 2048 // Number of content download results to import at once into the chain
 
-	fsHeaderCheckFrequency = 100             // Verification frequency of the downloaded headers during fast sync
-	fsHeaderSafetyNet      = 2048            // Number of headers to discard in case a chain violation is detected
-	fsHeaderForceVerify    = 24              // Number of headers to verify before and after the pivot to accept it
-	fsHeaderContCheck      = 3 * time.Second // Time interval to check for header continuations during state download
-	fsMinFullBlocks        = 64              // Number of blocks to retrieve fully even in fast sync
+	fsBlockContCheck = 3 * time.Second
 )
 
 var (
@@ -629,7 +624,7 @@ func (d *Downloader) fetchBlocks(p *peerConnection, from uint64, pivot uint64) e
 				if atomic.LoadInt32(&d.committed) == 0 && pivot <= from {
 					p.log.Debug("No headers, waiting for pivot commit")
 					select {
-					case <-time.After(fsHeaderContCheck):
+					case <-time.After(fsBlockContCheck):
 						getBlocks(from)
 						continue
 					case <-d.cancelCh:
