@@ -20,9 +20,9 @@ var (
 func Init() {
 	log.Info("Node init...")
 
-	svcList[0].Init(nil)		//consensus init
+	svcList[0].Init(nil)                                       //consensus init
 	svcList[1].Init(GetConsensusService().GetAccountManager()) //wallet init
-	svcList[2].Init(GetConsensusService()) //p2p init
+	svcList[2].Init(GetConsensusService())                     //p2p init
 }
 
 func Run() {
@@ -33,7 +33,7 @@ func Run() {
 		v.Start()
 	}
 
-	/*block :=svcList[1].(*consensus.Service).GetBlockManager().NewBlock()
+	/*block :=svcList[1].(*consensus.Service).GetBlockManager().CreateBlock()
 	svcList[1].(*consensus.Service).GetBlockManager().ProcessBlock(block)*/
 }
 

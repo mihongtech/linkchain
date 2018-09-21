@@ -11,7 +11,6 @@ import (
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/account"
-	"github.com/linkchain/meta/block"
 	"github.com/linkchain/meta/tx"
 	"github.com/linkchain/protobuf"
 )
@@ -21,40 +20,11 @@ type Block struct {
 	TXs    []Transaction
 }
 
-type BlockHeader struct {
-	// Version of the block.  This is not the same as the protocol version.
-	Version uint32
-
-	// Hash of the previous block header in the block chain.
-	PrevBlock math.Hash
-
-	// Merkle tree reference to hash of all transactions for the block.
-	MerkleRoot math.Hash
-
-	// Time the block was created.  This is, unfortunately, encoded as a
-	// uint32 on the wire and therefore is limited to 2106.
-	Timestamp time.Time
-
-	// Difficulty target for the block.
-	Difficulty uint32
-
-	// Nonce used to generate the block.
-	Nonce uint32
-
-	//the height of block
-	Height uint32
-
-	// Extra used to extenion the block.
-	Extra []byte
-
-	hash math.Hash
-
-	signer Signer
-}
-
-func NewPOABlock() (block.IBlock, error) {
-	b := &Block{}
-	return b, nil
+func NewBlock(header BlockHeader, txs []Transaction) *Block {
+	return &Block{
+		Header: header,
+		TXs:    txs,
+	}
 }
 
 func (b *Block) SetTx(newTXs []tx.ITx) error {
@@ -132,25 +102,62 @@ func (b *Block) GetTxs() []tx.ITx {
 }
 
 func (b *Block) CalculateTxTreeRoot() meta.DataID {
-	//var txHash [32]byte
-	//var txHashes [][]byte
 	var transactions [][]byte
-
 	for _, tx := range b.TXs {
-		//txHashes = append(txHashes,tx.Hash())
 		txbuff, _ := proto.Marshal(tx.Serialize())
 		transactions = append(transactions, txbuff)
 	}
-	//txHash = sha256.Sum256(bytes.Join(txHashes,[]byte{}))
 	mTree := merkle.NewMerkleTree(transactions)
-
-	//return txHash[:]
 	hash, _ := math.NewHash(mTree.RootNode.Data)
 	return hash
 }
 
 func (b *Block) IsGensis() bool {
 	return b.Header.IsGensis()
+}
+
+type BlockHeader struct {
+	// Version of the block.  This is not the same as the protocol version.
+	Version uint32
+
+	// Hash of the previous block header in the block chain.
+	PrevBlock math.Hash
+
+	// Merkle tree reference to hash of all transactions for the block.
+	MerkleRoot math.Hash
+
+	// Time the block was created.  This is, unfortunately, encoded as a
+	// uint32 on the wire and therefore is limited to 2106.
+	Timestamp time.Time
+
+	// Difficulty target for the block.
+	Difficulty uint32
+
+	// Nonce used to generate the block.
+	Nonce uint32
+
+	//the height of block
+	Height uint32
+
+	// Extra used to extenion the block.
+	Extra []byte
+
+	hash math.Hash
+
+	signer Signer
+}
+
+func NewBlockHeader(version uint32, prev math.Hash, root math.Hash, time time.Time, difficulty uint32, nounce uint32, height uint32, extra []byte) *BlockHeader {
+	return &BlockHeader{
+		Version:    version,
+		PrevBlock:  prev,
+		MerkleRoot: root,
+		Timestamp:  time,
+		Difficulty: difficulty,
+		Nonce:      nounce,
+		Height:     height,
+		Extra:      extra,
+	}
 }
 
 func (bh *BlockHeader) GetBlockID() meta.DataID {

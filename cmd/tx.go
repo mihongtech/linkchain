@@ -33,7 +33,7 @@ var createTxCmd = &cobra.Command{
 		}
 		toAccount := node.GetConsensusService().GetAccountManager().NewAccount()
 		amount := &meta.Amount{Value: 10}
-		tx := manage.GetManager().TransactionManager.NewTransaction(fromAccount, toAccount, amount)
+		tx := manage.GetManager().TransactionManager.CreateTransaction(fromAccount, toAccount, amount)
 		buffer, err := proto.Marshal(tx.Serialize())
 		if err != nil {
 			log.Error("tx Serialize failed", "Marshaling error", err)
@@ -138,7 +138,7 @@ var testTxCmd = &cobra.Command{
 		}
 		toAccount := node.GetConsensusService().GetAccountManager().NewAccount()
 		amount := &meta.Amount{Value: 10}
-		tx := manage.GetManager().TransactionManager.NewTransaction(fromAccount, toAccount, amount)
+		tx := manage.GetManager().TransactionManager.CreateTransaction(fromAccount, toAccount, amount)
 		tx.Deserialize(tx.Serialize())
 		node.GetWallet().SignTransaction(tx)
 		manage.GetManager().TransactionManager.ProcessTx(tx)

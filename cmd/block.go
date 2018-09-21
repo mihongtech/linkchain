@@ -13,14 +13,13 @@ func init() {
 	RootCmd.AddCommand(chainInfoCmd)
 	RootCmd.AddCommand(blockCmd)
 	blockCmd.AddCommand(heightCmd)
-	RootCmd.AddCommand(minetestCmd)
 }
 
 var mineCmd = &cobra.Command{
 	Use:   "mine",
 	Short: "generate a new block",
 	Run: func(cmd *cobra.Command, args []string) {
-		block, err := manage.GetManager().BlockManager.NewBlock()
+		block, err := manage.GetManager().BlockManager.CreateBlock()
 		if err != nil {
 			log.Error("mine", "New Block error", err)
 			return
@@ -29,28 +28,6 @@ var mineCmd = &cobra.Command{
 		block.SetTx(txs)
 
 		block, err = manage.GetManager().BlockManager.RebuildBlock(block)
-		if err != nil {
-			log.Error("mine", "Rebuild Block error", err)
-			return
-		}
-		manage.GetManager().BlockManager.ProcessBlock(block)
-		manage.GetManager().NewBlockEvent.Post(meta_block.NewMinedBlockEvent{Block: block})
-	},
-}
-
-var minetestCmd = &cobra.Command{
-	Use:   "test",
-	Short: "generate a new block",
-	Run: func(cmd *cobra.Command, args []string) {
-		block, err := manage.GetManager().BlockManager.NewBlock()
-		if err != nil {
-			log.Error("mine", "New Block error", err)
-			return
-		}
-		txs := manage.GetManager().TransactionManager.GetAllTransaction()
-		block.SetTx(txs)
-
-		block, err = manage.GetManager().BlockManager.RebuildTestBlock(block)
 		if err != nil {
 			log.Error("mine", "Rebuild Block error", err)
 			return

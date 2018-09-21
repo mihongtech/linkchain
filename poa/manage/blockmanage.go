@@ -11,6 +11,7 @@ import (
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
+	"github.com/linkchain/poa/config"
 	poameta "github.com/linkchain/poa/meta"
 )
 
@@ -62,15 +63,13 @@ func (m *BlockManage) Stop() {
 }
 
 /** interface: BlockBaseManager **/
-func (m *BlockManage) NewBlock() (block.IBlock, error) {
+func (m *BlockManage) CreateBlock() (block.IBlock, error) {
 	bestBlock := GetManager().ChainManager.GetBestBlock()
 	if bestBlock != nil {
 		bestHash := bestBlock.GetBlockID()
 		txs := []poameta.Transaction{}
-		b := &poameta.Block{
-			Header: poameta.BlockHeader{Version: 0, PrevBlock: *bestHash.(*math.Hash), MerkleRoot: math.Hash{}, Timestamp: time.Now(), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: bestBlock.GetHeight() + 1},
-			TXs:    txs,
-		}
+		header := poameta.NewBlockHeader(config.BlockVersion, *bestHash.(*math.Hash), math.Hash{}, time.Now(), config.Difficulty, config.DefaultNounce, bestBlock.GetHeight()+1, nil)
+		b := poameta.NewBlock(*header, txs)
 		return m.RebuildBlock(b)
 	} else {
 		return m.GetGensisBlock(), nil
@@ -86,63 +85,24 @@ func (m *BlockManage) RebuildBlock(block block.IBlock) (block.IBlock, error) {
 
 		ls, err := bestBlock.(*poameta.Block).Header.GetSignerID()
 		if err != nil {
-			log.Error("BlockManage", "NewBlock", err)
+			log.Error("BlockManage", "CreateBlock", err)
 			return &pb, err
 		}
 		lf, err := hex.DecodeString(ls.GetString())
 		if err != nil {
-			log.Error("BlockManage", "NewBlock", err)
+			log.Error("BlockManage", "CreateBlock", err)
 			return &pb, err
 		}
 		pubIndex := ChooseNextSigner(lf)
 		s, err := poameta.CreateSignerIdByPubKey(poameta.PubSigners[pubIndex])
 		if err != nil {
-			log.Error("BlockManage", "NewBlock Create Signer", err)
+			log.Error("BlockManage", "CreateBlock Create Signer", err)
 			return nil, err
 		}
 		pb.Header.SetSigner(*s)
 		signer, err := pb.Header.GetSigner()
 		if err != nil {
-			log.Error("BlockManage", "NewBlock", err)
-			return &pb, err
-		}
-		pb.Deserialize(pb.Serialize())
-		signer.Sign(poameta.PrivSigner[pubIndex], *pb.GetBlockID().(*math.Hash))
-		pb.Header.SetSigner(signer)
-		return &pb, nil
-	} else {
-		return m.GetGensisBlock(), nil
-	}
-}
-
-func (m *BlockManage) RebuildTestBlock(block block.IBlock) (block.IBlock, error) {
-	bestBlock := GetManager().ChainManager.GetBestBlock()
-	if bestBlock != nil {
-		pb := *block.(*poameta.Block)
-		root := pb.CalculateTxTreeRoot()
-		pb.Header.SetMerkleRoot(root)
-
-		ls, err := bestBlock.(*poameta.Block).Header.GetSignerID()
-		if err != nil {
-			log.Error("BlockManage", "NewBlock", err)
-			return &pb, err
-		}
-		lf, err := hex.DecodeString(ls.GetString())
-		if err != nil {
-			log.Error("BlockManage", "NewBlock", err)
-			return &pb, err
-		}
-		pubIndex := ChooseNextSigner(lf)
-		pubIndex = 0
-		s, err := poameta.CreateSignerIdByPubKey(poameta.PubSigners[pubIndex])
-		if err != nil {
-			log.Error("BlockManage", "NewBlock Create Signer", err)
-			return nil, err
-		}
-		pb.Header.SetSigner(*s)
-		signer, err := pb.Header.GetSigner()
-		if err != nil {
-			log.Error("BlockManage", "NewBlock", err)
+			log.Error("BlockManage", "CreateBlock", err)
 			return &pb, err
 		}
 		pb.Deserialize(pb.Serialize())
@@ -157,22 +117,20 @@ func (m *BlockManage) RebuildTestBlock(block block.IBlock) (block.IBlock, error)
 /** interface: BlockBaseManager **/
 func (m *BlockManage) GetGensisBlock() block.IBlock {
 	txs := []poameta.Transaction{}
-	b := &poameta.Block{
-		Header: poameta.BlockHeader{Version: 0, PrevBlock: math.Hash{}, MerkleRoot: math.Hash{}, Timestamp: time.Unix(1487780010, 0), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: 0},
-		TXs:    txs,
-	}
+	header := poameta.NewBlockHeader(config.BlockVersion, math.Hash{}, math.Hash{}, time.Unix(1487780010, 0), config.Difficulty, config.DefaultNounce, 0, nil)
+	b := poameta.NewBlock(*header, txs)
 	root := b.CalculateTxTreeRoot()
 	b.Header.SetMerkleRoot(root)
 	s, err := poameta.CreateSignerIdByPubKey(poameta.PubSigners[0])
 	if err != nil {
-		log.Error("BlockManage", "NewBlock Create Signer", err)
+		log.Error("BlockManage", "CreateBlock Create Signer", err)
 		return nil
 	}
 	b.Header.SetSigner(*s)
 	//TODO test
 	signer, err := b.Header.GetSigner()
 	if err != nil {
-		log.Error("BlockManage", "NewBlock", err)
+		log.Error("BlockManage", "CreateBlock", err)
 		return b
 	}
 	b.Deserialize(b.Serialize())
@@ -241,7 +199,7 @@ func (m *BlockManage) CheckBlock(block block.IBlock) bool {
 	}
 	nextSigner, err := poameta.CreateSignerIdByPubKey(poameta.PubSigners[ChooseNextSigner(lf)])
 	if err != nil {
-		log.Error("BlockManage", "NewBlock Create Signer", err)
+		log.Error("BlockManage", "CreateBlock Create Signer", err)
 		return false
 	}
 	b := block.(*poameta.Block)

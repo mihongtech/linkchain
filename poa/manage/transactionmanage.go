@@ -7,6 +7,7 @@ import (
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/account"
 	"github.com/linkchain/meta/tx"
+	"github.com/linkchain/poa/config"
 	poameta "github.com/linkchain/poa/meta"
 	"time"
 )
@@ -59,12 +60,12 @@ func (m *TransactionManage) RemoveTransaction(txid meta.DataID) error {
 	return nil
 }
 
-func (m *TransactionManage) NewTransaction(from account.IAccount, to account.IAccount, amount meta.IAmount) tx.ITx {
+func (m *TransactionManage) CreateTransaction(from account.IAccount, to account.IAccount, amount meta.IAmount) tx.ITx {
 	fromId := *from.GetAccountID().(*poameta.AccountID)
 	toId := *to.GetAccountID().(*poameta.AccountID)
 	fp := *poameta.NewTransactionPeer(fromId, nil)
 	tp := *poameta.NewTransactionPeer(toId, nil)
-	newTx := poameta.NewTransaction(0, fp, tp, *amount.(*poameta.Amount), time.Now(), (from.GetNounce() + 1), nil, poameta.FromSign{})
+	newTx := poameta.NewTransaction(config.TransactionVersion, fp, tp, *amount.(*poameta.Amount), time.Now(), (from.GetNounce() + 1), nil, poameta.FromSign{})
 	return newTx
 }
 
