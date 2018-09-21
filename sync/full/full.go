@@ -346,7 +346,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		//				log.Debug("Failed to deliver blocks", "err", err)
 		//			}
 		//		}
-		return pm.downloader.ImportBlocks(p.id, blocks)
+		//		return pm.downloader.ImportBlocks(p.id, blocks)
 
 	case msg.Code == NewBlockHashesMsg:
 		var announces protobuf.NewBlockHashesDatas
@@ -406,8 +406,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		transaction.Deserialize(&t)
 		p.MarkTransaction(transaction.GetTxID())
 		log.Debug("Receive TxMsg", "transaction is", transaction)
-		pm.txmanager.AddTransaction(transaction)
-
+		return pm.txmanager.AddTransaction(transaction)
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
