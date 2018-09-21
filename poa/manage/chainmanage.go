@@ -228,6 +228,7 @@ func (m *ChainManage) sortChains(block poameta.Block) bool {
 				log.Info("sortChains :the chain is bad chain ,because the data of chain is imcomplete. the give up the chain")
 				deletIndex = append(deletIndex, index)
 				index--
+				continue
 			}
 			ancestorNode := poameta.NewPOAChainNode(ancestorBlock)
 
@@ -236,6 +237,7 @@ func (m *ChainManage) sortChains(block poameta.Block) bool {
 				newChain.AddNewBlock(&block)
 				m.chains = append(m.chains, newChain)
 				isUpdated = true
+				break
 			}
 		}
 	}
@@ -256,7 +258,7 @@ func (m *ChainManage) sortChains(block poameta.Block) bool {
 	for _, index := range deletIndex {
 		m.chains = append(m.chains[:index], m.chains[index+1:]...)
 	}
-	return true
+	return isUpdated
 }
 
 /**
