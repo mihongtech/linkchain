@@ -73,12 +73,10 @@ func (s *Signer) Verify(signHash math.Hash) error {
 	}
 
 	verified := signature.Verify(signHash.CloneBytes(), &s.AccountID.ID)
-	if verified {
-		log.Info("Signer", "VerifySign", true)
-		return nil
-	} else {
+	if !verified {
 		return errors.New("Signer VerifySign failed: Error Sign")
 	}
+	return nil
 }
 
 func (s *Signer) IsEqual(signer Signer) bool {

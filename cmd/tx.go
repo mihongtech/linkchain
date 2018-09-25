@@ -26,13 +26,14 @@ var createTxCmd = &cobra.Command{
 	Use:   "create",
 	Short: "create a new tx",
 	Run: func(cmd *cobra.Command, args []string) {
-		fromAccount := node.GetWallet().GetWAccount()
-		if fromAccount == nil {
+		amount := &meta.Amount{Value: 10}
+		from, err := node.GetWallet().ChooseWAccount(amount)
+		if err != nil {
 			println("cmd :can not find from")
 			return
 		}
+		fromAccount := from.ConvertAccount()
 		toAccount := node.GetConsensusService().GetAccountManager().NewAccount()
-		amount := &meta.Amount{Value: 10}
 		tx := manage.GetManager().TransactionManager.CreateTransaction(fromAccount, toAccount, amount)
 		buffer, err := proto.Marshal(tx.Serialize())
 		if err != nil {
@@ -133,15 +134,15 @@ var testTxCmd = &cobra.Command{
 	Use:   "test",
 	Short: "send a new tx to network",
 	Run: func(cmd *cobra.Command, args []string) {
-		fromAccount, err := manage.GetManager().AccountManager.GetAccount(node.GetWallet().GetWAccount().GetAccountID())
-		node.GetWallet().UpdateWalletAccount(fromAccount)
+		amount := &meta.Amount{Value: 10}
+		from, err := node.GetWallet().ChooseWAccount(amount)
 		if err != nil {
 			println("cmd :can not find from")
 			return
 		}
-
+		fromAccount := from.ConvertAccount()
 		toAccount := node.GetConsensusService().GetAccountManager().NewAccount()
-		amount := &meta.Amount{Value: 10}
+
 		tx := manage.GetManager().TransactionManager.CreateTransaction(fromAccount, toAccount, amount)
 		fromAccount.SetNounce(fromAccount.GetNounce() + 1)
 		node.GetWallet().UpdateWalletAccount(fromAccount)

@@ -110,15 +110,17 @@ func (m *ChainManage) GetBlockNodeByHeight(height uint32) (poameta.ChainNode, er
 
 func (m *ChainManage) GetBlockChainInfo() string {
 
+	log.Info("ChainManage mainchain", "chainHeight", m.mainChain.GetHeight(), "bestHash", m.mainChain.GetLastNode().GetNodeHash(), "prev hash")
+
 	//log.Info("ChainManage chains", "chains", len(m.chains))
 	for i, chain := range m.chains {
 		log.Info("ChainManage chains", "chainId", i, "chainHeight", chain.GetHeight(), "bestHash", chain.GetLastBlock().GetBlockID().GetString())
 	}
 
-	for e := m.mainChain.GetLastElement(); e != nil; e = e.Prev() {
+	/*for e := m.mainChain.GetLastElement(); e != nil; e = e.Prev() {
 		currentNode := e.Value.(poameta.ChainNode)
 		log.Info("ChainManage mainchain", "Height", currentNode.GetNodeHeight(), "current hash", currentNode.GetNodeHash(), "prev hash", currentNode.GetPrevHash())
-	}
+	}*/
 
 	/*for _, b := range m.mainChainIndex {
 		log.Info("ChainManage mainchainIndex", "chainHeight", b.GetNodeHeight(), "bestHash", b.GetNodeHash())

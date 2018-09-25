@@ -14,7 +14,7 @@ var once sync.Once
 func GetManager() *Manage {
 	once.Do(func() {
 		m = &Manage{BlockManager: &BlockManage{},
-			AccountManager:     &AccountManage{},
+			AccountManager:     &AccountManage{NewWalletEvent: new(event.TypeMux)},
 			TransactionManager: &TransactionManage{},
 			ChainManager:       &ChainManage{},
 			NewBlockEvent:      new(event.TypeMux),

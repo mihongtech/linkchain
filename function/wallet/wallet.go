@@ -6,10 +6,13 @@ import (
 	"strings"
 
 	"github.com/linkchain/common/btcec"
+	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/consensus/manager"
+	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/account"
+	"github.com/linkchain/meta/events"
 	"github.com/linkchain/meta/tx"
+	"github.com/linkchain/poa/manage"
 	poameta "github.com/linkchain/poa/meta"
 )
 
@@ -29,14 +32,17 @@ func NewWSAccount() WAccount {
 	return WAccount{privKey: *priv, amount: 0}
 }
 
-func CreateWAccountFromBytes(pb []byte) WAccount {
-	priv, _ := btcec.PrivKeyFromBytes(btcec.S256(), pb)
-	return WAccount{privKey: *priv, amount: 0}
+func CreateWAccountFromBytes(privb []byte, amount int) WAccount {
+	priv, _ := btcec.PrivKeyFromBytes(btcec.S256(), privb)
+	return WAccount{privKey: *priv, amount: amount}
 }
 
 func (wa *WAccount) UpdateWAccount(iAccount account.IAccount) error {
-	if strings.Compare(iAccount.GetAccountID().GetString(), string(wa.privKey.PubKey().SerializeCompressed())) != 0 {
+	if strings.Compare(iAccount.GetAccountID().GetString(), hex.EncodeToString(wa.privKey.PubKey().SerializeCompressed())) != 0 {
 		return errors.New("Account is error")
+	}
+	if wa.amount != iAccount.GetAmount().GetInt() || wa.nounce != iAccount.GetNounce() {
+		log.Info("updateWallet", "account", iAccount.GetAccountID().GetString(), "amount", iAccount.GetAmount().GetInt(), "nounce", iAccount.GetNounce())
 	}
 	wa.amount = iAccount.GetAmount().GetInt()
 	wa.nounce = iAccount.GetNounce()
@@ -50,8 +56,19 @@ func (wa *WAccount) ConvertAccount() account.IAccount {
 }
 
 func (wa *WAccount) GetAccountInfo() {
-	log.Info("GetAccountInfo", "privkey", hex.EncodeToString(wa.privKey.Serialize()))
-	log.Info("GetAccountInfo", "pubkey", hex.EncodeToString(wa.privKey.PubKey().SerializeCompressed()))
+	log.Info("Wallet Info", "account", hex.EncodeToString(wa.privKey.PubKey().SerializeCompressed()), "amount", wa.GetAmount(), "nounce", wa.GetNounce())
+}
+
+func (wa *WAccount) GetAccountPubkey() string {
+	return hex.EncodeToString(wa.privKey.PubKey().SerializeCompressed())
+}
+
+func (wa *WAccount) GetAmount() int {
+	return wa.amount
+}
+
+func (wa *WAccount) GetNounce() uint32 {
+	return wa.nounce
 }
 
 func (wa *WAccount) Sign(messageHash []byte) []byte {
@@ -64,39 +81,64 @@ func (wa *WAccount) Sign(messageHash []byte) []byte {
 }
 
 type Wallet struct {
-	accounts map[string]WAccount
-	am       manager.AccountManager
+	accounts         map[string]WAccount
+	am               manage.AccountManage
+	updateAccountSub *event.TypeMuxSubscription
 }
 
 func (w *Wallet) Init(i interface{}) bool {
 	log.Info("Wallet init...")
 	w.accounts = make(map[string]WAccount)
-	w.am = i.(manager.AccountManager)
+	w.am = *i.(*manage.AccountManage)
 	return true
 }
 
 func (w *Wallet) Start() bool {
 	log.Info("Wallet start...")
-	gensisWA := CreateWAccountFromBytes(minePriv)
+	gensisWA := CreateWAccountFromBytes(minePriv, 50)
 	gensisKey := hex.EncodeToString(gensisWA.privKey.PubKey().SerializeCompressed())
 	w.accounts[gensisKey] = gensisWA
-	ga, err := w.am.GetAccount(gensisWA.ConvertAccount().GetAccountID())
-	if err == nil {
-		gensisWA.UpdateWAccount(ga)
-	}
+	w.updateAccountSub = w.am.NewWalletEvent.Subscribe(events.WAccountEvent{})
+	go w.updateWalletLoop()
 	return true
 }
 
 func (w *Wallet) Stop() {
 	log.Info("Wallet stop...")
+	w.updateAccountSub.Unsubscribe()
 }
 
+func (w *Wallet) updateWalletLoop() {
+	for obj := range w.updateAccountSub.Chan() {
+		switch ev := obj.Data.(type) {
+		case events.WAccountEvent:
+			if ev.IsUpdate {
+				newWas := make([]account.IAccount, 0)
+				for key := range w.accounts {
+					wa := w.accounts[key]
+					newWa, err := w.am.GetAccount(wa.ConvertAccount().GetAccountID())
+					if err != nil {
+						continue
+					}
+					newWas = append(newWas, newWa)
+				}
+				for _, wa := range newWas {
+					w.UpdateWalletAccount(wa)
+				}
+			}
+		}
+	}
+}
 func (w *Wallet) UpdateWalletAccount(account account.IAccount) error {
 	a, ok := w.accounts[account.GetAccountID().GetString()]
 	if !ok {
 		return errors.New("ConvertAccount can not find account")
 	}
-	a.amount = account.GetAmount().GetInt()
+	err := a.UpdateWAccount(account)
+	if err != nil {
+		return err
+	}
+	w.AddWAccount(a)
 	return nil
 }
 
@@ -105,16 +147,24 @@ func (w *Wallet) AddWAccount(wa WAccount) {
 	w.accounts[key] = wa
 }
 
-func (w *Wallet) GetWAccount() account.IAccount {
-	var randWA WAccount
+func (w *Wallet) ChooseWAccount(amount meta.IAmount) (WAccount, error) {
 	if len(w.accounts) > 0 {
-		for a := range w.accounts {
-			randWA = w.accounts[a]
-			break
+		for key := range w.accounts {
+			wa := w.accounts[key]
+			if wa.GetAmount() >= amount.GetInt() {
+				return w.accounts[key], nil
+			}
 		}
-		return randWA.ConvertAccount()
 	}
-	return nil
+	return NewWSAccount(), errors.New("Wallet can not find legal account")
+}
+
+func (w *Wallet) GetAllWAccount() []WAccount {
+	var WAs []WAccount
+	for a := range w.accounts {
+		WAs = append(WAs, w.accounts[a])
+	}
+	return WAs
 }
 
 func (w *Wallet) SignTransaction(tx tx.ITx) (tx.ITx, error) {

@@ -5,16 +5,19 @@ import (
 	"sync"
 
 	"github.com/linkchain/common/btcec"
+	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/account"
+	"github.com/linkchain/meta/events"
 	"github.com/linkchain/meta/tx"
 	poameta "github.com/linkchain/poa/meta"
 )
 
 type AccountManage struct {
-	accountMtx sync.RWMutex
-	accountMap map[string]poameta.Account
+	accountMtx     sync.RWMutex
+	accountMap     map[string]poameta.Account
+	NewWalletEvent *event.TypeMux
 }
 
 func (m *AccountManage) readAccount(key string) (poameta.Account, bool) {
@@ -166,6 +169,9 @@ func (m *AccountManage) UpdateAccountsByTxs(txs []tx.ITx, mineIndex int) error {
 	for _, a := range cache {
 		m.AddAccount(a)
 	}
+
+	//Notice wallet
+	m.NewWalletEvent.Post(events.WAccountEvent{IsUpdate: true})
 	return nil
 }
 
