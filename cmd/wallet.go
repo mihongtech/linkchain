@@ -5,6 +5,7 @@ import (
 	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/function/wallet"
+	"github.com/linkchain/meta/tx"
 	"github.com/linkchain/node"
 	"github.com/linkchain/poa/manage"
 	"github.com/linkchain/poa/meta"
@@ -85,5 +86,6 @@ var sendMoneyCmd = &cobra.Command{
 		}
 		log.Info("send", "txid", tx.GetTxID().GetString())
 		manage.GetManager().TransactionManager.ProcessTx(tx)
+		manage.GetManager().NewTxEvent.Send(tx.TxEvent{tx})
 	},
 }
