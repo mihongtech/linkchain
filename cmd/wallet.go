@@ -78,14 +78,14 @@ var sendMoneyCmd = &cobra.Command{
 		}
 		to := meta.NewAccount(*toAID, *amount, 0)
 
-		tx := manage.GetManager().TransactionManager.CreateTransaction(from.ConvertAccount(), to, amount)
-		tx, err = node.GetWallet().SignTransaction(tx)
+		transaction := manage.GetManager().TransactionManager.CreateTransaction(from.ConvertAccount(), to, amount)
+		transaction, err = node.GetWallet().SignTransaction(transaction)
 		if err != nil {
 			log.Error("send ", "error", "sign tx is failed", "season", err)
 			return
 		}
-		log.Info("send", "txid", tx.GetTxID().GetString())
-		manage.GetManager().TransactionManager.ProcessTx(tx)
-		manage.GetManager().NewTxEvent.Send(tx.TxEvent{tx})
+		log.Info("send", "txid", transaction.GetTxID().GetString())
+		manage.GetManager().TransactionManager.ProcessTx(transaction)
+		manage.GetManager().NewTxEvent.Send(tx.TxEvent{transaction})
 	},
 }
