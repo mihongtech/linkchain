@@ -14,7 +14,7 @@ import (
 
 func init() {
 	RootCmd.AddCommand(txCmd)
-	txCmd.AddCommand(createTxCmd, signTxCmd, sendTxCmd, testTxCmd, accountCmd)
+	txCmd.AddCommand(createTxCmd, signTxCmd, sendTxCmd, decodeTxCmd)
 }
 
 var txCmd = &cobra.Command{
@@ -130,33 +130,32 @@ var sendTxCmd = &cobra.Command{
 	},
 }
 
-var testTxCmd = &cobra.Command{
-	Use:   "test",
-	Short: "send a new tx to network",
+var decodeTxCmd = &cobra.Command{
+	Use:   "decode",
+	Short: "decode tx",
 	Run: func(cmd *cobra.Command, args []string) {
-		amount := &meta.Amount{Value: 10}
-		from, err := node.GetWallet().ChooseWAccount(amount)
-		if err != nil {
-			println("cmd :can not find from")
+		if len(args) != 1 {
+			log.Error("decode", "error", "please hex tx")
 			return
 		}
-		fromAccount := from.ConvertAccount()
-		toAccount := node.GetConsensusService().GetAccountManager().NewAccount()
+		buffer, err := hex.DecodeString(args[0])
+		if err != nil {
+			log.Error("decode ", "error", "hex Decode failed")
+			return
+		}
 
-		tx := manage.GetManager().TransactionManager.CreateTransaction(fromAccount, toAccount, amount)
-		fromAccount.SetNounce(fromAccount.GetNounce() + 1)
-		node.GetWallet().UpdateWalletAccount(fromAccount)
-		tx.Deserialize(tx.Serialize())
-		node.GetWallet().SignTransaction(tx)
-		manage.GetManager().TransactionManager.ProcessTx(tx)
-		manage.GetManager().NewTxEvent.Send(meta_tx.TxEvent{tx})
-	},
-}
+		txData := protobuf.Transaction{}
+		err = proto.Unmarshal(buffer, &txData)
 
-var accountCmd = &cobra.Command{
-	Use:   "account",
-	Short: "send a new tx to network",
-	Run: func(cmd *cobra.Command, args []string) {
-		manage.GetManager().AccountManager.GetAllAccounts()
+		if err != nil {
+			log.Error("decode Deserialize failed", "Unmarshal error", err)
+			return
+		}
+		log.Info("decode", txData.String())
+
+		var tx meta_tx.ITx = &meta.Transaction{}
+		tx.Deserialize(&txData)
+
+		log.Info("decode", "data", tx)
 	},
 }

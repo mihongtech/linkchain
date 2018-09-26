@@ -244,6 +244,6 @@ func (m *AccountManage) GetAllAccounts() {
 	defer m.accountMtx.RUnlock()
 
 	for _, accountId := range m.accountMap {
-		log.Info("AccountManage", accountId.AccountID.GetString(), accountId.Value.GetString(), "nounce", accountId.Nounce)
+		log.Info("AccountManage", "account", accountId.GetAccountID().GetString(), "amount", accountId.GetAmount().GetInt(), "nounce", accountId.GetNounce())
 	}
 }
