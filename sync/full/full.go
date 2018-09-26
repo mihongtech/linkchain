@@ -185,10 +185,10 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		genesis, _ = pm.blockchain.GetBlockByHeight(0)
 		current    = pm.blockchain.GetBestBlock()
 		hash       = current.GetBlockID()
-		// number  = current.GetHeight()
+		number     = uint64(current.GetHeight())
 	)
 	p.Log().Debug("Linkchain handshake data", "genesis", genesis, "number", current.GetHeight(), "current", hash)
-	if err := p.Handshake(pm.networkId, hash, genesis.GetBlockID()); err != nil {
+	if err := p.Handshake(pm.networkId, number, hash, genesis.GetBlockID()); err != nil {
 		p.Log().Debug("Linkchain handshake failed", "err", err)
 		return err
 	}
@@ -353,7 +353,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			trueHead = block.GetPrevBlockID()
 		)
 		log.Debug("Receive NewBlockMsg", "block is", block)
-		p.SetHead(trueHead)
+		p.SetHead(trueHead, uint64(block.GetHeight()))
 
 		go pm.synchronise(p)
 

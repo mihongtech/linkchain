@@ -35,6 +35,7 @@ const (
 type PeerInfo struct {
 	Version int    `json:"version"` // Linkchain protocol version negotiated
 	Head    string `json:"head"`    // SHA3 hash of the peer's best owned block
+	Height  uint64 `json:"height"`
 }
 
 type peer struct {
@@ -46,8 +47,9 @@ type peer struct {
 	version  int         // Protocol version negotiated
 	forkDrop *time.Timer // Timed connection dropper if forks aren't validated in time
 
-	head math.Hash
-	lock sync.RWMutex
+	head   math.Hash
+	height uint64
+	lock   sync.RWMutex
 
 	knownTxs    set.Interface // Set of transaction hashes known to be known by this peer
 	knownBlocks set.Interface // Set of block hashes known to be known by this peer
@@ -68,33 +70,35 @@ func newPeer(version int, p *p2p_peer.Peer, rw message.MsgReadWriter) *peer {
 
 // Info gathers and returns a collection of metadata known about a peer.
 func (p *peer) Info() *PeerInfo {
-	hash := p.Head()
+	hash, height := p.Head()
 
 	return &PeerInfo{
 		Version: p.version,
 		Head:    hash.GetString(),
+		Height:  height,
 	}
 }
 
 // Head retrieves a copy of the current head hash and total difficulty of the
 // peer.
-func (p *peer) Head() (hash meta.DataID) {
+func (p *peer) Head() (hash meta.DataID, height uint64) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
 	// copy(hash[:], p.head[:])
 	hash = &math.Hash{}
 	hash.SetBytes(p.head[:])
-
-	return hash
+	height = p.height
+	return hash, height
 }
 
 // SetHead updates the head hash and total difficulty of the peer.
-func (p *peer) SetHead(hash meta.DataID) {
+func (p *peer) SetHead(hash meta.DataID, height uint64) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
 	copy(p.head[:], hash.CloneBytes())
+	p.height = height
 	// p.head.SetBytes(hash.CloneBytes())
 }
 
@@ -172,7 +176,7 @@ func (p *peer) RequestOneBlock(hash meta.DataID) error {
 
 // Handshake executes the eth protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(network uint64, head meta.DataID, genesis meta.DataID) error {
+func (p *peer) Handshake(network uint64, height uint64, head meta.DataID, genesis meta.DataID) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
 	var status statusData // safe to read after two values have been received from errc
@@ -181,6 +185,7 @@ func (p *peer) Handshake(network uint64, head meta.DataID, genesis meta.DataID) 
 		data := &statusData{
 			ProtocolVersion: uint32(p.version),
 			NetworkId:       network,
+			Height:          height,
 			CurrentBlock:    head,
 			GenesisBlock:    genesis,
 		}
@@ -202,7 +207,7 @@ func (p *peer) Handshake(network uint64, head meta.DataID, genesis meta.DataID) 
 			return peer_error.DiscReadTimeout
 		}
 	}
-	p.SetHead(status.CurrentBlock)
+	p.SetHead(status.CurrentBlock, status.Height)
 	// copy(p.head[:], status.CurrentBlock.CloneBytes())
 	return nil
 }
@@ -373,10 +378,14 @@ func (ps *peerSet) BestPeer() *peer {
 	defer ps.lock.RUnlock()
 
 	var (
-		bestPeer *peer
+		bestPeer   *peer
+		bestHeight uint64
 	)
+
 	for _, p := range ps.peers {
-		bestPeer = p
+		if _, height := p.Head(); bestPeer == nil || height > bestHeight {
+			bestPeer, bestHeight = p, height
+		}
 	}
 	return bestPeer
 }

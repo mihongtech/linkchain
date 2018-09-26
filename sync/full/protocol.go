@@ -72,6 +72,7 @@ var errorToString = map[int]string{
 type statusData struct {
 	ProtocolVersion uint32
 	NetworkId       uint64
+	Height          uint64
 	CurrentBlock    meta.DataID
 	GenesisBlock    meta.DataID
 }
@@ -82,6 +83,7 @@ func (s *statusData) Serialize() serialize.SerializeStream {
 	status := &protobuf.StatusData{
 		ProtocolVersion: &s.ProtocolVersion,
 		NetworkId:       &s.NetworkId,
+		Height:          &s.Height,
 		CurrentBlock:    currentBlock,
 		GenesisBlock:    genesisBlock,
 	}
@@ -93,6 +95,7 @@ func (s *statusData) Deserialize(data serialize.SerializeStream) {
 	d := data.(*protobuf.StatusData)
 	s.ProtocolVersion = *d.ProtocolVersion
 	s.NetworkId = *d.NetworkId
+	s.Height = *d.Height
 	genesis := &math.Hash{}
 	genesis.Deserialize(d.GenesisBlock)
 	s.GenesisBlock = genesis

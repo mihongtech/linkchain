@@ -135,7 +135,11 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 		return
 	}
 
-	pHead := peer.Head()
+	pHead, height := peer.Head()
+	currentHeight := uint64(pm.blockmanager.GetGensisBlock().GetHeight())
+	if height <= currentHeight {
+		return
+	}
 
 	//	// Run the sync cycle, and disable fast sync if we've went past the pivot block
 	if err := pm.downloader.Synchronise(peer.id, pHead); err != nil {
@@ -149,6 +153,6 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 		// scenario will most often crop up in private and hackathon networks with
 		// degenerate connectivity, but it should be healthy for the mainnet too to
 		// more reliably update peers or the local TD state.
-		go pm.BroadcastBlock(block, false)
+		// go pm.BroadcastBlock(block, false)
 	}
 }

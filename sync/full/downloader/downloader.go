@@ -262,6 +262,7 @@ func (d *Downloader) synchronise(id string, hash meta.DataID) error {
 // syncWithPeer starts a block synchronization based on the hash chain from the
 // specified peer and head hash.
 func (d *Downloader) syncWithPeer(p *peerConnection, hash meta.DataID) (err error) {
+	log.Info("start to sync with peer")
 	d.mux.Post(StartEvent{})
 	defer func() {
 		// reset on error
@@ -370,7 +371,7 @@ func (d *Downloader) fetchHeight(p *peerConnection) (block.IBlock, error) {
 	p.log.Debug("Retrieving remote chain height")
 
 	// Request the advertised remote head block and wait for the response
-	head := p.peer.Head()
+	head, _ := p.peer.Head()
 	go p.peer.RequestBlocksByHash(head, 1, 0)
 
 	ttl := d.requestTTL()
@@ -555,7 +556,7 @@ func (d *Downloader) fetchBlocks(p *peerConnection, from uint64, pivot uint64) e
 	defer p.log.Debug("Block download terminated")
 
 	// Create a timeout timer, and the associated header fetcher
-	skeleton := true            // Skeleton assembly phase or finishing up
+	skeleton := false           // Skeleton assembly phase or finishing up
 	request := time.Now()       // time of the last skeleton fetch request
 	timeout := time.NewTimer(0) // timer to dump a non-responsive active peer
 	<-timeout.C                 // timeout channel should be initially empty
