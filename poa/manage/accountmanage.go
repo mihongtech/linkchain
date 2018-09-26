@@ -233,6 +233,7 @@ func (m *AccountManage) checkAccount(fromAccount account.IAccount, amount meta.I
 		}
 	} else {
 		if fromAccount.GetNounce() >= txNounce {
+			log.Error("checkAccount", "from", fromAccount.GetNounce(), "tx", txNounce)
 			return errors.New("checkAccount() the from of tx should be more than fromAccount nounce")
 		}
 	}

@@ -246,6 +246,7 @@ func (m *BlockManage) CheckBlock(block block.IBlock) bool {
 	for _, tx := range block.GetTxs() {
 		if !GetManager().TransactionManager.CheckTx(tx) {
 			log.Error("POA CheckBlock", "check tx", false)
+			return false
 		}
 	}
 	return true
