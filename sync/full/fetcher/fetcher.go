@@ -246,13 +246,13 @@ func (f *Fetcher) loop() {
 
 			count := f.announces[notification.origin] + 1
 			if count > hashLimit {
-				log.Debug("Peer exceeded outstanding announces", "peer", notification.origin, "limit", hashLimit)
+				log.Trace("Peer exceeded outstanding announces", "peer", notification.origin, "limit", hashLimit)
 				break
 			}
 			// If we have a valid block number, check that it's potentially useful
 			if notification.number > 0 {
 				if dist := int64(notification.number) - int64(f.chainHeight()); dist > maxQueueDist {
-					log.Debug("Peer discarded announcement", "peer", notification.origin, "number", notification.number, "hash", notification.hash, "distance", dist)
+					log.Trace("Peer discarded announcement", "peer", notification.origin, "number", notification.number, "hash", notification.hash, "distance", dist)
 					break
 				}
 			}
@@ -335,7 +335,7 @@ func (f *Fetcher) loop() {
 			f.rescheduleComplete(completeTimer)
 
 		case filter := <-f.blockFilter:
-			log.Debug("blockFilter arrived", "filter", filter)
+			log.Trace("blockFilter arrived", "filter", filter)
 			var task *blockFilterTask
 			select {
 			case task = <-filter:
@@ -443,14 +443,14 @@ func (f *Fetcher) enqueue(peer string, block block.IBlock) {
 	// Ensure the peer isn't DOSing us
 	count := f.queues[peer] + 1
 	if count > blockLimit {
-		log.Debug("Discarded propagated block, exceeded allowance", "peer", peer, "number", block.GetHeight(), "hash", hash, "limit", blockLimit)
+		log.Trace("Discarded propagated block, exceeded allowance", "peer", peer, "number", block.GetHeight(), "hash", hash, "limit", blockLimit)
 
 		f.forgetHash(hash)
 		return
 	}
 	// Discard any past or too distant blocks
 	if dist := int64(block.GetHeight()) - int64(f.chainHeight()); dist > maxQueueDist {
-		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.GetHeight(), "hash", hash, "distance", dist)
+		log.Trace("Discarded propagated block, too far away", "peer", peer, "number", block.GetHeight(), "hash", hash, "distance", dist)
 
 		f.forgetHash(hash)
 		return
@@ -464,7 +464,7 @@ func (f *Fetcher) enqueue(peer string, block block.IBlock) {
 		f.queues[peer] = count
 		f.queued[hash] = op
 		f.queue.Push(op, -float32(block.GetHeight()))
-		log.Debug("Queued propagated block", "peer", peer, "number", block.GetHeight(), "hash", hash, "queued", f.queue.Size())
+		log.Trace("Queued propagated block", "peer", peer, "number", block.GetHeight(), "hash", hash, "queued", f.queue.Size())
 	}
 }
 
@@ -475,7 +475,7 @@ func (f *Fetcher) insert(peer string, block block.IBlock) {
 	hash := block.GetBlockID()
 
 	// Run the import on a new thread
-	log.Debug("Importing propagated block", "peer", peer, "number", block.GetHeight(), "hash", hash)
+	log.Trace("Importing propagated block", "peer", peer, "number", block.GetHeight(), "hash", hash)
 	go func() {
 		defer func() { f.done <- hash }()
 

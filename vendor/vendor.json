@@ -27,10 +27,6 @@
 			"revisionTime": "2018-08-21T05:17:52Z"
 		},
 		{
-			"path": "github.com/golang/protobuf/proto/protoc-gen-go",
-			"revision": ""
-		},
-		{
 			"checksumSHA1": "EgfzbGuTBeO6iDSPDMByp22qz2g=",
 			"path": "github.com/golang/protobuf/protoc-gen-go",
 			"revision": "b27b920f9e71b439b873b17bf99f56467623814a",

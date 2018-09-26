@@ -157,7 +157,7 @@ func (p *peer) SendBlock(blocks []block.IBlock) error {
 // RequestBodies fetches a batch of blocks' bodies corresponding to the hashes
 // specified.
 func (p *peer) RequestBlock(hashes []meta.DataID) error {
-	p.Log().Debug("Fetching batch of block bodies", "count", len(hashes))
+	p.Log().Trace("Fetching batch of block bodies", "count", len(hashes))
 	for _, hash := range hashes {
 		data := &getBlockHeadersData{Hash: hash, Amount: 1}
 		log.Debug("Send GetBlockMsg", "query data is", data)
@@ -168,7 +168,7 @@ func (p *peer) RequestBlock(hashes []meta.DataID) error {
 }
 
 func (p *peer) RequestOneBlock(hash meta.DataID) error {
-	p.Log().Debug("Fetching single block", "hash", hash)
+	p.Log().Trace("Fetching single block", "hash", hash)
 	data := &getBlockHeadersData{Hash: hash, Amount: 1}
 	log.Debug("Send GetBlockMsg", "query data is", data)
 	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
@@ -232,7 +232,7 @@ func (p *peer) readStatus(network uint64, status *statusData, genesis meta.DataI
 	if err := msg.Decode(&data); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
-	log.Debug("read status data is", "data", data, "current status is", status)
+	log.Trace("read status data is", "data", data, "current status is", status)
 	status.Deserialize(&data)
 	if !status.GenesisBlock.IsEqual(genesis) {
 		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status.GenesisBlock, genesis)
@@ -254,13 +254,13 @@ func (p *peer) String() string {
 }
 
 func (p *peer) RequestBlocksByHash(h meta.DataID, amount int, skip int) error {
-	p.Log().Debug("Fetching block by hash", "hash", h)
+	p.Log().Trace("Fetching block by hash", "hash", h)
 	data := &getBlockHeadersData{Hash: h, Amount: uint64(amount), Skip: uint64(skip)}
 	log.Debug("Send GetBlockMsg", "query data is", data)
 	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 }
 func (p *peer) RequestBlocksByNumber(i uint64, amount int, skip int) error {
-	p.Log().Debug("Fetching block by number", "number", i)
+	p.Log().Trace("Fetching block by number", "number", i)
 	data := &getBlockHeadersData{Number: i, Amount: uint64(amount), Skip: uint64(skip)}
 	log.Debug("Send GetBlockMsg", "query data is", data)
 	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))

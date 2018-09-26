@@ -178,7 +178,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		return peer_error.DiscTooManyPeers
 	}
-	p.Log().Debug("Linkchain peer connected", "name", p.Name())
+	p.Log().Trace("Linkchain peer connected", "name", p.Name())
 
 	// Execute the Linkchain handshake
 	var (
