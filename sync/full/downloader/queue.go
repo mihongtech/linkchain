@@ -212,8 +212,8 @@ func (q *queue) Schedule(blocks []block.IBlock, from uint64) []block.IBlock {
 			log.Warn("Header broke chain ordering", "number", block.GetHeight(), "hash", hash, "expected", from)
 			break
 		}
-		if q.blockHead != nil && q.blockHead != block.GetPrevBlockID() {
-			log.Warn("Header broke chain ancestry", "number", block.GetHeight(), "hash", hash)
+		if q.blockHead != nil && !q.blockHead.IsEqual(block.GetPrevBlockID()) {
+			log.Warn("Header broke chain ancestry", "number", block.GetHeight(), "hash", hash, "q.blockHead", q.blockHead, "block.GetPrevBlockID()", block.GetPrevBlockID())
 			break
 		}
 
@@ -500,7 +500,7 @@ func (q *queue) DeliverBlocks(id string, blocks []block.IBlock, blockProcCh chan
 		if uint64(blocks[0].GetHeight()) != request.From {
 			log.Trace("First block broke chain ordering", "peer", id, "number", blocks[0].GetHeight(), "hash", blocks[0].GetBlockID(), request.From)
 			accepted = false
-		} else if blocks[len(blocks)-1].GetBlockID() != target {
+		} else if !blocks[len(blocks)-1].GetBlockID().IsEqual(target) {
 			log.Trace("Last block broke skeleton structure ", "peer", id, "number", blocks[len(blocks)-1].GetHeight(), "hash", blocks[len(blocks)-1].GetBlockID(), "expected", target)
 			accepted = false
 		}
@@ -513,7 +513,7 @@ func (q *queue) DeliverBlocks(id string, blocks []block.IBlock, blockProcCh chan
 				accepted = false
 				break
 			}
-			if blocks[i].GetBlockID() != block.GetPrevBlockID() {
+			if !blocks[i].GetBlockID().IsEqual(block.GetPrevBlockID()) {
 				log.Warn("Header broke chain ancestry", "peer", id, "number", block.GetHeight(), "hash", hash)
 				accepted = false
 				break
