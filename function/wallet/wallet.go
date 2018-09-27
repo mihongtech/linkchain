@@ -63,6 +63,10 @@ func (wa *WAccount) GetAccountPubkey() string {
 	return hex.EncodeToString(wa.privKey.PubKey().SerializeCompressed())
 }
 
+func (wa *WAccount) GetAccountPrivkey() string {
+	return hex.EncodeToString(wa.privKey.Serialize())
+}
+
 func (wa *WAccount) GetAmount() int {
 	return wa.amount
 }
@@ -130,6 +134,7 @@ func (w *Wallet) updateWalletLoop() {
 		}
 	}
 }
+
 func (w *Wallet) UpdateWalletAccount(account account.IAccount) error {
 	a, ok := w.accounts[account.GetAccountID().GetString()]
 	if !ok {
@@ -168,6 +173,13 @@ func (w *Wallet) GetAllWAccount() []WAccount {
 	return WAs
 }
 
+func (w *Wallet) GetWAccount(key string) (WAccount, error) {
+	wa, ok := w.accounts[key]
+	if ok {
+		return wa, nil
+	}
+	return WAccount{}, errors.New("can not find waccount")
+}
 func (w *Wallet) SignTransaction(tx tx.ITx) (tx.ITx, error) {
 	a, ok := w.accounts[tx.GetFrom().GetID().GetString()]
 	if !ok {
