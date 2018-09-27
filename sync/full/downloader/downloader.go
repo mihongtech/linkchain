@@ -262,7 +262,7 @@ func (d *Downloader) synchronise(id string, hash meta.DataID) error {
 // syncWithPeer starts a block synchronization based on the hash chain from the
 // specified peer and head hash.
 func (d *Downloader) syncWithPeer(p *peerConnection, hash meta.DataID) (err error) {
-	log.Info("start to sync with peer")
+	log.Debug("start to sync with peer")
 	d.mux.Post(StartEvent{})
 	defer func() {
 		// reset on error
@@ -433,7 +433,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 	if count > limit {
 		count = limit
 	}
-	log.Info("findAncestor RequestBlocksByNumber", "from", from, "count", count)
+	log.Debug("findAncestor RequestBlocksByNumber", "from", from, "count", count)
 	go p.peer.RequestBlocksByNumber(uint64(from), count, 15)
 
 	// Wait for the remote response to the head fetch
