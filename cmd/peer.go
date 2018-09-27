@@ -21,6 +21,10 @@ var addPeerCmd = &cobra.Command{
 	Use:   "add",
 	Short: "add a new peer",
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 1 {
+			println("Please input peer id")
+			return
+		}
 		println("Add new peer")
 		println("args is %s", args[0])
 		server := node.GetP2pService()
@@ -56,6 +60,10 @@ var removePeerCmd = &cobra.Command{
 	Use:   "remove",
 	Short: "remove a new peer",
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 1 {
+			println("Please input peer id")
+			return
+		}
 		println("Remove  peer")
 		println("args is %s", args[0])
 		server := node.GetP2pService()
