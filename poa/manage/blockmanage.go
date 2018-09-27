@@ -255,7 +255,7 @@ func (m *BlockManage) CheckBlock(block block.IBlock) bool {
 func (s *BlockManage) ProcessBlock(block block.IBlock) error {
 	log.Info("POA ProcessBlock ...")
 	//1.checkBlock
-	if !GetManager().BlockManager.CheckBlock(block) {
+	if !s.CheckBlock(block) {
 		log.Error("POA checkBlock failed")
 		return errors.New("POA checkBlock failed")
 	}
