@@ -1,0 +1,25 @@
+syntax = "proto2";
+
+import "protobuf/transaction.proto";
+
+package protobuf;
+
+message BlockHeader {
+    required uint32 version = 1;
+    required Hash prevHash = 2;
+    required Hash merkleRoot = 3;
+    required int64 time = 4;
+    required uint32 difficulty = 5;
+    required uint32 nounce = 6;
+    required uint32 height = 7;
+    optional bytes extra = 8;
+}
+
+message Block {
+    required BlockHeader header = 1;
+    optional Transactions txList = 2;
+}
+
+message Blocks {
+    repeated Block  block = 1;
+}

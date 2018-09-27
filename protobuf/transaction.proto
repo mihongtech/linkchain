@@ -1,0 +1,35 @@
+syntax = "proto2";
+
+package protobuf;
+
+message Transactions {
+    repeated Transaction txs = 1;
+}
+
+message Transaction {
+    required uint32 version = 1;
+    required TransactionPeer from = 2;
+    required TransactionPeer to = 3;
+    required Amount amount = 4;
+    required int64 time = 5;
+    required uint32 nounce = 6;
+    optional bytes extra = 7;
+    optional bytes sign = 8;
+}
+
+message TransactionPeer {
+    required AccountID accountID = 1;
+    optional bytes extra = 2 ;
+}
+
+message AccountID {
+    required bytes id=1;
+}
+
+message Hash {
+    required bytes data = 1;
+}
+
+message Amount {
+    required int32 value = 1;
+}
