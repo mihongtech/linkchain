@@ -77,10 +77,10 @@
 
 ## 4. 结构
 * 区块头
-![](https://github.com/xixisese/linkchain/blob/master/linkchain/source/pic6.png?raw=true)
+![](https://github.com/xixisese/linkchain/blob/master/doc/source/pic6.png?raw=true)
 
 * 交易
-![](https://github.com/xixisese/linkchain/blob/master/linkchain/source/pic5.png?raw=true)
+![](https://github.com/xixisese/linkchain/blob/master/doc/source/pic5.png?raw=true)
 
 ## 5. 接口
 核心层所有模块都必须提供init start stop接口。
@@ -98,9 +98,9 @@
 	+ GetConsensusParams
 
 - consensus层架构
-![](https://github.com/xixisese/linkchain/blob/master/linkchain/source/pic2.png?raw=true)
+![](https://github.com/xixisese/linkchain/blob/master/doc/source/pic2.png?raw=true)
 
 - consensus层核心功能
-![](https://github.com/xixisese/linkchain/blob/master/linkchain/source/pic3.png?raw=true)
+![](https://github.com/xixisese/linkchain/blob/master/doc/source/pic3.png?raw=true)
 
-![](https://github.com/xixisese/linkchain/blob/master/linkchain/source/pic4.png?raw=true)
+![](https://github.com/xixisese/linkchain/blob/master/doc/source/pic4.png?raw=true)
