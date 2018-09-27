@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/common/util/mclock"
@@ -22,7 +23,8 @@ import (
 var errServerStopped = errors.New("server stopped")
 
 type Config struct {
-
+	// This field must be set to a valid private key.
+	PrivateKey *btcec.PrivateKey `toml:"-"`
 	// MaxPeers is the maximum number of peers that can be
 	// connected. It must be greater than zero.
 	MaxPeers int
@@ -130,7 +132,8 @@ type peerDrop struct {
 func (srv *Service) Init(i interface{}) bool {
 	log.Info("p2p service init...")
 	// TODO: init config
-	srv.ListenAddr = "127.0.0.1:40000"
+	srv.ListenAddr = "0.0.0.0:40000"
+	srv.PrivateKey, _ = btcec.NewPrivateKey(btcec.S256())
 	srv.sync = &data_sync.Service{}
 	srv.sync.Init(i)
 	return true
@@ -295,7 +298,7 @@ func (srv *Service) makeSelf(listener net.Listener) *node.Node {
 	// Inbound connections disabled, use zero address.
 	if listener == nil {
 		// TODO use publikey to generate ID
-		return &node.Node{IP: net.ParseIP("0.0.0.0"), ID: sha256.Sum256([]byte((&net.TCPAddr{IP: net.ParseIP("0.0.0.0")}).String()))}
+		return &node.Node{IP: net.ParseIP("0.0.0.0"), ID: node.PubkeyID(&srv.PrivateKey.PublicKey)}
 	}
 	// Otherwise inject the listener address too
 	addr := listener.Addr().(*net.TCPAddr)
@@ -303,7 +306,7 @@ func (srv *Service) makeSelf(listener net.Listener) *node.Node {
 	return &node.Node{
 		IP:  addr.IP,
 		TCP: uint16(addr.Port),
-		ID:  sha256.Sum256([]byte((&net.TCPAddr{IP: addr.IP, Port: int(addr.Port)}).String())),
+		ID:  node.PubkeyID(&srv.PrivateKey.PublicKey),
 	}
 }
 
