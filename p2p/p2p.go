@@ -352,8 +352,8 @@ func (srv *Service) setupConn(c *peer.Conn, flags peer.ConnFlag, dialDest *node.
 		c.ID = phs.ID
 	}
 
-	if phs.ID != c.ID {
-		clog.Trace("Wrong devp2p handshake identity", "err", phs.ID)
+	if phs.ID.String() != c.ID.String() {
+		clog.Trace("Wrong devp2p handshake identity", "err", phs.ID.String(), "c.ID", c.ID.String())
 		return peer_error.DiscUnexpectedIdentity
 	}
 	c.Caps, c.Name = phs.Caps, phs.Name

@@ -146,7 +146,7 @@ func readProtocolHandshake(rw message.MsgReader, our *message.ProtoHandshake) (*
 
 	nodeID := node.NodeID{}
 	if len(pbmsg.Id) > 0 {
-		copy(nodeID[:], pbmsg.Id[0:32])
+		copy(nodeID[:], pbmsg.Id[:])
 	}
 
 	var port uint64

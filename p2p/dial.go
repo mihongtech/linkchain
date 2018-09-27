@@ -268,7 +268,7 @@ func (s *dialstate) checkDial(n *node.Node, peers map[node.NodeID]*peer.Peer) er
 		return errAlreadyDialing
 	case peers[n.ID] != nil:
 		return errAlreadyConnected
-	case s.ntab != nil && n.ID == s.ntab.Self().ID:
+	case s.ntab != nil && n.ID.String() == s.ntab.Self().ID.String():
 		return errSelf
 	case s.netrestrict != nil && !s.netrestrict.Contains(n.IP):
 		return errNotWhitelisted
