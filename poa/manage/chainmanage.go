@@ -8,9 +8,11 @@ import (
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
 	poameta "github.com/linkchain/poa/meta"
+	"sync"
 )
 
 type ChainManage struct {
+	chainMtx       sync.RWMutex
 	chains         []poameta.Chain     //the chain tree for storing all chains
 	mainChainIndex []poameta.ChainNode //the mainChain is slice for search block
 	mainChain      poameta.BlockChain  //the mainChain is linked list for converting chain
@@ -52,7 +54,10 @@ func (m *ChainManage) GetBestBlock() block.IBlock {
 	if err != nil {
 		return nil
 	}
+
+	m.chainMtx.RLock()
 	hash := m.mainChainIndex[bestHeight].GetNodeHash()
+	m.chainMtx.RUnlock()
 	bestBlock, _ := GetManager().BlockManager.GetBlockByID(hash)
 	return bestBlock
 }
@@ -62,7 +67,11 @@ func (m *ChainManage) GetBestNode() (poameta.ChainNode, error) {
 	if err != nil {
 		return poameta.ChainNode{}, errors.New("the chain is not init")
 	}
-	return m.mainChainIndex[bestHeight], nil
+
+	m.chainMtx.RLock()
+	defer m.chainMtx.RUnlock()
+	node := m.mainChainIndex[bestHeight]
+	return node, nil
 }
 
 func (m *ChainManage) GetBestBlockHash() meta.DataID {
@@ -70,11 +79,16 @@ func (m *ChainManage) GetBestBlockHash() meta.DataID {
 	if err != nil {
 		return nil
 	}
+
+	m.chainMtx.RLock()
+	defer m.chainMtx.RUnlock()
 	hash := m.mainChainIndex[bestHeight].GetNodeHash()
 	return hash
 }
 
 func (m *ChainManage) GetBestHeight() (uint32, error) {
+	m.chainMtx.RLock()
+	defer m.chainMtx.RUnlock()
 	bestHeight := len(m.mainChainIndex) - 1
 	if bestHeight < 0 {
 		return uint32(0), errors.New("thechain is not Init")
@@ -83,6 +97,7 @@ func (m *ChainManage) GetBestHeight() (uint32, error) {
 }
 
 func (m *ChainManage) GetBlockByHash(hash math.Hash) (block.IBlock, error) {
+	//TODO need to lock chain
 	b, err := GetManager().BlockManager.GetBlockByID(&hash)
 	if err != nil {
 		return b, err
@@ -94,7 +109,12 @@ func (m *ChainManage) GetBlockByHeight(height uint32) (block.IBlock, error) {
 	if height < 0 || height > uint32(len(m.mainChainIndex)-1) {
 		return nil, errors.New("ChainManage: GetBlockByHeight->height is error")
 	}
-	b, err := GetManager().BlockManager.GetBlockByID(m.mainChainIndex[height].GetNodeHash())
+
+	m.chainMtx.RLock()
+	hash := m.mainChainIndex[height].GetNodeHash()
+	m.chainMtx.RUnlock()
+
+	b, err := GetManager().BlockManager.GetBlockByID(hash)
 	if err != nil {
 		return b, err
 	}
@@ -105,10 +125,16 @@ func (m *ChainManage) GetBlockNodeByHeight(height uint32) (poameta.ChainNode, er
 	if height > uint32(len(m.mainChainIndex)-1) {
 		return poameta.ChainNode{}, errors.New("the height is too large")
 	}
-	return m.mainChainIndex[height], nil
+	m.chainMtx.RLock()
+	defer m.chainMtx.RUnlock()
+	node := m.mainChainIndex[height]
+
+	return node, nil
 }
 
 func (m *ChainManage) GetBlockChainInfo() string {
+	m.chainMtx.RLock()
+	defer m.chainMtx.RUnlock()
 
 	log.Info("ChainManage mainchain", "chainHeight", m.mainChain.GetHeight(), "bestHash", m.mainChain.GetLastNode().GetNodeHash(), "prev hash")
 
@@ -163,6 +189,9 @@ func (m *ChainManage) UpdateChain() bool {
 }
 
 func (m *ChainManage) sortChains(block poameta.Block) bool {
+	m.chainMtx.Lock()
+	defer m.chainMtx.Unlock()
+
 	isUpdated := false
 	deletIndex := make([]int, 0)
 	blockNode := poameta.NewPOAChainNode(&block)
@@ -255,6 +284,9 @@ aim:update mainChainIndex from mainChain
 TODO need to test
 */
 func (m *ChainManage) updateChainIndex() bool {
+	m.chainMtx.Lock()
+	defer m.chainMtx.Unlock()
+
 	forkNode := m.mainChain.GetLastElement()
 	forkPosition := len(m.mainChainIndex) - 1
 	endNode := forkNode.Value.(poameta.ChainNode)
@@ -343,6 +375,9 @@ aim:update mainChain from chains
 TODO need to test
 */
 func (m *ChainManage) updateChain() bool {
+	m.chainMtx.Lock()
+	defer m.chainMtx.Unlock()
+
 	longestChain, _ := m.GetLongestChain()
 	bestBlock := longestChain.GetLastBlock()
 	log.Info("ChainManage updateChain", "bestblock", bestBlock.GetBlockID().GetString())
