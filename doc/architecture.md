@@ -24,7 +24,7 @@
 
 		为各层提供基础工具库，如数字安全，编码，序列化/反序列化等。
 		
-![](https://github.com/xixisese/linkchain/blob/master/doc/source/pic1.png?raw=true)
+![](https://github.com/xixisese/linkchain/blob/master/doc/source/architecture1.png?raw=true)
 
 ## 2. 分工
 - 李晨
@@ -77,10 +77,10 @@
 
 ## 4. 结构
 * 区块头
-![](https://github.com/xixisese/linkchain/blob/master/doc/source/pic6.png?raw=true)
+![](https://github.com/xixisese/linkchain/blob/master/doc/source/architecture6.png?raw=true)
 
 * 交易
-![](https://github.com/xixisese/linkchain/blob/master/doc/source/pic5.png?raw=true)
+![](https://github.com/xixisese/linkchain/blob/master/doc/source/architecture5.png?raw=true)
 
 ## 5. 接口
 核心层所有模块都必须提供init start stop接口。
@@ -98,9 +98,9 @@
 	+ GetConsensusParams
 
 - consensus层架构
-![](https://github.com/xixisese/linkchain/blob/master/doc/source/pic2.png?raw=true)
+![](https://github.com/xixisese/linkchain/blob/master/doc/source/architecture2.png?raw=true)
 
 - consensus层核心功能
-![](https://github.com/xixisese/linkchain/blob/master/doc/source/pic3.png?raw=true)
+![](https://github.com/xixisese/linkchain/blob/master/doc/source/architecture3.png?raw=true)
 
-![](https://github.com/xixisese/linkchain/blob/master/doc/source/pic4.png?raw=true)
+![](https://github.com/xixisese/linkchain/blob/master/doc/source/architecture4.png?raw=true)
