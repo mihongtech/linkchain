@@ -30,7 +30,7 @@ import (
 	"time"
 )
 
-type NodeID [32]byte
+type NodeID [64]byte
 
 // Bytes returns a byte slice representation of the NodeID
 func (n NodeID) Bytes() []byte {

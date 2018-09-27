@@ -1,7 +1,6 @@
 package p2p
 
 import (
-	"crypto/sha256"
 	"errors"
 	"net"
 	"sync"
@@ -181,8 +180,7 @@ func (srv *Service) Start() bool {
 	}
 
 	// handshake
-	addr := srv.listener.Addr().(*net.TCPAddr)
-	srv.ourHandshake = &message.ProtoHandshake{Version: peer.BaseProtocolVersion, Name: srv.Name, ID: sha256.Sum256([]byte((&net.TCPAddr{IP: addr.IP, Port: int(addr.Port)}).String()))}
+	srv.ourHandshake = &message.ProtoHandshake{Version: peer.BaseProtocolVersion, Name: srv.Name, ID: node.PubkeyID(&srv.PrivateKey.PublicKey)}
 	for _, p := range srv.Protocols {
 		srv.ourHandshake.Caps = append(srv.ourHandshake.Caps, p.Cap())
 	}
