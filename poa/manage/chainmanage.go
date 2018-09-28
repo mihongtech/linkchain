@@ -203,7 +203,7 @@ func (m *ChainManage) sortChains(block poameta.Block) bool {
 		newChain := poameta.NewPOAChain(nil, prevBlock)
 		newChain.AddNewBlock(&block)
 		m.chains = append(m.chains, newChain)
-		return isUpdated
+		return false
 	}
 
 	prevNode := poameta.NewPOAChainNode(prevBlock)
@@ -222,7 +222,7 @@ func (m *ChainManage) sortChains(block poameta.Block) bool {
 	} else {
 		//3.find block Prev from other sideChain,If cannot find then give up
 		// a.update sidechain
-		for index, _ := range m.chains {
+		for index := range m.chains {
 			err = m.chains[index].UpdateChainTop(&block)
 			if err == nil {
 				// if update chain then check complete chain is the chain next
@@ -260,7 +260,7 @@ func (m *ChainManage) sortChains(block poameta.Block) bool {
 	}
 
 	//sort InCompleteChain
-	for index, _ := range m.chains {
+	for index := range m.chains {
 		// if update chain then check complete chain is the chain next
 		for i, imcompletchain := range m.chains {
 			if imcompletchain.IsInComplete {
