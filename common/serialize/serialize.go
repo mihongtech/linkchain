@@ -2,15 +2,15 @@ package serialize
 
 import "github.com/golang/protobuf/proto"
 
-type SerializeStream interface{
+type SerializeStream interface {
 	proto.Message
 }
 
-type ISerialize interface{
+type ISerialize interface {
 	//Serialize/Deserialize
-	Serialize()(SerializeStream)
+	Serialize() SerializeStream
 	Deserialize(s SerializeStream)
 
 	//
-	ToString()(string)
+	String() string
 }

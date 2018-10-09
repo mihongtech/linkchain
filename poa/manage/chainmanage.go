@@ -167,7 +167,7 @@ func (m *ChainManage) AddBlock(block block.IBlock) {
 	}
 	m.sortChains(newblock)
 	//longest, _ := m.GetLongestChain()
-	//log.Info("AddBlock", "Longest Chain height", len(longest.Blocks), "Longest Chain bestHash", longest.GetLastBlock().GetBlockID().GetString())
+	//log.Info("AddBlock", "Longest Chain height", len(longest.Blocks), "Longest Chain bestHash", longest.GetLastBlock().GetBlockID().String())
 }
 
 func (m *ChainManage) GetLongestChain() (poameta.Chain, int) {

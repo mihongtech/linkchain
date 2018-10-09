@@ -38,11 +38,11 @@ func CreateWAccountFromBytes(privb []byte, amount int) WAccount {
 }
 
 func (wa *WAccount) UpdateWAccount(iAccount account.IAccount) error {
-	if strings.Compare(iAccount.GetAccountID().GetString(), hex.EncodeToString(wa.privKey.PubKey().SerializeCompressed())) != 0 {
-		return errors.New("Account is error")
+	if strings.Compare(iAccount.GetAccountID().String(), hex.EncodeToString(wa.privKey.PubKey().SerializeCompressed())) != 0 {
+		return errors.New("IAccount is error")
 	}
 	if wa.amount != iAccount.GetAmount().GetInt() || wa.nounce != iAccount.GetNounce() {
-		log.Info("updateWallet", "account", iAccount.GetAccountID().GetString(), "amount", iAccount.GetAmount().GetInt(), "nounce", iAccount.GetNounce())
+		log.Info("updateWallet", "account", iAccount.GetAccountID().String(), "amount", iAccount.GetAmount().GetInt(), "nounce", iAccount.GetNounce())
 	}
 	wa.amount = iAccount.GetAmount().GetInt()
 	wa.nounce = iAccount.GetNounce()
@@ -136,7 +136,7 @@ func (w *Wallet) updateWalletLoop() {
 }
 
 func (w *Wallet) UpdateWalletAccount(account account.IAccount) error {
-	a, ok := w.accounts[account.GetAccountID().GetString()]
+	a, ok := w.accounts[account.GetAccountID().String()]
 	if !ok {
 		return errors.New("ConvertAccount can not find account")
 	}
@@ -181,7 +181,7 @@ func (w *Wallet) GetWAccount(key string) (WAccount, error) {
 	return WAccount{}, errors.New("can not find waccount")
 }
 func (w *Wallet) SignTransaction(tx tx.ITx) (tx.ITx, error) {
-	a, ok := w.accounts[tx.GetFrom().GetID().GetString()]
+	a, ok := w.accounts[tx.GetFrom().GetID().String()]
 	if !ok {
 		return nil, errors.New("SignTransaction can not find tx from account")
 	}

@@ -45,7 +45,7 @@ var getAccountByPubCmd = &cobra.Command{
 			log.Error("send ", "error", "get account is error", "season", err)
 			return
 		}
-		log.Info("send", "account", a.GetAccountID().GetString(), "amount", a.GetAmount().GetInt(), "nounce", a.GetNounce())
+		log.Info("send", "account", a.GetAccountID(), "amount", a.GetAmount().GetInt(), "nounce", a.GetNounce())
 	},
 }
 

@@ -96,7 +96,8 @@ func (m *TransactionManage) ProcessTx(tx tx.ITx) error {
 	}
 	//2.push Tx into storage
 	m.AddTransaction(tx)
-	log.Info("POA Add Tranasaction Pool  ...")
+	log.Info("POA Add Tranasaction Pool  ...", "txid", tx.GetTxID())
+	log.Info("POA Add Tranasaction Pool  ...", "tx", tx)
 	return nil
 }
 

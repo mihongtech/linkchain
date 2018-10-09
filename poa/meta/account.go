@@ -1,9 +1,8 @@
 package meta
 
 import (
-	"encoding/json"
-
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/btcec"
@@ -15,17 +14,17 @@ import (
 )
 
 type AccountID struct {
-	ID btcec.PublicKey
+	ID []byte
 }
 
-func (id *AccountID) GetString() string {
-	return hex.EncodeToString(id.ID.SerializeCompressed())
+func (id *AccountID) String() string {
+	return hex.EncodeToString(id.ID)
 }
 
 //Serialize/Deserialize
 func (a *AccountID) Serialize() serialize.SerializeStream {
 	accountId := protobuf.AccountID{
-		Id: proto.NewBuffer(a.ID.SerializeCompressed()).Bytes(),
+		Id: proto.NewBuffer(a.ID).Bytes(),
 	}
 	return &accountId
 }
@@ -37,11 +36,11 @@ func (a *AccountID) Deserialize(s serialize.SerializeStream) {
 		log.Error("AccountID", "Deserialize failed", err)
 		return
 	}
-	a.ID = *pk
+	a.ID = pk.SerializeCompressed()
 }
 
 func NewAccountId(id *btcec.PublicKey) *AccountID {
-	return &AccountID{ID: *id}
+	return &AccountID{ID: id.SerializeCompressed()}
 }
 
 func CreateAccountIdByPubKey(pubKey string) (*AccountID, error) {
@@ -100,7 +99,7 @@ func (a *Account) SetNounce(nounce uint32) error {
 		a.Nounce = nounce
 		return nil
 	}
-	return errors.New("Account nounce is error")
+	return errors.New("IAccount nounce is error")
 }
 
 func (a *Account) CheckNounce(nounce uint32) bool {
@@ -115,8 +114,8 @@ func (a *Account) Serialize() serialize.SerializeStream {
 func (a *Account) Deserialize(s serialize.SerializeStream) {
 }
 
-func (a *Account) ToString() string {
-	data, err := json.Marshal(a)
+func (id *Account) String() string {
+	data, err := json.Marshal(id)
 	if err != nil {
 		return err.Error()
 	}

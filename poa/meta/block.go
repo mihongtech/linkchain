@@ -85,7 +85,7 @@ func (b *Block) Deserialize(s serialize.SerializeStream) {
 	}
 }
 
-func (b *Block) ToString() string {
+func (b *Block) String() string {
 	data, err := json.Marshal(b)
 	if err != nil {
 		return err.Error()
@@ -243,9 +243,17 @@ func (bh *BlockHeader) Deserialize(s serialize.SerializeStream) {
 		Difficulty: data.Difficulty,
 		Nounce:     data.Nounce,
 		Height:     data.Height,
-		Extra:      proto.NewBuffer(signer.AccountID.ID.SerializeCompressed()).Bytes(),
+		Extra:      proto.NewBuffer(signer.AccountID.ID).Bytes(),
 	}
 	bh.hash = math.MakeHash(&t)
+}
+
+func (bh *BlockHeader) String() string {
+	data, err := json.Marshal(bh)
+	if err != nil {
+		return err.Error()
+	}
+	return string(data)
 }
 
 func (b *BlockHeader) IsGensis() bool {

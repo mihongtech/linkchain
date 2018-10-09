@@ -68,20 +68,20 @@ func (m *AccountManage) NewAccount() account.IAccount {
 
 func (m *AccountManage) AddAccount(iAccount account.IAccount) error {
 	a := *iAccount.(*poameta.Account)
-	m.writeAccount(iAccount.GetAccountID().GetString(), a)
+	m.writeAccount(iAccount.GetAccountID().String(), a)
 	return nil
 }
 
 func (m *AccountManage) GetAccount(id account.IAccountID) (account.IAccount, error) {
-	a, ok := m.readAccount(id.GetString())
+	a, ok := m.readAccount(id.String())
 	if ok {
 		return &a, nil
 	}
-	return nil, errors.New("Can not find Account ")
+	return nil, errors.New("Can not find IAccount ")
 }
 
 func (m *AccountManage) RemoveAccount(id account.IAccountID) error {
-	m.removeAccount(id.GetString())
+	m.removeAccount(id.String())
 	return nil
 }
 
@@ -128,7 +128,7 @@ func (m *AccountManage) UpdateAccountsByTxs(txs []tx.ITx, mineIndex int) error {
 			return err
 		}
 		for _, a := range txA {
-			key := a.GetAccountID().GetString()
+			key := a.GetAccountID().String()
 			cache[key] = a
 		}
 	}
@@ -140,12 +140,12 @@ func (m *AccountManage) UpdateAccountsByTxs(txs []tx.ITx, mineIndex int) error {
 			return errors.New("When cache is empty,only update mineTx")
 		}
 	}
-	//Check Tx Account
+	//Check Tx IAccount
 	for index, t := range txs {
 		fA, tA := m.ConvertAccount(t, index == mineIndex)
 
 		if index != mineIndex {
-			fKey := fA.GetAccountID().GetString()
+			fKey := fA.GetAccountID().String()
 			cachefA, _ := cache[fKey]
 			err := m.checkAccount(cachefA, t.GetAmount(), t.GetNounce(), true)
 			if err != nil {
@@ -155,7 +155,7 @@ func (m *AccountManage) UpdateAccountsByTxs(txs []tx.ITx, mineIndex int) error {
 			cachefA.ChangeAmount(cachefA.GetAmount().Addition(fA.GetAmount()))
 			cache[fKey] = cachefA
 		}
-		tKey := tA.GetAccountID().GetString()
+		tKey := tA.GetAccountID().String()
 		cachetA, ok := cache[tKey]
 		if ok {
 			cachetA.ChangeAmount(cachetA.GetAmount().Addition(tA.GetAmount()))
@@ -181,25 +181,25 @@ func (m *AccountManage) RevertAccountsByTxs(txs []tx.ITx, mineIndex int) error {
 	for index, t := range txs {
 		txA, _ := m.GetAccountRelateTXs(t, index == mineIndex)
 		for _, a := range txA {
-			key := a.GetAccountID().GetString()
+			key := a.GetAccountID().String()
 			cache[key] = a
 		}
 	}
 
-	//Check Tx Account
+	//Check Tx IAccount
 	for index, t := range txs {
 		t.GetAmount().Reverse()
 		t.SetNounce(t.GetNounce() - 1)
 		fA, tA := m.ConvertAccount(t, index == mineIndex)
 
 		if index != mineIndex {
-			fKey := fA.GetAccountID().GetString()
+			fKey := fA.GetAccountID().String()
 			cachefA, _ := cache[fKey]
 			cachefA.SetNounce(fA.GetNounce())
 			cachefA.ChangeAmount(cachefA.GetAmount().Addition(fA.GetAmount()))
 			cache[fKey] = cachefA
 		}
-		tKey := tA.GetAccountID().GetString()
+		tKey := tA.GetAccountID().String()
 		cachetA, _ := cache[tKey]
 		cachetA.ChangeAmount(cachetA.GetAmount().Addition(tA.GetAmount()))
 		cache[tKey] = cachetA
@@ -245,6 +245,6 @@ func (m *AccountManage) GetAllAccounts() {
 	defer m.accountMtx.RUnlock()
 
 	for _, accountId := range m.accountMap {
-		log.Info("AccountManage", "account", accountId.GetAccountID().GetString(), "amount", accountId.GetAmount().GetInt(), "nounce", accountId.GetNounce())
+		log.Info("AccountManage", "account", accountId.GetAccountID().String(), "amount", accountId.GetAmount().GetInt(), "nounce", accountId.GetNounce())
 	}
 }

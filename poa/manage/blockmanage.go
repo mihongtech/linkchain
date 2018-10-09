@@ -88,7 +88,7 @@ func (m *BlockManage) RebuildBlock(block block.IBlock) (block.IBlock, error) {
 			log.Error("BlockManage", "CreateBlock", err)
 			return &pb, err
 		}
-		lf, err := hex.DecodeString(ls.GetString())
+		lf, err := hex.DecodeString(ls.String())
 		if err != nil {
 			log.Error("BlockManage", "CreateBlock", err)
 			return &pb, err
@@ -214,7 +214,7 @@ func (m *BlockManage) CheckBlock(block block.IBlock) bool {
 	}
 	ls, err := prevBlock.(*poameta.Block).Header.GetSignerID()
 
-	lf, err := hex.DecodeString(ls.GetString())
+	lf, err := hex.DecodeString(ls.String())
 	if err != nil {
 		log.Error("BlockManage", "CheckBlock", err)
 		return false
@@ -262,8 +262,9 @@ func (s *BlockManage) ProcessBlock(block block.IBlock) error {
 
 	//2.acceptBlock
 	GetManager().ChainManager.AddBlock(block)
-	//log.Info("POA Add a Blocks", "block hash", block.GetBlockID().GetString())
-	//log.Info("POA Add a Blocks", "prev hash", block.GetPrevBlockID().GetString())
+	log.Info("POA Add a Blocks", "block", block)
+	//log.Info("POA Add a Blocks", "block hash", block.GetBlockID().String())
+	//log.Info("POA Add a Blocks", "prev hash", block.GetPrevBlockID().String())
 
 	//3.updateChain
 	if !GetManager().ChainManager.UpdateChain() {

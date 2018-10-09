@@ -6,7 +6,7 @@ import (
 )
 
 type IAccountID interface {
-	GetString() string
+	String() string
 }
 
 type IAccount interface {

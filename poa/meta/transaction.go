@@ -153,7 +153,13 @@ func (tx *Transaction) Verify() error {
 		log.Error("Transaction", "VerifySign", err)
 		return err
 	}
-	verified := signature.Verify(tx.GetTxID().CloneBytes(), &tx.From.AccountID.ID)
+
+	pk, err := btcec.ParsePubKey(tx.From.AccountID.ID, btcec.S256())
+	if err != nil {
+		return errors.New("Transaction VerifySign ParsePubKey is error")
+	}
+
+	verified := signature.Verify(tx.GetTxID().CloneBytes(), pk)
 	if verified {
 		return nil
 	} else {
@@ -203,7 +209,7 @@ func (tx *Transaction) Deserialize(s serialize.SerializeStream) {
 	tx.txid = math.MakeHash(&t)
 }
 
-func (tx *Transaction) ToString() string {
+func (tx *Transaction) String() string {
 	data, err := json.Marshal(tx)
 	if err != nil {
 		return err.Error()

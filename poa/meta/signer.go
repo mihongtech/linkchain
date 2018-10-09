@@ -1,6 +1,7 @@
 package meta
 
 import (
+	"bytes"
 	"encoding/hex"
 	"errors"
 	"github.com/golang/protobuf/proto"
@@ -53,7 +54,12 @@ func (s *Signer) Sign(signerPriv string, signHash math.Hash) error {
 		return nil
 	}
 	priv, pub := btcec.PrivKeyFromBytes(btcec.S256(), privbuff)
-	if !pub.IsEqual(&s.AccountID.ID) {
+	temp, err := btcec.ParsePubKey(s.AccountID.ID, btcec.S256())
+	if err != nil {
+		return errors.New("Signer Sign() signer ParsePubKey is error")
+	}
+
+	if !pub.IsEqual(temp) {
 		return errors.New("Signer Sign() pubkey is error")
 	}
 	signature, err := priv.Sign(signHash.CloneBytes())
@@ -72,7 +78,12 @@ func (s *Signer) Verify(signHash math.Hash) error {
 		return err
 	}
 
-	verified := signature.Verify(signHash.CloneBytes(), &s.AccountID.ID)
+	pk, err := btcec.ParsePubKey(s.AccountID.ID, btcec.S256())
+	if err != nil {
+		return errors.New("Signer VerifySign signer ParsePubKey is error")
+	}
+
+	verified := signature.Verify(signHash.CloneBytes(), pk)
 	if !verified {
 		return errors.New("Signer VerifySign failed: Error Sign")
 	}
@@ -80,7 +91,7 @@ func (s *Signer) Verify(signHash math.Hash) error {
 }
 
 func (s *Signer) IsEqual(signer Signer) bool {
-	return s.AccountID.ID.IsEqual(&signer.AccountID.ID)
+	return bytes.Equal(s.AccountID.ID, signer.AccountID.ID)
 }
 
 func (s *Signer) Decode() ([]byte, error) {
