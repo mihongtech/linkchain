@@ -20,7 +20,9 @@ type hasher struct {
 // hashers live in a global db.
 var hasherPool = sync.Pool{
 	New: func() interface{} {
-		return &hasher{tmp: new(bytes.Buffer), sha: math.HashH(nil)}
+		// return &hasher{tmp: new(bytes.Buffer), sha: sha3.NewKeccak256()}
+		// TODO: implement me
+		return &hasher{tmp: new(bytes.Buffer)}
 	},
 }
 
@@ -139,9 +141,10 @@ func (h *hasher) store(n node, db *Database, force bool) (node, error) {
 	}
 	// Generate the RLP encoding of the node
 	h.tmp.Reset()
-	if err := rlp.Encode(h.tmp, n); err != nil {
-		panic("encode error: " + err.Error())
-	}
+	// TODO : implement me
+	//	if err := rlp.Encode(h.tmp, n); err != nil {
+	//		panic("encode error: " + err.Error())
+	//	}
 	if h.tmp.Len() < 32 && !force {
 		return n, nil // Nodes smaller than 32 bytes are stored inside their parent
 	}
