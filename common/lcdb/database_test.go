@@ -17,7 +17,7 @@ func newTestLDB() (*lcdb.LDBDatabase, func()) {
 	if err != nil {
 		panic("failed to create test file: " + err.Error())
 	}
-	db, err := db.NewLDBDatabase(dirname, 0, 0)
+	db, err := lcdb.NewLDBDatabase(dirname, 0, 0)
 	if err != nil {
 		panic("failed to create test database: " + err.Error())
 	}
@@ -45,14 +45,14 @@ func testPutGet(db lcdb.Database, t *testing.T) {
 	t.Parallel()
 
 	for _, v := range test_values {
-		err := lcdb.Put([]byte(v), []byte(v))
+		err := db.Put([]byte(v), []byte(v))
 		if err != nil {
 			t.Fatalf("put failed: %v", err)
 		}
 	}
 
 	for _, v := range test_values {
-		data, err := lcdb.Get([]byte(v))
+		data, err := db.Get([]byte(v))
 		if err != nil {
 			t.Fatalf("get failed: %v", err)
 		}
@@ -62,14 +62,14 @@ func testPutGet(db lcdb.Database, t *testing.T) {
 	}
 
 	for _, v := range test_values {
-		err := lcdb.Put([]byte(v), []byte("?"))
+		err := db.Put([]byte(v), []byte("?"))
 		if err != nil {
 			t.Fatalf("put override failed: %v", err)
 		}
 	}
 
 	for _, v := range test_values {
-		data, err := lcdb.Get([]byte(v))
+		data, err := db.Get([]byte(v))
 		if err != nil {
 			t.Fatalf("get failed: %v", err)
 		}
@@ -79,12 +79,12 @@ func testPutGet(db lcdb.Database, t *testing.T) {
 	}
 
 	for _, v := range test_values {
-		orig, err := lcdb.Get([]byte(v))
+		orig, err := db.Get([]byte(v))
 		if err != nil {
 			t.Fatalf("get failed: %v", err)
 		}
 		orig[0] = byte(0xff)
-		data, err := lcdb.Get([]byte(v))
+		data, err := db.Get([]byte(v))
 		if err != nil {
 			t.Fatalf("get failed: %v", err)
 		}
@@ -94,14 +94,14 @@ func testPutGet(db lcdb.Database, t *testing.T) {
 	}
 
 	for _, v := range test_values {
-		err := lcdb.Delete([]byte(v))
+		err := db.Delete([]byte(v))
 		if err != nil {
 			t.Fatalf("delete %q failed: %v", v, err)
 		}
 	}
 
 	for _, v := range test_values {
-		_, err := lcdb.Get([]byte(v))
+		_, err := db.Get([]byte(v))
 		if err == nil {
 			t.Fatalf("got deleted value %q", v)
 		}
@@ -127,7 +127,7 @@ func testParallelPutGet(db lcdb.Database, t *testing.T) {
 	for i := 0; i < n; i++ {
 		go func(key string) {
 			defer pending.Done()
-			err := lcdb.Put([]byte(key), []byte("v"+key))
+			err := db.Put([]byte(key), []byte("v"+key))
 			if err != nil {
 				panic("put failed: " + err.Error())
 			}
@@ -139,7 +139,7 @@ func testParallelPutGet(db lcdb.Database, t *testing.T) {
 	for i := 0; i < n; i++ {
 		go func(key string) {
 			defer pending.Done()
-			data, err := lcdb.Get([]byte(key))
+			data, err := db.Get([]byte(key))
 			if err != nil {
 				panic("get failed: " + err.Error())
 			}
@@ -154,7 +154,7 @@ func testParallelPutGet(db lcdb.Database, t *testing.T) {
 	for i := 0; i < n; i++ {
 		go func(key string) {
 			defer pending.Done()
-			err := lcdb.Delete([]byte(key))
+			err := db.Delete([]byte(key))
 			if err != nil {
 				panic("delete failed: " + err.Error())
 			}
@@ -166,7 +166,7 @@ func testParallelPutGet(db lcdb.Database, t *testing.T) {
 	for i := 0; i < n; i++ {
 		go func(key string) {
 			defer pending.Done()
-			_, err := lcdb.Get([]byte(key))
+			_, err := db.Get([]byte(key))
 			if err == nil {
 				panic("get succeeded")
 			}
