@@ -3,7 +3,10 @@ package math
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
+
 	"github.com/golang/protobuf/proto"
+	"github.com/linkchain/common"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/protobuf"
@@ -97,6 +100,13 @@ func NewHash(newHash []byte) (*Hash, error) {
 	return &sh, err
 }
 
+// BytesToHash returns a new Hash from a byte slice.
+func BytesToHash(b []byte) Hash {
+	var h Hash
+	h.SetBytes(b)
+	return h
+}
+
 // NewHashFromStr creates a Hash from a hash string.  The string should be
 // the hexadecimal string of a byte-reversed hash, but any missing characters
 // result in zero padding at the end of the Hash.
@@ -160,3 +170,9 @@ func (hash *Hash) Deserialize(s serialize.SerializeStream) {
 func (hash *Hash) ToString() string {
 	return hash.String()
 }
+
+func StringToHash(s string) Hash { return BytesToHash([]byte(s)) }
+func BigToHash(b *big.Int) Hash  { return BytesToHash(b.Bytes()) }
+func HexToHash(s string) Hash    { return BytesToHash(common.FromHex(s)) }
+
+func (h Hash) Bytes() []byte { return h[:] }

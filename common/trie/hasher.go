@@ -1,19 +1,3 @@
-// Copyright 2016 The go-ethereum Authors
-// This file is part of the go-ethereum library.
-//
-// The go-ethereum library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// The go-ethereum library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
-
 package trie
 
 import (
@@ -21,9 +5,8 @@ import (
 	"hash"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto/sha3"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/linkchain/common/lcdb"
+	"github.com/linkchain/common/math"
 )
 
 type hasher struct {
@@ -37,7 +20,7 @@ type hasher struct {
 // hashers live in a global db.
 var hasherPool = sync.Pool{
 	New: func() interface{} {
-		return &hasher{tmp: new(bytes.Buffer), sha: sha3.NewKeccak256()}
+		return &hasher{tmp: new(bytes.Buffer), sha: math.HashH(nil)}
 	},
 }
 
@@ -62,7 +45,6 @@ func (h *hasher) hash(n node, db *Database, force bool) (node, node, error) {
 		if n.canUnload(h.cachegen, h.cachelimit) {
 			// Unload the node from cache. All of its subnodes will have a lower or equal
 			// cache generation number.
-			cacheUnloadCounter.Inc(1)
 			return hash, hash, nil
 		}
 		if !dirty {
@@ -108,7 +90,7 @@ func (h *hasher) hashChildren(original node, db *Database) (node, node, error) {
 		// Hash the short node's child, caching the newly hashed subtree
 		collapsed, cached := n.copy(), n.copy()
 		collapsed.Key = hexToCompact(n.Key)
-		cached.Key = common.CopyBytes(n.Key)
+		cached.Key = lcdb.CopyBytes(n.Key)
 
 		if _, ok := n.Val.(valueNode); !ok {
 			collapsed.Val, cached.Val, err = h.hash(n.Val, db, false)
@@ -174,19 +156,19 @@ func (h *hasher) store(n node, db *Database, force bool) (node, error) {
 		// We are pooling the trie nodes into an intermediate memory cache
 		db.lock.Lock()
 
-		hash := common.BytesToHash(hash)
-		db.insert(hash, h.tmp.Bytes())
+		hashData := math.BytesToHash(hash)
+		db.insert(hashData, h.tmp.Bytes())
 
 		// Track all direct parent->child node references
 		switch n := n.(type) {
 		case *shortNode:
 			if child, ok := n.Val.(hashNode); ok {
-				db.reference(common.BytesToHash(child), hash)
+				db.reference(math.BytesToHash(child), hashData)
 			}
 		case *fullNode:
 			for i := 0; i < 16; i++ {
 				if child, ok := n.Children[i].(hashNode); ok {
-					db.reference(common.BytesToHash(child), hash)
+					db.reference(math.BytesToHash(child), hashData)
 				}
 			}
 		}
@@ -197,12 +179,12 @@ func (h *hasher) store(n node, db *Database, force bool) (node, error) {
 			switch n := n.(type) {
 			case *shortNode:
 				if child, ok := n.Val.(valueNode); ok {
-					h.onleaf(child, hash)
+					h.onleaf(child, hashData)
 				}
 			case *fullNode:
 				for i := 0; i < 16; i++ {
 					if child, ok := n.Children[i].(valueNode); ok {
-						h.onleaf(child, hash)
+						h.onleaf(child, hashData)
 					}
 				}
 			}
