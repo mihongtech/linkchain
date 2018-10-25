@@ -9,3 +9,9 @@ message HashNode {
 message ValueNode {
   required bytes data = 1;
 }
+
+message NodeFlag {
+  required HashNode hash  = 1;
+  required uint32   gen   = 2;
+  required bool     dirty = 3;
+}
