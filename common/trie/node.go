@@ -105,7 +105,7 @@ func (n hashNode) Serialize() serialize.SerializeStream {
 }
 
 func (n valueNode) Serialize() serialize.SerializeStream {
-	node := protobuf.HashNode{
+	node := protobuf.ValueNode{
 		Data: n,
 	}
 
@@ -124,7 +124,7 @@ func (n hashNode) Deserialize(s serialize.SerializeStream) {
 }
 
 func (n valueNode) Deserialize(s serialize.SerializeStream) {
-	data := *s.(*protobuf.HashNode)
+	data := *s.(*protobuf.ValueNode)
 	copy(n, data.Data)
 }
 

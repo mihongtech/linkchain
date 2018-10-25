@@ -8,6 +8,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/math"
+	"github.com/linkchain/common/math/sha3"
 )
 
 type hasher struct {
@@ -21,9 +22,7 @@ type hasher struct {
 // hashers live in a global db.
 var hasherPool = sync.Pool{
 	New: func() interface{} {
-		// return &hasher{tmp: new(bytes.Buffer), sha: sha3.NewKeccak256()}
-		// TODO: implement me
-		return &hasher{tmp: new(bytes.Buffer)}
+		return &hasher{tmp: new(bytes.Buffer), sha: sha3.NewKeccak256()}
 	},
 }
 

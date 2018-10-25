@@ -5,3 +5,7 @@ package protobuf;
 message HashNode {
   required bytes data = 1;
 }
+
+message ValueNode {
+  required bytes data = 1;
+}
