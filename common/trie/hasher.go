@@ -5,6 +5,7 @@ import (
 	"hash"
 	"sync"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/math"
 )
@@ -141,10 +142,14 @@ func (h *hasher) store(n node, db *Database, force bool) (node, error) {
 	}
 	// Generate the RLP encoding of the node
 	h.tmp.Reset()
-	// TODO : implement me
-	//	if err := rlp.Encode(h.tmp, n); err != nil {
-	//		panic("encode error: " + err.Error())
-	//	}
+
+	data := n.Serialize()
+	buffer, err := proto.Marshal(data)
+	if err != nil {
+		panic("encode error: " + err.Error())
+	}
+	h.tmp.Write(buffer)
+
 	if h.tmp.Len() < 32 && !force {
 		return n, nil // Nodes smaller than 32 bytes are stored inside their parent
 	}
