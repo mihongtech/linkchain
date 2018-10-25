@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/log"
@@ -53,19 +54,21 @@ func (t *Trie) Prove(key []byte, fromLevel uint, proofDb lcdb.Putter) error {
 		// if encoding doesn't work and we're not writing to any database.
 		n, _, _ = hasher.hashChildren(n, nil)
 		hn, _ := hasher.store(n, nil, false)
-		// 		if hash, ok := hn.(hashNode); ok || i == 0 {
-		if _, ok := hn.(hashNode); ok || i == 0 {
+		if hash, ok := hn.(hashNode); ok || i == 0 {
 			// If the node's database encoding is a hash (or is the
 			// root node), it becomes a proof element.
 			if fromLevel > 0 {
 				fromLevel--
 			} else {
-				//				enc, _ := rlp.EncodeToBytes(n)
-				//				if !ok {
-				//					hash = crypto.Keccak256(enc)
-				//				}
-				//				proofDb.Put(hash, enc)
-				// TODO: implement me
+				enc := n.Serialize()
+				buffer, err := proto.Marshal(enc)
+				if err != nil {
+					log.Error("header marshaling error: ", err)
+				}
+				if !ok {
+					hash = math.HashB(buffer)
+				}
+				proofDb.Put(hash, buffer)
 
 			}
 		}

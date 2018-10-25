@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/linkchain/common/math"
+	"github.com/linkchain/common/serialize"
+	"github.com/linkchain/protobuf"
 )
 
 var indices = []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "[17]"}
@@ -14,6 +16,9 @@ type node interface {
 	fstring(string) string
 	cache() (hashNode, bool)
 	canUnload(cachegen, cachelimit uint16) bool
+
+	//serialize
+	serialize.ISerialize
 }
 
 type (
@@ -29,13 +34,6 @@ type (
 	hashNode  []byte
 	valueNode []byte
 )
-
-// EncodeRLP encodes a full node into the consensus RLP format.
-func (n *fullNode) EncodeRLP(w io.Writer) error {
-	// return rlp.Encode(w, n.Children)
-	// TODO: implement me
-	return nil
-}
 
 func (n *fullNode) copy() *fullNode   { copy := *n; return &copy }
 func (n *shortNode) copy() *shortNode { copy := *n; return &copy }
@@ -87,6 +85,47 @@ func (n hashNode) fstring(ind string) string {
 }
 func (n valueNode) fstring(ind string) string {
 	return fmt.Sprintf("%x ", []byte(n))
+}
+
+//Serialize/Deserialize
+func (n *fullNode) Serialize() serialize.SerializeStream {
+	return nil
+}
+
+func (n *shortNode) Serialize() serialize.SerializeStream {
+	return nil
+}
+
+func (n hashNode) Serialize() serialize.SerializeStream {
+	node := protobuf.HashNode{
+		Data: n,
+	}
+
+	return &node
+}
+
+func (n valueNode) Serialize() serialize.SerializeStream {
+	node := protobuf.HashNode{
+		Data: n,
+	}
+
+	return &node
+}
+
+func (n *fullNode) Deserialize(s serialize.SerializeStream) {
+}
+
+func (n *shortNode) Deserialize(s serialize.SerializeStream) {
+}
+
+func (n hashNode) Deserialize(s serialize.SerializeStream) {
+	data := *s.(*protobuf.HashNode)
+	copy(n, data.Data)
+}
+
+func (n valueNode) Deserialize(s serialize.SerializeStream) {
+	data := *s.(*protobuf.HashNode)
+	copy(n, data.Data)
 }
 
 func mustDecodeNode(hash, buf []byte, cachegen uint16) node {
