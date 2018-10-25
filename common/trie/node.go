@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/protobuf"
@@ -89,6 +90,10 @@ func (n valueNode) fstring(ind string) string {
 
 //Serialize/Deserialize
 func (n *fullNode) Serialize() serialize.SerializeStream {
+	node := protobuf.FullNode{
+		Children: n.Children,
+		Flags:    n.flags,
+	}
 	return nil
 }
 
@@ -185,56 +190,37 @@ func decodeShort(hash, buf, elems []byte, cachegen uint16) (node, error) {
 	return nil, nil
 }
 
-func decodeFull(hash, buf, elems []byte, cachegen uint16) (*fullNode, error) {
-	//	n := &fullNode{flags: nodeFlag{hash: hash, gen: cachegen}}
-	//	for i := 0; i < 16; i++ {
-	//		cld, rest, err := decodeRef(elems, cachegen)
-	//		if err != nil {
-	//			return n, wrapError(err, fmt.Sprintf("[%d]", i))
-	//		}
-	//		n.Children[i], elems = cld, rest
-	//	}
-	//	val, _, err := rlp.SplitString(elems)
-	//	if err != nil {
-	//		return n, err
-	//	}
-	//	if len(val) > 0 {
-	//		n.Children[16] = append(valueNode{}, val...)
-	//	}
-	//	return n, nil
+func decodeFull(hash, buf, cachegen uint16) (*fullNode, error) {
+	n := &fullNode{flags: nodeFlag{hash: hash, gen: cachegen}}
 
-	// TODO: implement me
-	return nil, nil
+	proto.Unmarshal(buf, pb)
+
+	for i := 0; i < 16; i++ {
+		cld, err := decodeRef(elems, cachegen)
+		if err != nil {
+			return n, wrapError(err, fmt.Sprintf("[%d]", i))
+		}
+		n.Children[i], elems = cld, rest
+	}
+
+	if len(val) > 0 {
+		n.Children[16] = append(valueNode{}, val...)
+	}
+	return n, nil
 }
 
 const hashLen = len(math.Hash{})
 
-func decodeRef(buf []byte, cachegen uint16) (node, []byte, error) {
-	//	kind, val, rest, err := rlp.Split(buf)
-	//	if err != nil {
-	//		return nil, buf, err
-	//	}
-	//	switch {
-	//	case kind == rlp.List:
-	//		// 'embedded' node reference. The encoding must be smaller
-	//		// than a hash in order to be valid.
-	//		if size := len(buf) - len(rest); size > hashLen {
-	//			err := fmt.Errorf("oversized embedded node (size is %d bytes, want size < %d)", size, hashLen)
-	//			return nil, buf, err
-	//		}
-	//		n, err := decodeNode(nil, buf, cachegen)
-	//		return n, rest, err
-	//	case kind == rlp.String && len(val) == 0:
-	//		// empty node
-	//		return nil, rest, nil
-	//	case kind == rlp.String && len(val) == 32:
-	//		return append(hashNode{}, val...), rest, nil
-	//	default:
-	//		return nil, nil, fmt.Errorf("invalid RLP string size %d (want 0 or 32)", len(val))
-	//	}
-
-	// TODO: implement me
-	return nil, nil, nil
+func decodeRef(buf []byte, cachegen uint16) (node, error) {
+	switch {
+	case len(buf) == 0:
+		// empty node
+		return nil, nil
+	case len(buf) == 32:
+		return append(hashNode{}, buf...), nil
+	default:
+		return nil, fmt.Errorf("invalid probuf string size %d (want 0 or 32)", len(buf))
+	}
 }
 
 // wraps a decoding error with information about the path to the
