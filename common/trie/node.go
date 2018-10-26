@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
+	_ "github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/protobuf"
@@ -90,10 +90,12 @@ func (n valueNode) fstring(ind string) string {
 
 //Serialize/Deserialize
 func (n *fullNode) Serialize() serialize.SerializeStream {
-	node := protobuf.FullNode{
-		Children: n.Children,
-		Flags:    n.flags,
-	}
+	//	node := protobuf.FullNode{
+	//		Children: n.Children,
+	//		Flags:    n.flags,
+	//	}
+	//	return &node
+	// TODO: implement me
 	return nil
 }
 
@@ -191,22 +193,22 @@ func decodeShort(hash, buf, elems []byte, cachegen uint16) (node, error) {
 }
 
 func decodeFull(hash, buf, cachegen uint16) (*fullNode, error) {
-	n := &fullNode{flags: nodeFlag{hash: hash, gen: cachegen}}
-
-	proto.Unmarshal(buf, pb)
-
-	for i := 0; i < 16; i++ {
-		cld, err := decodeRef(elems, cachegen)
-		if err != nil {
-			return n, wrapError(err, fmt.Sprintf("[%d]", i))
-		}
-		n.Children[i], elems = cld, rest
-	}
-
-	if len(val) > 0 {
-		n.Children[16] = append(valueNode{}, val...)
-	}
-	return n, nil
+	//	n := &fullNode{flags: nodeFlag{hash: hash, gen: cachegen}}
+	//
+	//	proto.Unmarshal(buf, pb)
+	//
+	//	for i := 0; i < 16; i++ {
+	//		cld, err := decodeRef(elems, cachegen)
+	//		if err != nil {
+	//			return n, wrapError(err, fmt.Sprintf("[%d]", i))
+	//		}
+	//		n.Children[i], elems = cld, rest
+	//	}
+	//
+	//	if len(val) > 0 {
+	//		n.Children[16] = append(valueNode{}, val...)
+	//	}
+	return nil, nil
 }
 
 const hashLen = len(math.Hash{})
