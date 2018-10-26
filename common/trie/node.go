@@ -171,9 +171,11 @@ func (n valueNode) Serialize() serialize.SerializeStream {
 }
 
 func (n *fullNode) Deserialize(s serialize.SerializeStream) {
+
 }
 
 func (n *shortNode) Deserialize(s serialize.SerializeStream) {
+
 }
 
 func (n hashNode) Deserialize(s serialize.SerializeStream) {
@@ -199,26 +201,19 @@ func decodeNode(hash, buf []byte, cachegen uint16) (node, error) {
 	if len(buf) == 0 {
 		return nil, io.ErrUnexpectedEOF
 	}
-	// TODO: implement me
-	//	elems, _, err := rlp.SplitList(buf)
-	//	if err != nil {
-	//		return nil, fmt.Errorf("decode error: %v", err)
-	//	}
-	//	switch c, _ := rlp.CountValues(elems); c {
-	//	case 2:
-	//		n, err := decodeShort(hash, buf, elems, cachegen)
-	//		return n, wrapError(err, "short")
-	//	case 17:
-	//		n, err := decodeFull(hash, buf, elems, cachegen)
-	//		return n, wrapError(err, "full")
-	//	default:
-	//		return nil, fmt.Errorf("invalid number of list elements: %v", c)
-	//	}
 
-	return nil, nil
+	if n, err := decodeShort(hash, buf, cachegen); err != nil {
+		if n, err := decodeFull(hash, buf, cachegen); err != nil {
+			return n, wrapError(err, "full")
+		} else {
+			return nil, fmt.Errorf("invalid node data")
+		}
+	} else {
+		return n, wrapError(err, "short")
+	}
 }
 
-func decodeShort(hash, buf, elems []byte, cachegen uint16) (node, error) {
+func decodeShort(hash, buf []byte, cachegen uint16) (node, error) {
 	//	kbuf, rest, err := rlp.SplitString(elems)
 	//	if err != nil {
 	//		return nil, err
@@ -238,12 +233,10 @@ func decodeShort(hash, buf, elems []byte, cachegen uint16) (node, error) {
 	//		return nil, wrapError(err, "val")
 	//	}
 	//	return &shortNode{key, r, flag}, nil
-
-	// TODO: implement me
 	return nil, nil
 }
 
-func decodeFull(hash, buf, cachegen uint16) (*fullNode, error) {
+func decodeFull(hash, buf []byte, cachegen uint16) (*fullNode, error) {
 	//	n := &fullNode{flags: nodeFlag{hash: hash, gen: cachegen}}
 	//
 	//	proto.Unmarshal(buf, pb)
