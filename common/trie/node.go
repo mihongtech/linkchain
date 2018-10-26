@@ -214,45 +214,33 @@ func decodeNode(hash, buf []byte, cachegen uint16) (node, error) {
 }
 
 func decodeShort(hash, buf []byte, cachegen uint16) (node, error) {
-	//	kbuf, rest, err := rlp.SplitString(elems)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	flag := nodeFlag{hash: hash, gen: cachegen}
-	//	key := compactToHex(kbuf)
-	//	if hasTerm(key) {
-	//		// value node
-	//		val, _, err := rlp.SplitString(rest)
-	//		if err != nil {
-	//			return nil, fmt.Errorf("invalid value node: %v", err)
-	//		}
-	//		return &shortNode{key, append(valueNode{}, val...), flag}, nil
-	//	}
-	//	r, _, err := decodeRef(rest, cachegen)
-	//	if err != nil {
-	//		return nil, wrapError(err, "val")
-	//	}
-	//	return &shortNode{key, r, flag}, nil
-	return nil, nil
+	var node protobuf.ShortNode
+	if err := proto.Unmarshal(buf, &node); err != nil {
+		return nil, err
+	}
+
+	flag := nodeFlag{hash: hash, gen: cachegen}
+	key := compactToHex(node.Key)
+
+	r, err := decodeRef(node.Val.Data, cachegen)
+	if err != nil {
+		return nil, err
+	}
+
+	return &shortNode{key, r, flag}, nil
 }
 
 func decodeFull(hash, buf []byte, cachegen uint16) (*fullNode, error) {
-	//	n := &fullNode{flags: nodeFlag{hash: hash, gen: cachegen}}
-	//
-	//	proto.Unmarshal(buf, pb)
-	//
-	//	for i := 0; i < 16; i++ {
-	//		cld, err := decodeRef(elems, cachegen)
-	//		if err != nil {
-	//			return n, wrapError(err, fmt.Sprintf("[%d]", i))
-	//		}
-	//		n.Children[i], elems = cld, rest
-	//	}
-	//
-	//	if len(val) > 0 {
-	//		n.Children[16] = append(valueNode{}, val...)
-	//	}
-	return nil, nil
+	n := &fullNode{flags: nodeFlag{hash: hash, gen: cachegen}}
+
+	var node protobuf.FullNode
+	if err := proto.Unmarshal(buf, &node); err != nil {
+		return nil, err
+	}
+
+	n.Deserialize(&node)
+
+	return n, nil
 }
 
 const hashLen = len(math.Hash{})
