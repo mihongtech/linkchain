@@ -5,9 +5,10 @@ import (
 	"io"
 	"strings"
 
-	_ "github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/serialize"
+	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/protobuf"
 )
 
@@ -90,13 +91,37 @@ func (n valueNode) fstring(ind string) string {
 
 //Serialize/Deserialize
 func (n *fullNode) Serialize() serialize.SerializeStream {
-	//	node := protobuf.FullNode{
-	//		Children: n.Children,
-	//		Flags:    n.flags,
-	//	}
-	//	return &node
-	// TODO: implement me
-	return nil
+	var children []*protobuf.HashNode
+
+	for _, child := range n.Children {
+		enc := child.Serialize()
+		buffer, err := proto.Marshal(enc)
+		if err != nil {
+			log.Error("header marshaling error: ", err)
+		}
+		hash := math.HashB(buffer)
+		hashData := protobuf.HashNode{
+			Data: hash,
+		}
+		children = append(children, &hashData)
+	}
+
+	hashData := protobuf.HashNode{
+		Data: n.flags.hash,
+	}
+
+	gen := uint32(n.flags.gen)
+	falgs := protobuf.NodeFlag{
+		Gen:   &(gen),
+		Dirty: &(n.flags.dirty),
+		Hash:  &(hashData),
+	}
+
+	node := protobuf.FullNode{
+		Children: children,
+		Flags:    &falgs,
+	}
+	return &node
 }
 
 func (n *shortNode) Serialize() serialize.SerializeStream {
