@@ -29,7 +29,7 @@ func (m *Transactions) Reset()         { *m = Transactions{} }
 func (m *Transactions) String() string { return proto.CompactTextString(m) }
 func (*Transactions) ProtoMessage()    {}
 func (*Transactions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_transaction_f5cb32b462e88af0, []int{0}
+	return fileDescriptor_transaction_d461f76fa24db29d, []int{0}
 }
 func (m *Transactions) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Transactions.Unmarshal(m, b)
@@ -74,7 +74,7 @@ func (m *Transaction) Reset()         { *m = Transaction{} }
 func (m *Transaction) String() string { return proto.CompactTextString(m) }
 func (*Transaction) ProtoMessage()    {}
 func (*Transaction) Descriptor() ([]byte, []int) {
-	return fileDescriptor_transaction_f5cb32b462e88af0, []int{1}
+	return fileDescriptor_transaction_d461f76fa24db29d, []int{1}
 }
 func (m *Transaction) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Transaction.Unmarshal(m, b)
@@ -162,7 +162,7 @@ func (m *TransactionPeer) Reset()         { *m = TransactionPeer{} }
 func (m *TransactionPeer) String() string { return proto.CompactTextString(m) }
 func (*TransactionPeer) ProtoMessage()    {}
 func (*TransactionPeer) Descriptor() ([]byte, []int) {
-	return fileDescriptor_transaction_f5cb32b462e88af0, []int{2}
+	return fileDescriptor_transaction_d461f76fa24db29d, []int{2}
 }
 func (m *TransactionPeer) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TransactionPeer.Unmarshal(m, b)
@@ -207,7 +207,7 @@ func (m *AccountID) Reset()         { *m = AccountID{} }
 func (m *AccountID) String() string { return proto.CompactTextString(m) }
 func (*AccountID) ProtoMessage()    {}
 func (*AccountID) Descriptor() ([]byte, []int) {
-	return fileDescriptor_transaction_f5cb32b462e88af0, []int{3}
+	return fileDescriptor_transaction_d461f76fa24db29d, []int{3}
 }
 func (m *AccountID) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AccountID.Unmarshal(m, b)
@@ -245,7 +245,7 @@ func (m *Hash) Reset()         { *m = Hash{} }
 func (m *Hash) String() string { return proto.CompactTextString(m) }
 func (*Hash) ProtoMessage()    {}
 func (*Hash) Descriptor() ([]byte, []int) {
-	return fileDescriptor_transaction_f5cb32b462e88af0, []int{4}
+	return fileDescriptor_transaction_d461f76fa24db29d, []int{4}
 }
 func (m *Hash) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Hash.Unmarshal(m, b)
@@ -283,7 +283,7 @@ func (m *Amount) Reset()         { *m = Amount{} }
 func (m *Amount) String() string { return proto.CompactTextString(m) }
 func (*Amount) ProtoMessage()    {}
 func (*Amount) Descriptor() ([]byte, []int) {
-	return fileDescriptor_transaction_f5cb32b462e88af0, []int{5}
+	return fileDescriptor_transaction_d461f76fa24db29d, []int{5}
 }
 func (m *Amount) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Amount.Unmarshal(m, b)
@@ -320,10 +320,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("protobuf/transaction.proto", fileDescriptor_transaction_f5cb32b462e88af0)
+	proto.RegisterFile("protobuf/transaction.proto", fileDescriptor_transaction_d461f76fa24db29d)
 }
 
-var fileDescriptor_transaction_f5cb32b462e88af0 = []byte{
+var fileDescriptor_transaction_d461f76fa24db29d = []byte{
 	// 307 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x90, 0xbf, 0x4f, 0xfb, 0x30,
 	0x10, 0xc5, 0x55, 0x27, 0x4d, 0xdb, 0x4b, 0xbf, 0x5f, 0xd0, 0xf1, 0x43, 0xa6, 0x48, 0x28, 0xca,

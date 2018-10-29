@@ -399,7 +399,7 @@ func (m *ChainManage) updateStatus(block block.IBlock, isAdd bool) error {
 	amount := poameta.NewAmout(50)
 	signer, _ := poablock.Header.GetSigner()
 	tp := poameta.NewTransactionPeer(signer.AccountID, signer.Extra)
-	mineTx := poameta.NewTransaction(0, poameta.TransactionPeer{}, *tp, *amount, poablock.Header.Timestamp, poablock.Header.Nonce, nil, poameta.FromSign{})
+	mineTx := poameta.NewTransaction(0, poameta.TransactionPeer{}, *tp, *amount, poablock.Header.Time, poablock.Header.Nonce, nil, poameta.FromSign{})
 	cachTxs := block.GetTxs()
 	mineIndex := len(cachTxs)
 	cachTxs = append(cachTxs, mineTx)

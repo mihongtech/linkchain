@@ -60,7 +60,7 @@ type Transaction struct {
 	Amount Amount
 
 	Time time.Time
-	// Extra used to extenion the block.
+	// Data used to extenion the block.
 
 	Nounce uint32
 
