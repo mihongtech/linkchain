@@ -105,7 +105,10 @@ func (m *BlockManage) RebuildBlock(block block.IBlock) (block.IBlock, error) {
 			log.Error("BlockManage", "CreateBlock", err)
 			return &pb, err
 		}
-		pb.Deserialize(pb.Serialize())
+		err = pb.Deserialize(pb.Serialize())
+		if err != nil {
+			return nil, err
+		}
 		signer.Sign(poameta.PrivSigner[pubIndex], *pb.GetBlockID().(*math.Hash))
 		pb.Header.SetSigner(signer)
 		return &pb, nil
@@ -133,7 +136,10 @@ func (m *BlockManage) GetGensisBlock() block.IBlock {
 		log.Error("BlockManage", "CreateBlock", err)
 		return b
 	}
-	b.Deserialize(b.Serialize())
+	err = b.Deserialize(b.Serialize())
+	if err != nil {
+		return nil
+	}
 	signer.Sign(poameta.PrivSigner[0], *b.GetBlockID().(*math.Hash))
 	b.Header.SetSigner(signer)
 	return b

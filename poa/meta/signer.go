@@ -108,8 +108,8 @@ func (s *Signer) Encode(buff []byte) error {
 	if err != nil {
 		return err
 	}
-	s.Deserialize(data)
-	return nil
+
+	return s.Deserialize(data)
 }
 
 //Serialize/Deserialize
@@ -122,10 +122,14 @@ func (txpeer *Signer) Serialize() serialize.SerializeStream {
 	return &peer
 }
 
-func (txpeer *Signer) Deserialize(s serialize.SerializeStream) {
+func (txpeer *Signer) Deserialize(s serialize.SerializeStream) error {
 	data := *s.(*protobuf.TransactionPeer)
-	txpeer.AccountID.Deserialize(data.AccountID)
+	err := txpeer.AccountID.Deserialize(data.AccountID)
+	if err != nil {
+		return err
+	}
 	txpeer.Extra = data.Extra
+	return nil
 }
 
 func (txpeer *Signer) GetID() account.IAccountID {

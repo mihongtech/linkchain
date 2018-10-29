@@ -35,10 +35,14 @@ func (txpeer *TransactionPeer) Serialize() serialize.SerializeStream {
 	return &peer
 }
 
-func (txpeer *TransactionPeer) Deserialize(s serialize.SerializeStream) {
+func (txpeer *TransactionPeer) Deserialize(s serialize.SerializeStream) error {
 	data := *s.(*protobuf.TransactionPeer)
-	txpeer.AccountID.Deserialize(data.AccountID)
+	err := txpeer.AccountID.Deserialize(data.AccountID)
+	if err != nil {
+		return err
+	}
 	txpeer.Extra = data.Extra
+	return nil
 }
 
 func (txpeer *TransactionPeer) GetID() account.IAccountID {
@@ -86,6 +90,7 @@ func NewTransaction(version uint32, from TransactionPeer, to TransactionPeer, am
 
 func (tx *Transaction) GetTxID() meta.DataID {
 	if tx.txid.IsEmpty() {
+		//TODO Deserialize
 		tx.Deserialize(tx.Serialize())
 	}
 	return &tx.txid
@@ -186,14 +191,23 @@ func (tx *Transaction) Serialize() serialize.SerializeStream {
 	return &t
 }
 
-func (tx *Transaction) Deserialize(s serialize.SerializeStream) {
+func (tx *Transaction) Deserialize(s serialize.SerializeStream) error {
 	data := *s.(*protobuf.Transaction)
 	tx.Version = *data.Version
-	tx.From.Deserialize(data.From)
-	tx.To.Deserialize(data.To)
+	err := tx.From.Deserialize(data.From)
+	if err != nil {
+		return err
+	}
+	err = tx.To.Deserialize(data.To)
+	if err != nil {
+		return err
+	}
 	tx.Time = time.Unix(*data.Time, 0)
 	tx.Nounce = *data.Nounce
-	tx.Amount.Deserialize(data.Amount)
+	err = tx.Amount.Deserialize(data.Amount)
+	if err != nil {
+		return err
+	}
 	tx.Extra = data.Extra
 	tx.Signs = FromSign{Code: data.Sign}
 
@@ -207,6 +221,7 @@ func (tx *Transaction) Deserialize(s serialize.SerializeStream) {
 		Extra:   data.Extra,
 	}
 	tx.txid = math.MakeHash(&t)
+	return nil
 }
 
 func (tx *Transaction) String() string {

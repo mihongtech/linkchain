@@ -29,14 +29,15 @@ func (a *AccountID) Serialize() serialize.SerializeStream {
 	return &accountId
 }
 
-func (a *AccountID) Deserialize(s serialize.SerializeStream) {
+func (a *AccountID) Deserialize(s serialize.SerializeStream) error {
 	data := s.(*protobuf.AccountID)
 	pk, err := btcec.ParsePubKey(data.Id, btcec.S256())
 	if err != nil {
 		log.Error("AccountID", "Deserialize failed", err)
-		return
+		return err
 	}
 	a.ID = pk.SerializeCompressed()
+	return nil
 }
 
 func NewAccountId(id *btcec.PublicKey) *AccountID {
@@ -111,7 +112,8 @@ func (a *Account) Serialize() serialize.SerializeStream {
 	return nil
 }
 
-func (a *Account) Deserialize(s serialize.SerializeStream) {
+func (a *Account) Deserialize(s serialize.SerializeStream) error {
+	return nil
 }
 
 func (id *Account) String() string {

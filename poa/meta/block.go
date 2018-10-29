@@ -74,15 +74,22 @@ func (b *Block) Serialize() serialize.SerializeStream {
 	return &block
 }
 
-func (b *Block) Deserialize(s serialize.SerializeStream) {
+func (b *Block) Deserialize(s serialize.SerializeStream) error {
 	data := *s.(*protobuf.Block)
-	b.Header.Deserialize(data.Header)
+	err := b.Header.Deserialize(data.Header)
+	if err != nil {
+		return err
+	}
 	b.TXs = b.TXs[:0] // transaction clear
 	for _, transaction := range data.TxList.Txs {
 		newTx := Transaction{}
-		newTx.Deserialize(transaction)
+		err = newTx.Deserialize(transaction)
+		if err != nil {
+			return err
+		}
 		b.TXs = append(b.TXs, newTx)
 	}
+	return nil
 }
 
 func (b *Block) String() string {
@@ -172,6 +179,7 @@ func NewBlockHeader(version uint32, prev math.Hash, root math.Hash, time time.Ti
 
 func (bh *BlockHeader) GetBlockID() meta.DataID {
 	if bh.hash.IsEmpty() {
+		//TODO Deserialize
 		bh.Deserialize(bh.Serialize())
 	}
 	return &bh.hash
@@ -229,24 +237,33 @@ func (bh *BlockHeader) Serialize() serialize.SerializeStream {
 	return &header
 }
 
-func (bh *BlockHeader) Deserialize(s serialize.SerializeStream) {
+func (bh *BlockHeader) Deserialize(s serialize.SerializeStream) error {
 	data := s.(*protobuf.BlockHeader)
 	bh.Version = *data.Version
 	bh.Height = *data.Height
 	bh.Time = time.Unix(*data.Time, 0)
 	bh.Nonce = *data.Nounce
 	bh.Difficulty = *data.Difficulty
-	bh.Prev.Deserialize(data.Prev)
-	bh.TxRoot.Deserialize(data.TxRoot)
-	bh.Status.Deserialize(data.Status)
+	err := bh.Prev.Deserialize(data.Prev)
+	if err != nil {
+		return err
+	}
+	err = bh.TxRoot.Deserialize(data.TxRoot)
+	if err != nil {
+		return err
+	}
+	err = bh.Status.Deserialize(data.Status)
+	if err != nil {
+		return err
+	}
 	bh.Sign = data.Sign
 	bh.Data = data.Data
 
 	signer := Signer{}
-	err := signer.Encode(bh.Sign)
-	//TODO need handle error
+	err = signer.Encode(bh.Sign)
 	if err != nil {
 		log.Error("BlockHeader", "Deserialize Signer failed", err)
+		return err
 	}
 	bh.signer = signer
 
@@ -262,6 +279,7 @@ func (bh *BlockHeader) Deserialize(s serialize.SerializeStream) {
 		Data:       data.Data,
 	}
 	bh.hash = math.MakeHash(&t)
+	return nil
 }
 
 func (bh *BlockHeader) String() string {
