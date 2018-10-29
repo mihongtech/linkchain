@@ -28,8 +28,8 @@ func NewBlock(header BlockHeader, txs []Transaction) *Block {
 }
 
 func (b *Block) SetTx(newTXs []tx.ITx) error {
-	for _, tx := range newTXs {
-		b.TXs = append(b.TXs, *tx.(*Transaction))
+	for _, iTx := range newTXs {
+		b.TXs = append(b.TXs, *iTx.(*Transaction))
 	}
 	b.Header.SetMerkleRoot(b.CalculateTxTreeRoot()) //calculate merkle root
 	return nil
@@ -179,7 +179,7 @@ func (bh *BlockHeader) GetBlockID() meta.DataID {
 
 func (bh *BlockHeader) GetSignerID() (account.IAccountID, error) {
 	signer := Signer{}
-	err := signer.Encode(bh.Data)
+	err := signer.Encode(bh.Sign)
 	if err != nil {
 		log.Error("BlockHeader", "Encode Signer failed", err)
 		return nil, err
@@ -196,7 +196,7 @@ func (bh *BlockHeader) SetSigner(signer Signer) error {
 	if err != nil {
 		return err
 	}
-	bh.Data = buf
+	bh.Sign = buf
 	bh.signer = signer
 	return nil
 }
@@ -242,7 +242,26 @@ func (bh *BlockHeader) Deserialize(s serialize.SerializeStream) {
 	bh.Sign = data.Sign
 	bh.Data = data.Data
 
-	bh.hash = math.MakeHash(data)
+	signer := Signer{}
+	err := signer.Encode(bh.Sign)
+	//TODO need handle error
+	if err != nil {
+		log.Error("BlockHeader", "Deserialize Signer failed", err)
+	}
+	bh.signer = signer
+
+	t := protobuf.BlockHeader{
+		Version:    data.Version,
+		Height:     data.Height,
+		Time:       data.Time,
+		Nounce:     data.Nounce,
+		Difficulty: data.Difficulty,
+		Prev:       data.Prev,
+		TxRoot:     data.TxRoot,
+		Status:     data.Status,
+		Data:       data.Data,
+	}
+	bh.hash = math.MakeHash(&t)
 }
 
 func (bh *BlockHeader) String() string {
