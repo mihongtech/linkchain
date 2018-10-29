@@ -14,12 +14,14 @@ import (
 	poameta "github.com/linkchain/poa/meta"
 )
 
+// AccountManage is a important manager which is handling  all th account status of the whole system.
 type AccountManage struct {
 	accountMtx     sync.RWMutex
 	accountMap     map[string]poameta.Account
 	NewWalletEvent *event.TypeMux
 }
 
+// read account by key with R/W lock.
 func (m *AccountManage) readAccount(key string) (poameta.Account, bool) {
 	m.accountMtx.RLock()
 	defer m.accountMtx.RUnlock()
@@ -27,12 +29,14 @@ func (m *AccountManage) readAccount(key string) (poameta.Account, bool) {
 	return value, ok
 }
 
+// write account by key with R/W lock.
 func (m *AccountManage) writeAccount(key string, value poameta.Account) {
 	m.accountMtx.Lock()
 	defer m.accountMtx.Unlock()
 	m.accountMap[key] = value
 }
 
+// remove account by key with R/W lock.
 func (m *AccountManage) removeAccount(key string) {
 	m.accountMtx.Lock()
 	defer m.accountMtx.Unlock()
@@ -55,6 +59,7 @@ func (m *AccountManage) Stop() {
 	log.Info("AccountManage stop...")
 }
 
+// create a new random Account.
 func (m *AccountManage) NewAccount() account.IAccount {
 	priv, err := btcec.NewPrivateKey(btcec.S256())
 	if err != nil {
@@ -66,12 +71,14 @@ func (m *AccountManage) NewAccount() account.IAccount {
 	return a
 }
 
+// add a account in accountmanage and if return nil , add success.
 func (m *AccountManage) AddAccount(iAccount account.IAccount) error {
 	a := *iAccount.(*poameta.Account)
 	m.writeAccount(iAccount.GetAccountID().String(), a)
 	return nil
 }
 
+// get a account by accountid in accountmanage and return interface of account and error message,if error message is nil,search is success.
 func (m *AccountManage) GetAccount(id account.IAccountID) (account.IAccount, error) {
 	a, ok := m.readAccount(id.String())
 	if ok {
@@ -80,11 +87,13 @@ func (m *AccountManage) GetAccount(id account.IAccountID) (account.IAccount, err
 	return nil, errors.New("Can not find IAccount ")
 }
 
+// get a account by accountid in accountmanage and if return nil , add success.
 func (m *AccountManage) RemoveAccount(id account.IAccountID) error {
 	m.removeAccount(id.String())
 	return nil
 }
 
+// get from/to account in accountmanage , return interface of account and error message,if error message is nil,search is success.
 func (m *AccountManage) GetAccountRelateTXs(tx tx.ITx, isMine bool) ([]account.IAccount, error) {
 	fId := tx.GetFrom().GetID()
 	tId := tx.GetTo().GetID()
@@ -104,22 +113,8 @@ func (m *AccountManage) GetAccountRelateTXs(tx tx.ITx, isMine bool) ([]account.I
 	return a, nil
 }
 
-func (m *AccountManage) ConvertAccount(tx tx.ITx, isMine bool) (account.IAccount, account.IAccount) {
-	fId := tx.GetFrom().GetID()
-	tId := tx.GetTo().GetID()
-	var fA, tA account.IAccount
-	toAmount := *tx.GetAmount().(*poameta.Amount)
-	if !isMine {
-		fromAmount := poameta.NewAmout(toAmount.Value)
-		fromAmount.Reverse()
-		fA = poameta.NewAccount(*fId.(*poameta.AccountID), *fromAmount, tx.GetNounce())
-	}
-	tA = poameta.NewAccount(*tId.(*poameta.AccountID), toAmount, 0)
-
-	return fA, tA
-}
-
 //TODO need to test
+//update accountmanage by tx when add block on chain and if error message is nil,update success.
 func (m *AccountManage) UpdateAccountsByTxs(txs []tx.ITx, mineIndex int) error {
 	cache := make(map[string]account.IAccount)
 	for index, t := range txs {
@@ -142,7 +137,7 @@ func (m *AccountManage) UpdateAccountsByTxs(txs []tx.ITx, mineIndex int) error {
 	}
 	//Check Tx IAccount
 	for index, t := range txs {
-		fA, tA := m.ConvertAccount(t, index == mineIndex)
+		fA, tA := ConvertAccount(t, index == mineIndex)
 
 		if index != mineIndex {
 			fKey := fA.GetAccountID().String()
@@ -176,6 +171,7 @@ func (m *AccountManage) UpdateAccountsByTxs(txs []tx.ITx, mineIndex int) error {
 }
 
 //TODO need to test
+//restore accountmanage by tx when remove block on chain and if error message is nil,restore success.
 func (m *AccountManage) RevertAccountsByTxs(txs []tx.ITx, mineIndex int) error {
 	cache := make(map[string]account.IAccount)
 	for index, t := range txs {
@@ -190,7 +186,7 @@ func (m *AccountManage) RevertAccountsByTxs(txs []tx.ITx, mineIndex int) error {
 	for index, t := range txs {
 		t.GetAmount().Reverse()
 		t.SetNounce(t.GetNounce() - 1)
-		fA, tA := m.ConvertAccount(t, index == mineIndex)
+		fA, tA := ConvertAccount(t, index == mineIndex)
 
 		if index != mineIndex {
 			fKey := fA.GetAccountID().String()
@@ -212,6 +208,7 @@ func (m *AccountManage) RevertAccountsByTxs(txs []tx.ITx, mineIndex int) error {
 	return nil
 }
 
+//check tx account is correct without strict and if error message is nil, the tx is correct.
 func (m *AccountManage) CheckTxAccount(tx tx.ITx) error {
 	fromAccountId := tx.GetFrom().GetID()
 	amount := tx.GetAmount()
@@ -222,6 +219,7 @@ func (m *AccountManage) CheckTxAccount(tx tx.ITx) error {
 	return m.checkAccount(fromAccount, amount, tx.GetNounce(), false)
 }
 
+//check account is correct and if error message is nil, the check is correct.
 func (m *AccountManage) checkAccount(fromAccount account.IAccount, amount meta.IAmount, txNounce uint32, isStrict bool) error {
 	if fromAccount.GetAmount().IsLessThan(amount) {
 		return errors.New("checkAccount() the from of tx doesn't have enough money to pay")
@@ -240,6 +238,8 @@ func (m *AccountManage) checkAccount(fromAccount account.IAccount, amount meta.I
 	return nil
 }
 
+//TODO need to remove
+//get all account in account.
 func (m *AccountManage) GetAllAccounts() {
 	m.accountMtx.RLock()
 	defer m.accountMtx.RUnlock()
@@ -247,4 +247,20 @@ func (m *AccountManage) GetAllAccounts() {
 	for _, accountId := range m.accountMap {
 		log.Info("AccountManage", "account", accountId.GetAccountID().String(), "amount", accountId.GetAmount().GetInt(), "nounce", accountId.GetNounce())
 	}
+}
+
+// create from/to account in accountmanage and return interface of account and error message,if error message is nil,search is success.
+func ConvertAccount(tx tx.ITx, isMine bool) (account.IAccount, account.IAccount) {
+	fId := tx.GetFrom().GetID()
+	tId := tx.GetTo().GetID()
+	var fA, tA account.IAccount
+	toAmount := *tx.GetAmount().(*poameta.Amount)
+	if !isMine {
+		fromAmount := poameta.NewAmout(toAmount.Value)
+		fromAmount.Reverse()
+		fA = poameta.NewAccount(*fId.(*poameta.AccountID), *fromAmount, tx.GetNounce())
+	}
+	tA = poameta.NewAccount(*tId.(*poameta.AccountID), toAmount, 0)
+
+	return fA, tA
 }
