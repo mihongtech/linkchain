@@ -147,21 +147,23 @@ func (n valueNode) Serialize() serialize.SerializeStream {
 	return &node
 }
 
-func (n *fullNode) Deserialize(s serialize.SerializeStream) {
+func (n *fullNode) Deserialize(s serialize.SerializeStream) error {
 	data := *s.(*protobuf.FullNode)
 	for i := 0; i < 16; i++ {
 		cld, err := decodeRef(data.Children[i].Data)
 		if err != nil {
-			return
+			return err
 		}
 		n.Children[i] = cld
 	}
 
 	n.Children[16] = append(valueNode{}, data.Children[16].Data...)
 	// do not deserialize flags
+
+	return nil
 }
 
-func (n *shortNode) Deserialize(s serialize.SerializeStream) {
+func (n *shortNode) Deserialize(s serialize.SerializeStream) error {
 	data := *s.(*protobuf.ShortNode)
 	n.Key = append(n.Key, data.Key...)
 
@@ -172,16 +174,19 @@ func (n *shortNode) Deserialize(s serialize.SerializeStream) {
 		n.Val, _ = decodeRef(data.Val.Data)
 	}
 	// do not deserialize flags
+	return nil
 }
 
-func (n hashNode) Deserialize(s serialize.SerializeStream) {
+func (n hashNode) Deserialize(s serialize.SerializeStream) error {
 	data := *s.(*protobuf.HashNode)
 	copy(n, data.Data)
+	return nil
 }
 
-func (n valueNode) Deserialize(s serialize.SerializeStream) {
+func (n valueNode) Deserialize(s serialize.SerializeStream) error {
 	data := *s.(*protobuf.ValueNode)
 	copy(n, data.Data)
+	return nil
 }
 
 func mustDecodeNode(hash, buf []byte, cachegen uint16) node {

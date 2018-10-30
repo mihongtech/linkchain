@@ -67,7 +67,7 @@ func (m *BlockManage) CreateBlock() (block.IBlock, error) {
 	if bestBlock != nil {
 		bestHash := bestBlock.GetBlockID()
 		txs := []poameta.Transaction{}
-		header := poameta.NewBlockHeader(config.BlockVersion, *bestHash.(*math.Hash), math.Hash{}, time.Now(), config.Difficulty, config.DefaultNounce, bestBlock.GetHeight()+1, nil)
+		header := poameta.NewBlockHeader(config.BlockVersion, bestBlock.GetHeight()+1, time.Now(), config.DefaultNounce, config.Difficulty, *bestHash.(*math.Hash), math.Hash{}, math.Hash{}, nil, nil)
 		b := poameta.NewBlock(*header, txs)
 		return m.RebuildBlock(b)
 	} else {
@@ -91,7 +91,7 @@ func (m *BlockManage) SignBlock(block block.IBlock, sign []byte) (block.IBlock, 
 /** interface: BlockBaseManager **/
 func (m *BlockManage) GetGensisBlock() block.IBlock {
 	txs := []poameta.Transaction{}
-	header := poameta.NewBlockHeader(config.BlockVersion, math.Hash{}, math.Hash{}, time.Unix(1487780010, 0), config.Difficulty, config.DefaultNounce, 0, nil)
+	header := poameta.NewBlockHeader(config.BlockVersion, 0, time.Unix(1487780010, 0), config.DefaultNounce, config.Difficulty, math.Hash{}, math.Hash{}, math.Hash{}, nil, nil)
 	b := poameta.NewBlock(*header, txs)
 	root := b.CalculateTxTreeRoot()
 	b.Header.SetMerkleRoot(root)
@@ -158,7 +158,7 @@ func (m *BlockManage) HasBlock(hash meta.DataID) bool {
 
 /** interface: BlockValidator **/
 func (m *BlockManage) CheckBlock(block block.IBlock) bool {
-	log.Info("POA CheckBlock ...")
+	//log.Info("POA CheckBlock ...")
 	croot := block.CalculateTxTreeRoot()
 	if !block.GetMerkleRoot().IsEqual(croot) {
 		log.Error("POA CheckBlock", "check merkle root", false)
@@ -196,7 +196,7 @@ func (m *BlockManage) CheckBlock(block block.IBlock) bool {
 }
 
 func (s *BlockManage) ProcessBlock(block block.IBlock) error {
-	log.Info("POA ProcessBlock ...")
+	//log.Info("POA ProcessBlock ...")
 	//1.checkBlock
 	if !s.CheckBlock(block) {
 		log.Error("POA checkBlock failed")
@@ -205,7 +205,7 @@ func (s *BlockManage) ProcessBlock(block block.IBlock) error {
 
 	//2.acceptBlock
 	GetManager().ChainManager.AddBlock(block)
-	log.Info("POA Add a Blocks", "block", block)
+	log.Info("POA Add a Blocks", "block", block.GetBlockID(), "prev", block.GetPrevBlockID())
 	//log.Info("POA Add a Blocks", "block hash", block.GetBlockID().String())
 	//log.Info("POA Add a Blocks", "prev hash", block.GetPrevBlockID().String())
 
@@ -216,8 +216,8 @@ func (s *BlockManage) ProcessBlock(block block.IBlock) error {
 		return errors.New("Update chain failed")
 	}
 
-	log.Info("POA ProcessBlock successed")
-	GetManager().ChainManager.GetBlockChainInfo()
+	//log.Info("POA ProcessBlock successed")
+	//GetManager().ChainManager.GetBlockChainInfo()
 
 	return nil
 	//4.updateStorage
