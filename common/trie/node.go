@@ -171,11 +171,30 @@ func (n valueNode) Serialize() serialize.SerializeStream {
 }
 
 func (n *fullNode) Deserialize(s serialize.SerializeStream) {
+	data := *s.(*protobuf.FullNode)
+	for i := 0; i < 16; i++ {
+		cld, err := decodeRef(data.Children[i].Data)
+		if err != nil {
+			return
+		}
+		n.Children[i] = cld
+	}
 
+	n.Children[16] = append(valueNode{}, data.Children[16].Data...)
+	// do not deserialize flags
 }
 
 func (n *shortNode) Deserialize(s serialize.SerializeStream) {
+	data := *s.(*protobuf.ShortNode)
+	n.Key = append(n.Key, data.Key...)
 
+	key := compactToHex(data.Key)
+	if hasTerm(key) {
+		n.Val = append(valueNode{}, data.Val.Data...)
+	} else {
+		n.Val, _ = decodeRef(data.Val.Data)
+	}
+	// do not deserialize flags
 }
 
 func (n hashNode) Deserialize(s serialize.SerializeStream) {
@@ -225,7 +244,7 @@ func decodeShort(hash, buf []byte, cachegen uint16) (node, error) {
 		return &shortNode{key, append(valueNode{}, node.Val.Data...), flag}, nil
 	}
 
-	r, err := decodeRef(node.Val.Data, cachegen)
+	r, err := decodeRef(node.Val.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +269,7 @@ func decodeFull(hash, buf []byte, cachegen uint16) (*fullNode, error) {
 
 const hashLen = len(math.Hash{})
 
-func decodeRef(buf []byte, cachegen uint16) (node, error) {
+func decodeRef(buf []byte) (node, error) {
 	switch {
 	case len(buf) == 0:
 		// empty node
