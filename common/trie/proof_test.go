@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/linkchain/common"
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/math"
 )
@@ -64,7 +65,7 @@ func TestVerifyBadProof(t *testing.T) {
 		node, _ := proofs.Get(key)
 		proofs.Delete(key)
 		mutateByte(node)
-		proofs.Put(crypto.Keccak256(node), node)
+		proofs.Put(math.HashB(node), node)
 		if _, err, _ := VerifyProof(root, kv.k, proofs); err == nil {
 			t.Fatalf("expected proof to fail for key %x", kv.k)
 		}

@@ -4,16 +4,17 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/linkchain/common"
+	"github.com/linkchain/common/lcdb"
+	"github.com/linkchain/common/math"
 )
 
 // makeTestTrie create a sample test trie to test node-wise reconstruction.
 func makeTestTrie() (*Database, *Trie, map[string][]byte) {
 	// Create an empty trie
-	diskdb, _ := ethdb.NewMemDatabase()
+	diskdb, _ := lcdb.NewMemDatabase()
 	triedb := NewDatabase(diskdb)
-	trie, _ := New(common.Hash{}, triedb)
+	trie, _ := New(math.Hash{}, triedb)
 
 	// Fill it with some arbitrary data
 	content := make(map[string][]byte)
@@ -44,11 +45,11 @@ func makeTestTrie() (*Database, *Trie, map[string][]byte) {
 // content map.
 func checkTrieContents(t *testing.T, db *Database, root []byte, content map[string][]byte) {
 	// Check root availability and trie contents
-	trie, err := New(common.BytesToHash(root), db)
+	trie, err := New(math.BytesToHash(root), db)
 	if err != nil {
 		t.Fatalf("failed to create trie at %x: %v", root, err)
 	}
-	if err := checkTrieConsistency(db, common.BytesToHash(root)); err != nil {
+	if err := checkTrieConsistency(db, math.BytesToHash(root)); err != nil {
 		t.Fatalf("inconsistent trie at %x: %v", root, err)
 	}
 	for key, val := range content {
@@ -59,7 +60,7 @@ func checkTrieContents(t *testing.T, db *Database, root []byte, content map[stri
 }
 
 // checkTrieConsistency checks that all nodes in a trie are indeed present.
-func checkTrieConsistency(db *Database, root common.Hash) error {
+func checkTrieConsistency(db *Database, root math.Hash) error {
 	// Create and iterate a trie rooted in a subnode
 	trie, err := New(root, db)
 	if err != nil {
@@ -73,17 +74,17 @@ func checkTrieConsistency(db *Database, root common.Hash) error {
 
 // Tests that an empty trie is not scheduled for syncing.
 func TestEmptyTrieSync(t *testing.T) {
-	diskdbA, _ := ethdb.NewMemDatabase()
+	diskdbA, _ := lcdb.NewMemDatabase()
 	triedbA := NewDatabase(diskdbA)
 
-	diskdbB, _ := ethdb.NewMemDatabase()
+	diskdbB, _ := lcdb.NewMemDatabase()
 	triedbB := NewDatabase(diskdbB)
 
-	emptyA, _ := New(common.Hash{}, triedbA)
+	emptyA, _ := New(math.Hash{}, triedbA)
 	emptyB, _ := New(emptyRoot, triedbB)
 
 	for i, trie := range []*Trie{emptyA, emptyB} {
-		diskdb, _ := ethdb.NewMemDatabase()
+		diskdb, _ := lcdb.NewMemDatabase()
 		if req := NewTrieSync(trie.Hash(), diskdb, nil).Missing(1); len(req) != 0 {
 			t.Errorf("test %d: content requested for empty trie: %v", i, req)
 		}
@@ -100,11 +101,11 @@ func testIterativeTrieSync(t *testing.T, batch int) {
 	srcDb, srcTrie, srcData := makeTestTrie()
 
 	// Create a destination trie and sync with the scheduler
-	diskdb, _ := ethdb.NewMemDatabase()
+	diskdb, _ := lcdb.NewMemDatabase()
 	triedb := NewDatabase(diskdb)
 	sched := NewTrieSync(srcTrie.Hash(), diskdb, nil)
 
-	queue := append([]common.Hash{}, sched.Missing(batch)...)
+	queue := append([]math.Hash{}, sched.Missing(batch)...)
 	for len(queue) > 0 {
 		results := make([]SyncResult, len(queue))
 		for i, hash := range queue {
@@ -133,11 +134,11 @@ func TestIterativeDelayedTrieSync(t *testing.T) {
 	srcDb, srcTrie, srcData := makeTestTrie()
 
 	// Create a destination trie and sync with the scheduler
-	diskdb, _ := ethdb.NewMemDatabase()
+	diskdb, _ := lcdb.NewMemDatabase()
 	triedb := NewDatabase(diskdb)
 	sched := NewTrieSync(srcTrie.Hash(), diskdb, nil)
 
-	queue := append([]common.Hash{}, sched.Missing(10000)...)
+	queue := append([]math.Hash{}, sched.Missing(10000)...)
 	for len(queue) > 0 {
 		// Sync only half of the scheduled nodes
 		results := make([]SyncResult, len(queue)/2+1)
@@ -171,11 +172,11 @@ func testIterativeRandomTrieSync(t *testing.T, batch int) {
 	srcDb, srcTrie, srcData := makeTestTrie()
 
 	// Create a destination trie and sync with the scheduler
-	diskdb, _ := ethdb.NewMemDatabase()
+	diskdb, _ := lcdb.NewMemDatabase()
 	triedb := NewDatabase(diskdb)
 	sched := NewTrieSync(srcTrie.Hash(), diskdb, nil)
 
-	queue := make(map[common.Hash]struct{})
+	queue := make(map[math.Hash]struct{})
 	for _, hash := range sched.Missing(batch) {
 		queue[hash] = struct{}{}
 	}
@@ -196,7 +197,7 @@ func testIterativeRandomTrieSync(t *testing.T, batch int) {
 		if index, err := sched.Commit(diskdb); err != nil {
 			t.Fatalf("failed to commit data #%d: %v", index, err)
 		}
-		queue = make(map[common.Hash]struct{})
+		queue = make(map[math.Hash]struct{})
 		for _, hash := range sched.Missing(batch) {
 			queue[hash] = struct{}{}
 		}
@@ -212,11 +213,11 @@ func TestIterativeRandomDelayedTrieSync(t *testing.T) {
 	srcDb, srcTrie, srcData := makeTestTrie()
 
 	// Create a destination trie and sync with the scheduler
-	diskdb, _ := ethdb.NewMemDatabase()
+	diskdb, _ := lcdb.NewMemDatabase()
 	triedb := NewDatabase(diskdb)
 	sched := NewTrieSync(srcTrie.Hash(), diskdb, nil)
 
-	queue := make(map[common.Hash]struct{})
+	queue := make(map[math.Hash]struct{})
 	for _, hash := range sched.Missing(10000) {
 		queue[hash] = struct{}{}
 	}
@@ -259,12 +260,12 @@ func TestDuplicateAvoidanceTrieSync(t *testing.T) {
 	srcDb, srcTrie, srcData := makeTestTrie()
 
 	// Create a destination trie and sync with the scheduler
-	diskdb, _ := ethdb.NewMemDatabase()
+	diskdb, _ := lcdb.NewMemDatabase()
 	triedb := NewDatabase(diskdb)
 	sched := NewTrieSync(srcTrie.Hash(), diskdb, nil)
 
-	queue := append([]common.Hash{}, sched.Missing(0)...)
-	requested := make(map[common.Hash]struct{})
+	queue := append([]math.Hash{}, sched.Missing(0)...)
+	requested := make(map[math.Hash]struct{})
 
 	for len(queue) > 0 {
 		results := make([]SyncResult, len(queue))
@@ -299,12 +300,12 @@ func TestIncompleteTrieSync(t *testing.T) {
 	srcDb, srcTrie, _ := makeTestTrie()
 
 	// Create a destination trie and sync with the scheduler
-	diskdb, _ := ethdb.NewMemDatabase()
+	diskdb, _ := lcdb.NewMemDatabase()
 	triedb := NewDatabase(diskdb)
 	sched := NewTrieSync(srcTrie.Hash(), diskdb, nil)
 
-	added := []common.Hash{}
-	queue := append([]common.Hash{}, sched.Missing(1)...)
+	added := []math.Hash{}
+	queue := append([]math.Hash{}, sched.Missing(1)...)
 	for len(queue) > 0 {
 		// Fetch a batch of trie nodes
 		results := make([]SyncResult, len(queue))

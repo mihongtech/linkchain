@@ -106,20 +106,8 @@ func (n *fullNode) Serialize() serialize.SerializeStream {
 		children = append(children, &hashData)
 	}
 
-	hashData := protobuf.HashNode{
-		Data: n.flags.hash,
-	}
-
-	gen := uint32(n.flags.gen)
-	falgs := protobuf.NodeFlag{
-		Gen:   &(gen),
-		Dirty: &(n.flags.dirty),
-		Hash:  &(hashData),
-	}
-
 	node := protobuf.FullNode{
 		Children: children,
-		Flags:    &falgs,
 	}
 	return &node
 }
@@ -130,26 +118,15 @@ func (n *shortNode) Serialize() serialize.SerializeStream {
 	if err != nil {
 		log.Error("header marshaling error: ", err)
 	}
+	// need hash ?
 	hash := math.HashB(buffer)
 	val := protobuf.HashNode{
 		Data: hash,
 	}
 
-	hashData := protobuf.HashNode{
-		Data: n.flags.hash,
-	}
-
-	gen := uint32(n.flags.gen)
-	falgs := protobuf.NodeFlag{
-		Gen:   &(gen),
-		Dirty: &(n.flags.dirty),
-		Hash:  &(hashData),
-	}
-
 	node := protobuf.ShortNode{
-		Key:   n.Key,
-		Val:   &val,
-		Flags: &falgs,
+		Key: n.Key,
+		Val: &val,
 	}
 	return &node
 }
@@ -171,11 +148,30 @@ func (n valueNode) Serialize() serialize.SerializeStream {
 }
 
 func (n *fullNode) Deserialize(s serialize.SerializeStream) {
+	data := *s.(*protobuf.FullNode)
+	for i := 0; i < 16; i++ {
+		cld, err := decodeRef(data.Children[i].Data)
+		if err != nil {
+			return
+		}
+		n.Children[i] = cld
+	}
 
+	n.Children[16] = append(valueNode{}, data.Children[16].Data...)
+	// do not deserialize flags
 }
 
 func (n *shortNode) Deserialize(s serialize.SerializeStream) {
+	data := *s.(*protobuf.ShortNode)
+	n.Key = append(n.Key, data.Key...)
 
+	key := compactToHex(data.Key)
+	if hasTerm(key) {
+		n.Val = append(valueNode{}, data.Val.Data...)
+	} else {
+		n.Val, _ = decodeRef(data.Val.Data)
+	}
+	// do not deserialize flags
 }
 
 func (n hashNode) Deserialize(s serialize.SerializeStream) {
@@ -221,8 +217,11 @@ func decodeShort(hash, buf []byte, cachegen uint16) (node, error) {
 
 	flag := nodeFlag{hash: hash, gen: cachegen}
 	key := compactToHex(node.Key)
+	if hasTerm(key) {
+		return &shortNode{key, append(valueNode{}, node.Val.Data...), flag}, nil
+	}
 
-	r, err := decodeRef(node.Val.Data, cachegen)
+	r, err := decodeRef(node.Val.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -240,12 +239,14 @@ func decodeFull(hash, buf []byte, cachegen uint16) (*fullNode, error) {
 
 	n.Deserialize(&node)
 
+	n.flags = nodeFlag{hash: hash, gen: cachegen}
+
 	return n, nil
 }
 
 const hashLen = len(math.Hash{})
 
-func decodeRef(buf []byte, cachegen uint16) (node, error) {
+func decodeRef(buf []byte) (node, error) {
 	switch {
 	case len(buf) == 0:
 		// empty node
