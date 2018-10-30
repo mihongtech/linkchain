@@ -19,6 +19,7 @@ type BlockBaseManager interface {
 	CreateBlock() (block.IBlock, error)
 	GetGensisBlock() block.IBlock
 	RebuildBlock(block block.IBlock) (block.IBlock, error)
+	SignBlock(block block.IBlock, sign []byte) (block.IBlock, error)
 }
 
 /**

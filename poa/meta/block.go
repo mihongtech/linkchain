@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"time"
 
+	"encoding/hex"
 	"github.com/golang/protobuf/proto"
+	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/merkle"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/meta"
-	"github.com/linkchain/meta/account"
 	"github.com/linkchain/meta/tx"
 	"github.com/linkchain/protobuf"
 )
@@ -49,8 +50,8 @@ func (b *Block) GetPrevBlockID() meta.DataID {
 func (b *Block) GetMerkleRoot() meta.DataID {
 	return &b.Header.TxRoot
 }
-func (b *Block) Verify() error {
-	return b.Header.Verify()
+func (b *Block) Verify(minerPKStr string) error {
+	return b.Header.Verify(minerPKStr)
 }
 
 //Serialize/Deserialize
@@ -157,8 +158,6 @@ type BlockHeader struct {
 
 	//The Hash of this block
 	hash math.Hash
-
-	signer Signer
 }
 
 func NewBlockHeader(version uint32, prev math.Hash, root math.Hash, time time.Time, difficulty uint32, nounce uint32, height uint32, extra []byte) *BlockHeader {
@@ -186,30 +185,6 @@ func (bh *BlockHeader) GetBlockID() meta.DataID {
 		}
 	}
 	return &bh.hash
-}
-
-func (bh *BlockHeader) GetSignerID() (account.IAccountID, error) {
-	signer := Signer{}
-	err := signer.Encode(bh.Sign)
-	if err != nil {
-		log.Error("BlockHeader", "Encode Signer failed", err)
-		return nil, err
-	}
-	return &signer.AccountID, nil
-}
-
-func (bh *BlockHeader) GetSigner() (Signer, error) {
-	return bh.signer, nil
-}
-
-func (bh *BlockHeader) SetSigner(signer Signer) error {
-	buf, err := signer.Decode()
-	if err != nil {
-		return err
-	}
-	bh.Sign = buf
-	bh.signer = signer
-	return nil
 }
 
 func (bh *BlockHeader) GetMerkleRoot() meta.DataID {
@@ -262,14 +237,6 @@ func (bh *BlockHeader) Deserialize(s serialize.SerializeStream) error {
 	bh.Sign = data.Sign
 	bh.Data = data.Data
 
-	signer := Signer{}
-	err = signer.Encode(bh.Sign)
-	if err != nil {
-		log.Error("BlockHeader", "Deserialize Signer failed", err)
-		return err
-	}
-	bh.signer = signer
-
 	t := protobuf.BlockHeader{
 		Version:    data.Version,
 		Height:     data.Height,
@@ -297,13 +264,24 @@ func (b *BlockHeader) IsGensis() bool {
 	return b.Height == 0 && b.Prev.IsEmpty()
 }
 
-func (b *BlockHeader) Verify() error {
-	signer, err := b.GetSigner()
+func (b *BlockHeader) Verify(minerPKStr string) error {
+	signature, err := btcec.ParseSignature(b.Sign, btcec.S256())
+	if err != nil {
+		log.Error("Signer", "VerifySign", err)
+		return err
+	}
+
+	minerPK, err := hex.DecodeString(minerPKStr)
 	if err != nil {
 		return err
 	}
-	err = signer.Verify(*b.GetBlockID().(*math.Hash))
+	pk, err := btcec.ParsePubKey(minerPK, btcec.S256())
 	if err != nil {
+		return err
+	}
+
+	verified := signature.Verify(b.GetBlockID().CloneBytes(), pk)
+	if !verified {
 		return err
 	}
 	return nil

@@ -101,6 +101,7 @@ func (w *Wallet) Start() bool {
 	log.Info("Wallet start...")
 	gensisWA := CreateWAccountFromBytes(minePriv, 50)
 	gensisKey := hex.EncodeToString(gensisWA.privKey.PubKey().SerializeCompressed())
+
 	w.accounts[gensisKey] = gensisWA
 	w.updateAccountSub = w.am.NewWalletEvent.Subscribe(events.WAccountEvent{})
 	go w.updateWalletLoop()
