@@ -162,9 +162,10 @@ func (hash *Hash) Serialize() serialize.SerializeStream {
 	return &h
 }
 
-func (hash *Hash) Deserialize(s serialize.SerializeStream) {
+func (hash *Hash) Deserialize(s serialize.SerializeStream) error {
 	h := *s.(*protobuf.Hash)
 	hash.SetBytes(h.Data)
+	return nil
 }
 
 func (hash *Hash) ToString() string {

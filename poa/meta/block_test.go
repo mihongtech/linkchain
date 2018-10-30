@@ -14,7 +14,7 @@ import (
 func Test_Serialize_block(t *testing.T) {
 	txs := []Transaction{}
 	block := Block{
-		Header: BlockHeader{Version: 0, PrevBlock: math.Hash{}, MerkleRoot: math.Hash{}, Timestamp: time.Unix(1487780010, 0), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: 0},
+		Header: BlockHeader{Version: 0, Prev: math.Hash{}, TxRoot: math.Hash{}, Time: time.Unix(1487780010, 0), Difficulty: 0x207fffff, Nonce: 0, Data: nil, Height: 0},
 		TXs:    txs,
 	}
 
@@ -68,7 +68,7 @@ func Test_Serialize_block_with_tx(t *testing.T) {
 	txs = append(txs, tx)
 
 	block := &Block{
-		Header: BlockHeader{Version: 0, PrevBlock: math.Hash{}, MerkleRoot: math.Hash{}, Timestamp: time.Unix(1487780010, 0), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: 0},
+		Header: BlockHeader{Version: 0, Prev: math.Hash{}, TxRoot: math.Hash{}, Time: time.Unix(1487780010, 0), Difficulty: 0x207fffff, Nonce: 0, Data: nil, Height: 0},
 		TXs:    txs,
 	}
 

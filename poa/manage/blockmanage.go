@@ -2,13 +2,12 @@ package manage
 
 import (
 	"errors"
-	"strings"
 	"sync"
 	"time"
 
-	"encoding/hex"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/log"
+	globalconfig "github.com/linkchain/config"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
 	"github.com/linkchain/poa/config"
@@ -77,41 +76,16 @@ func (m *BlockManage) CreateBlock() (block.IBlock, error) {
 }
 
 func (m *BlockManage) RebuildBlock(block block.IBlock) (block.IBlock, error) {
-	bestBlock := GetManager().ChainManager.GetBestBlock()
-	if bestBlock != nil {
-		pb := *block.(*poameta.Block)
-		root := pb.CalculateTxTreeRoot()
-		pb.Header.SetMerkleRoot(root)
+	pb := *block.(*poameta.Block)
+	root := pb.CalculateTxTreeRoot()
+	pb.Header.SetMerkleRoot(root)
+	return &pb, nil
+}
 
-		ls, err := bestBlock.(*poameta.Block).Header.GetSignerID()
-		if err != nil {
-			log.Error("BlockManage", "CreateBlock", err)
-			return &pb, err
-		}
-		lf, err := hex.DecodeString(ls.String())
-		if err != nil {
-			log.Error("BlockManage", "CreateBlock", err)
-			return &pb, err
-		}
-		pubIndex := ChooseNextSigner(lf)
-		s, err := poameta.CreateSignerIdByPubKey(poameta.PubSigners[pubIndex])
-		if err != nil {
-			log.Error("BlockManage", "CreateBlock Create Signer", err)
-			return nil, err
-		}
-		pb.Header.SetSigner(*s)
-		signer, err := pb.Header.GetSigner()
-		if err != nil {
-			log.Error("BlockManage", "CreateBlock", err)
-			return &pb, err
-		}
-		pb.Deserialize(pb.Serialize())
-		signer.Sign(poameta.PrivSigner[pubIndex], *pb.GetBlockID().(*math.Hash))
-		pb.Header.SetSigner(signer)
-		return &pb, nil
-	} else {
-		return m.GetGensisBlock(), nil
-	}
+func (m *BlockManage) SignBlock(block block.IBlock, sign []byte) (block.IBlock, error) {
+	pb := *block.(*poameta.Block)
+	pb.Header.Sign = sign
+	return &pb, nil
 }
 
 /** interface: BlockBaseManager **/
@@ -121,21 +95,7 @@ func (m *BlockManage) GetGensisBlock() block.IBlock {
 	b := poameta.NewBlock(*header, txs)
 	root := b.CalculateTxTreeRoot()
 	b.Header.SetMerkleRoot(root)
-	s, err := poameta.CreateSignerIdByPubKey(poameta.PubSigners[0])
-	if err != nil {
-		log.Error("BlockManage", "CreateBlock Create Signer", err)
-		return nil
-	}
-	b.Header.SetSigner(*s)
-	//TODO test
-	signer, err := b.Header.GetSigner()
-	if err != nil {
-		log.Error("BlockManage", "CreateBlock", err)
-		return b
-	}
-	b.Deserialize(b.Serialize())
-	signer.Sign(poameta.PrivSigner[0], *b.GetBlockID().(*math.Hash))
-	b.Header.SetSigner(signer)
+
 	return b
 }
 
@@ -212,31 +172,14 @@ func (m *BlockManage) CheckBlock(block block.IBlock) bool {
 		log.Error("BlockManage", "CheckBlock", err)
 		return false
 	}
-	ls, err := prevBlock.(*poameta.Block).Header.GetSignerID()
 
-	lf, err := hex.DecodeString(ls.String())
-	if err != nil {
-		log.Error("BlockManage", "CheckBlock", err)
+	if prevBlock.GetHeight()+1 != block.GetHeight() {
+		log.Error("BlockManage", "CheckBlock", "current block height is error")
 		return false
 	}
-	nextSigner, err := poameta.CreateSignerIdByPubKey(poameta.PubSigners[ChooseNextSigner(lf)])
-	if err != nil {
-		log.Error("BlockManage", "CreateBlock Create Signer", err)
-		return false
-	}
-	b := block.(*poameta.Block)
-	currentS, err := b.Header.GetSigner()
-	if err != nil {
-		log.Error("BlockManage", "CheckBlock", err)
-		return false
-	}
-	if !nextSigner.IsEqual(currentS) {
-		log.Error("BlockManage", "CheckBlock", "the block is error miner")
-		return false
-	}
-
+	signerIndex := block.GetHeight() % uint32(len(globalconfig.SignMiners))
 	//check block sign
-	err = block.Verify()
+	err = block.Verify(globalconfig.SignMiners[signerIndex])
 	if err != nil {
 		log.Error("POA CheckBlock", "check sign", false)
 		return false
@@ -280,22 +223,4 @@ func (s *BlockManage) ProcessBlock(block block.IBlock) error {
 	//4.updateStorage
 
 	//5.broadcast
-}
-
-func ChooseNextSigner(lastSigner []byte) int {
-	index := 0
-	for i, signer := range poameta.PubSigners {
-		if strings.Compare(signer, hex.EncodeToString(lastSigner)) == 0 {
-			index = (i + 1) % 3
-		}
-	}
-	return index
-}
-
-func IsCorrectSigner(lastSigner []byte, currentSigner []byte) bool {
-	i := ChooseNextSigner(lastSigner)
-	if strings.Compare(poameta.PubSigners[i], hex.EncodeToString(currentSigner)) == 0 {
-		return true
-	}
-	return false
 }

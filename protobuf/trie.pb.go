@@ -3,11 +3,9 @@
 
 package protobuf
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -31,17 +29,16 @@ func (m *HashNode) Reset()         { *m = HashNode{} }
 func (m *HashNode) String() string { return proto.CompactTextString(m) }
 func (*HashNode) ProtoMessage()    {}
 func (*HashNode) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77173f6eb0822a18, []int{0}
+	return fileDescriptor_trie_a3c75dc440be154f, []int{0}
 }
-
 func (m *HashNode) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HashNode.Unmarshal(m, b)
 }
 func (m *HashNode) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_HashNode.Marshal(b, m, deterministic)
 }
-func (m *HashNode) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HashNode.Merge(m, src)
+func (dst *HashNode) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_HashNode.Merge(dst, src)
 }
 func (m *HashNode) XXX_Size() int {
 	return xxx_messageInfo_HashNode.Size(m)
@@ -70,17 +67,16 @@ func (m *ValueNode) Reset()         { *m = ValueNode{} }
 func (m *ValueNode) String() string { return proto.CompactTextString(m) }
 func (*ValueNode) ProtoMessage()    {}
 func (*ValueNode) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77173f6eb0822a18, []int{1}
+	return fileDescriptor_trie_a3c75dc440be154f, []int{1}
 }
-
 func (m *ValueNode) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ValueNode.Unmarshal(m, b)
 }
 func (m *ValueNode) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ValueNode.Marshal(b, m, deterministic)
 }
-func (m *ValueNode) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ValueNode.Merge(m, src)
+func (dst *ValueNode) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ValueNode.Merge(dst, src)
 }
 func (m *ValueNode) XXX_Size() int {
 	return xxx_messageInfo_ValueNode.Size(m)
@@ -109,17 +105,16 @@ func (m *FullNode) Reset()         { *m = FullNode{} }
 func (m *FullNode) String() string { return proto.CompactTextString(m) }
 func (*FullNode) ProtoMessage()    {}
 func (*FullNode) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77173f6eb0822a18, []int{2}
+	return fileDescriptor_trie_a3c75dc440be154f, []int{2}
 }
-
 func (m *FullNode) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FullNode.Unmarshal(m, b)
 }
 func (m *FullNode) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_FullNode.Marshal(b, m, deterministic)
 }
-func (m *FullNode) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FullNode.Merge(m, src)
+func (dst *FullNode) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FullNode.Merge(dst, src)
 }
 func (m *FullNode) XXX_Size() int {
 	return xxx_messageInfo_FullNode.Size(m)
@@ -149,17 +144,16 @@ func (m *ShortNode) Reset()         { *m = ShortNode{} }
 func (m *ShortNode) String() string { return proto.CompactTextString(m) }
 func (*ShortNode) ProtoMessage()    {}
 func (*ShortNode) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77173f6eb0822a18, []int{3}
+	return fileDescriptor_trie_a3c75dc440be154f, []int{3}
 }
-
 func (m *ShortNode) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ShortNode.Unmarshal(m, b)
 }
 func (m *ShortNode) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ShortNode.Marshal(b, m, deterministic)
 }
-func (m *ShortNode) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ShortNode.Merge(m, src)
+func (dst *ShortNode) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ShortNode.Merge(dst, src)
 }
 func (m *ShortNode) XXX_Size() int {
 	return xxx_messageInfo_ShortNode.Size(m)
@@ -191,9 +185,9 @@ func init() {
 	proto.RegisterType((*ShortNode)(nil), "protobuf.ShortNode")
 }
 
-func init() { proto.RegisterFile("protobuf/trie.proto", fileDescriptor_77173f6eb0822a18) }
+func init() { proto.RegisterFile("protobuf/trie.proto", fileDescriptor_trie_a3c75dc440be154f) }
 
-var fileDescriptor_77173f6eb0822a18 = []byte{
+var fileDescriptor_trie_a3c75dc440be154f = []byte{
 	// 159 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x2e, 0x28, 0xca, 0x2f,
 	0xc9, 0x4f, 0x2a, 0x4d, 0xd3, 0x2f, 0x29, 0xca, 0x4c, 0xd5, 0x03, 0xf3, 0x84, 0x38, 0x60, 0x82,

@@ -25,7 +25,7 @@ type IBlock interface {
 	CalculateTxTreeRoot() meta.DataID
 
 	//verifiy
-	Verify() error
+	Verify(minerPKStr string) error
 
 	IsGensis() bool
 

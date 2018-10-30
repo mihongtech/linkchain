@@ -47,7 +47,10 @@ func Test_DeSerialize_tx(t *testing.T) {
 	}
 
 	newTx := Transaction{}
-	newTx.Deserialize(tx)
+	err = newTx.Deserialize(tx)
+	if err != nil {
+		t.Error("tx 反序列化不通过")
+	}
 	newTxHash := newTx.GetTxID()
 
 	if txid.IsEqual(newTxHash) {

@@ -55,7 +55,8 @@ func (a *Amount) Serialize() serialize.SerializeStream {
 	return &amount
 }
 
-func (a *Amount) Deserialize(s serialize.SerializeStream) {
+func (a *Amount) Deserialize(s serialize.SerializeStream) error {
 	data := s.(*protobuf.Amount)
 	a.Value = *data.Value
+	return nil
 }

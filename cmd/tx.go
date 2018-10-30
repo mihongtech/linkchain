@@ -68,8 +68,11 @@ var signTxCmd = &cobra.Command{
 		log.Info("signtx", txData.String())
 
 		var tx meta_tx.ITx = &meta.Transaction{}
-		tx.Deserialize(&txData)
-
+		err = tx.Deserialize(&txData)
+		if err != nil {
+			log.Error("signtx Deserialize failed", "Deserialize error", err)
+			return
+		}
 		node.GetWallet().SignTransaction(tx)
 
 		log.Info("signtx", "data", tx)
@@ -110,7 +113,11 @@ var sendTxCmd = &cobra.Command{
 		log.Info("sendtx", txData.String())
 
 		var tx meta_tx.ITx = &meta.Transaction{}
-		tx.Deserialize(&txData)
+		err = tx.Deserialize(&txData)
+		if err != nil {
+			log.Error("sendtx Deserialize failed", "Deserialize error", err)
+			return
+		}
 
 		log.Info("sendtx", "data", tx)
 		signbuffer, err := proto.Marshal(tx.Serialize())
@@ -154,7 +161,11 @@ var decodeTxCmd = &cobra.Command{
 		log.Info("decode", txData.String())
 
 		var tx meta_tx.ITx = &meta.Transaction{}
-		tx.Deserialize(&txData)
+		err = tx.Deserialize(&txData)
+		if err != nil {
+			log.Error("decode Deserialize failed", "Deserialize error", err)
+			return
+		}
 
 		log.Info("decode", "data", tx)
 	},

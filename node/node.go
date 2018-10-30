@@ -4,6 +4,7 @@ import (
 	"github.com/linkchain/common"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/consensus"
+	"github.com/linkchain/function/miner"
 	"github.com/linkchain/function/wallet"
 	"github.com/linkchain/p2p"
 )
@@ -14,6 +15,7 @@ var (
 		&consensus.Service{},
 		&wallet.Wallet{},
 		&p2p.Service{},
+		&miner.Miner{},
 	}
 )
 
@@ -42,10 +44,14 @@ func GetConsensusService() *consensus.Service {
 	return svcList[0].(*consensus.Service)
 }
 
+func GetWallet() *wallet.Wallet {
+	return svcList[1].(*wallet.Wallet)
+}
+
 func GetP2pService() *p2p.Service {
 	return svcList[2].(*p2p.Service)
 }
 
-func GetWallet() *wallet.Wallet {
-	return svcList[1].(*wallet.Wallet)
+func GetMiner() *miner.Miner {
+	return svcList[3].(*miner.Miner)
 }

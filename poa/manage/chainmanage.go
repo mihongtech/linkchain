@@ -2,13 +2,16 @@ package manage
 
 import (
 	"errors"
+	"sync"
 
+	"encoding/hex"
+	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/log"
+	globalconfig "github.com/linkchain/config"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
 	poameta "github.com/linkchain/poa/meta"
-	"sync"
 )
 
 type ChainManage struct {
@@ -397,9 +400,15 @@ func (m *ChainManage) updateStatus(block block.IBlock, isAdd bool) error {
 	poablock := *block.(*poameta.Block)
 
 	amount := poameta.NewAmout(50)
-	signer, _ := poablock.Header.GetSigner()
-	tp := poameta.NewTransactionPeer(signer.AccountID, signer.Extra)
-	mineTx := poameta.NewTransaction(0, poameta.TransactionPeer{}, *tp, *amount, poablock.Header.Timestamp, poablock.Header.Nonce, nil, poameta.FromSign{})
+	signerIndex := block.GetHeight() % uint32(len(globalconfig.SignMiners))
+	minerPK, err := hex.DecodeString(globalconfig.SignMiners[signerIndex])
+	if err != nil {
+		return err
+	}
+	pk, err := btcec.ParsePubKey(minerPK, btcec.S256())
+	sAccount := poameta.NewAccountId(pk)
+	tp := poameta.NewTransactionPeer(*sAccount, poablock.Header.Sign)
+	mineTx := poameta.NewTransaction(0, poameta.TransactionPeer{}, *tp, *amount, poablock.Header.Time, poablock.Header.Nonce, nil, poameta.FromSign{})
 	cachTxs := block.GetTxs()
 	mineIndex := len(cachTxs)
 	cachTxs = append(cachTxs, mineTx)
