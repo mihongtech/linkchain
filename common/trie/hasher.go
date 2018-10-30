@@ -2,18 +2,16 @@ package trie
 
 import (
 	"bytes"
-	"hash"
 	"sync"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/math"
-	"github.com/linkchain/common/math/sha3"
 )
 
 type hasher struct {
 	tmp        *bytes.Buffer
-	sha        hash.Hash
+	ha         math.Hash
 	cachegen   uint16
 	cachelimit uint16
 	onleaf     LeafCallback
@@ -22,7 +20,7 @@ type hasher struct {
 // hashers live in a global db.
 var hasherPool = sync.Pool{
 	New: func() interface{} {
-		return &hasher{tmp: new(bytes.Buffer), sha: sha3.NewKeccak256()}
+		return &hasher{tmp: new(bytes.Buffer), ha: math.Hash{}}
 	},
 }
 
@@ -155,9 +153,8 @@ func (h *hasher) store(n node, db *Database, force bool) (node, error) {
 	// Larger nodes are replaced by their hash and stored in the database.
 	hash, _ := n.cache()
 	if hash == nil {
-		h.sha.Reset()
-		h.sha.Write(h.tmp.Bytes())
-		hash = hashNode(h.sha.Sum(nil))
+		h.ha = math.BytesToHash(math.HashB(h.tmp.Bytes()))
+		hash = hashNode(math.HashB(h.tmp.Bytes()))
 	}
 	if db != nil {
 		// We are pooling the trie nodes into an intermediate memory cache
