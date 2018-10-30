@@ -90,8 +90,11 @@ func NewTransaction(version uint32, from TransactionPeer, to TransactionPeer, am
 
 func (tx *Transaction) GetTxID() meta.DataID {
 	if tx.txid.IsEmpty() {
-		//TODO Deserialize
-		tx.Deserialize(tx.Serialize())
+		err := tx.Deserialize(tx.Serialize())
+		if err != nil {
+			log.Error("Transaction", "GetTxID() error", err)
+			return nil
+		}
 	}
 	return &tx.txid
 }

@@ -179,8 +179,11 @@ func NewBlockHeader(version uint32, prev math.Hash, root math.Hash, time time.Ti
 
 func (bh *BlockHeader) GetBlockID() meta.DataID {
 	if bh.hash.IsEmpty() {
-		//TODO Deserialize
-		bh.Deserialize(bh.Serialize())
+		err := bh.Deserialize(bh.Serialize())
+		if err != nil {
+			log.Error("BlockHeader", "GetBlockID() error", err)
+			return nil
+		}
 	}
 	return &bh.hash
 }
