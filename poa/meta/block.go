@@ -160,7 +160,7 @@ type BlockHeader struct {
 	hash math.Hash
 }
 
-func NewBlockHeader(version uint32, prev math.Hash, root math.Hash, time time.Time, difficulty uint32, nounce uint32, height uint32, extra []byte) *BlockHeader {
+func NewBlockHeader(version uint32, height uint32, time time.Time, nounce uint32, difficulty uint32, prev math.Hash, root math.Hash, status math.Hash, sign []byte, extra []byte) *BlockHeader {
 	return &BlockHeader{
 		Version: version,
 		Height:  height,
@@ -170,8 +170,8 @@ func NewBlockHeader(version uint32, prev math.Hash, root math.Hash, time time.Ti
 		Difficulty: difficulty,
 		Prev:       prev,
 		TxRoot:     root,
-		Status:     prev,  //TODO
-		Sign:       extra, //TODO
+		Status:     prev, //TODO
+		Sign:       sign, //TODO
 		Data:       extra,
 	}
 }
