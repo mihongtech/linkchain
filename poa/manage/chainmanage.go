@@ -139,7 +139,7 @@ func (m *ChainManage) GetBlockChainInfo() string {
 	m.chainMtx.RLock()
 	defer m.chainMtx.RUnlock()
 
-	log.Info("ChainManage mainchain", "chainHeight", m.mainChain.GetHeight(), "bestHash", m.mainChain.GetLastNode().GetNodeHash(), "prev hash")
+	log.Info("ChainManage mainchain", "chainHeight", m.mainChain.GetHeight(), "bestHash", m.mainChain.GetLastNode().GetNodeHash())
 
 	//log.Info("ChainManage chains", "chains", len(m.chains))
 	for i, chain := range m.chains {
@@ -383,7 +383,7 @@ func (m *ChainManage) updateChain() bool {
 
 	longestChain, _ := m.GetLongestChain()
 	bestBlock := longestChain.GetLastBlock()
-	log.Info("ChainManage updateChain", "bestblock", bestBlock.GetBlockID().GetString())
+	log.Info("ChainManage UpdateChain", "bestheight", bestBlock.GetHeight(), "bestblock", bestBlock.GetBlockID(), "prev", bestBlock.GetPrevBlockID())
 	m.mainChain.AddNode(poameta.NewPOAChainNode(bestBlock))
 
 	err := m.mainChain.FillChain(GetManager().BlockManager)
@@ -395,7 +395,7 @@ func (m *ChainManage) updateChain() bool {
 }
 
 func (m *ChainManage) updateStatus(block block.IBlock, isAdd bool) error {
-	GetManager().AccountManager.GetAllAccounts()
+	//GetManager().AccountManager.GetAllAccounts()
 	//update mine account status
 	poablock := *block.(*poameta.Block)
 
