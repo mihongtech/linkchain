@@ -106,20 +106,20 @@ func (n *fullNode) Serialize() serialize.SerializeStream {
 		children = append(children, &hashData)
 	}
 
-	hashData := protobuf.HashNode{
-		Data: n.flags.hash,
-	}
-
-	gen := uint32(n.flags.gen)
-	falgs := protobuf.NodeFlag{
-		Gen:   &(gen),
-		Dirty: &(n.flags.dirty),
-		Hash:  &(hashData),
-	}
+	//	hashData := protobuf.HashNode{
+	//		Data: n.flags.hash,
+	//	}
+	//
+	//	gen := uint32(n.flags.gen)
+	//	falgs := protobuf.NodeFlag{
+	//		Gen:   &(gen),
+	//		Dirty: &(n.flags.dirty),
+	//		Hash:  &(hashData),
+	//	}
 
 	node := protobuf.FullNode{
 		Children: children,
-		Flags:    &falgs,
+		//		Flags:    &falgs,
 	}
 	return &node
 }
@@ -130,26 +130,27 @@ func (n *shortNode) Serialize() serialize.SerializeStream {
 	if err != nil {
 		log.Error("header marshaling error: ", err)
 	}
+	// need hash ?
 	hash := math.HashB(buffer)
 	val := protobuf.HashNode{
 		Data: hash,
 	}
 
-	hashData := protobuf.HashNode{
-		Data: n.flags.hash,
-	}
-
-	gen := uint32(n.flags.gen)
-	falgs := protobuf.NodeFlag{
-		Gen:   &(gen),
-		Dirty: &(n.flags.dirty),
-		Hash:  &(hashData),
-	}
+	//	hashData := protobuf.HashNode{
+	//		Data: n.flags.hash,
+	//	}
+	//
+	//	gen := uint32(n.flags.gen)
+	//	falgs := protobuf.NodeFlag{
+	//		Gen:   &(gen),
+	//		Dirty: &(n.flags.dirty),
+	//		Hash:  &(hashData),
+	//	}
 
 	node := protobuf.ShortNode{
-		Key:   n.Key,
-		Val:   &val,
-		Flags: &falgs,
+		Key: n.Key,
+		Val: &val,
+		//		Flags: &falgs,
 	}
 	return &node
 }

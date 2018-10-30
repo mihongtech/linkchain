@@ -10,19 +10,11 @@ message ValueNode {
   required bytes data = 1;
 }
 
-message NodeFlag {
-  required HashNode hash  = 1;
-  required uint32   gen   = 2;
-  required bool     dirty = 3;
-}
-
 message FullNode {
   repeated HashNode   children  = 1;
-  required NodeFlag   flags   = 2;
 }
 
 message ShortNode {
   required bytes      key  = 1;
   required HashNode   val  = 2;
-  required NodeFlag   flags   = 3;
 }
