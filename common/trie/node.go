@@ -221,6 +221,9 @@ func decodeShort(hash, buf []byte, cachegen uint16) (node, error) {
 
 	flag := nodeFlag{hash: hash, gen: cachegen}
 	key := compactToHex(node.Key)
+	if hasTerm(key) {
+		return &shortNode{key, append(valueNode{}, node.Val.Data...), flag}, nil
+	}
 
 	r, err := decodeRef(node.Val.Data, cachegen)
 	if err != nil {
@@ -239,6 +242,8 @@ func decodeFull(hash, buf []byte, cachegen uint16) (*fullNode, error) {
 	}
 
 	n.Deserialize(&node)
+
+	n.flags = nodeFlag{hash: hash, gen: cachegen}
 
 	return n, nil
 }
