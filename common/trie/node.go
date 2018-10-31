@@ -182,7 +182,7 @@ func (n *fullNode) Deserialize(s serialize.SerializeStream) error {
 	if len(data.Children) != 17 {
 		return fmt.Errorf("parse childern error", data.Children, "len(data.Children)", len(data.Children))
 	}
-	for i := 0; i < 16; i++ {
+	for i := 0; i < 17; i++ {
 		if len(data.Children[i]) == 0 || data.Children[i] == nil {
 			n.Children[i] = nil
 			continue
