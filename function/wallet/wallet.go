@@ -117,7 +117,7 @@ func (w *Wallet) updateWalletLoop() {
 	for obj := range w.updateAccountSub.Chan() {
 		switch ev := obj.Data.(type) {
 		case events.WAccountEvent:
-			log.Info("POST EVENT")
+			//log.Info("POST EVENT")
 			if ev.IsUpdate {
 				newWas := make([]account.IAccount, 0)
 				for key := range w.accounts {
