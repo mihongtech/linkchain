@@ -52,9 +52,9 @@ func TestNull(t *testing.T) {
 
 func TestMissingRoot(t *testing.T) {
 	diskdb, _ := lcdb.NewMemDatabase()
-	trie, err := New(math.HexToHash("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"), NewDatabase(diskdb))
+	trie, err := New(math.HexToHash("55b852781b9995a44c939b64e441ae2724b96f99c8f4fb9a141cfc9842c4b0e3"), NewDatabase(diskdb))
 	if trie != nil {
-		t.Error("New returned non-nil trie for invalid root")
+		t.Error("New returned non-nil trie for invalid root", emptyState)
 	}
 	if _, ok := err.(*MissingNodeError); !ok {
 		t.Errorf("New returned wrong error: %v", err)

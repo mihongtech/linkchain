@@ -385,8 +385,7 @@ func testIteratorContinueAfterSeekError(t *testing.T, memonly bool) {
 		delete(triedb.nodes, *barNodeHash)
 	} else {
 		barNodeBlob, _ = diskdb.Get(barNodeHash.Bytes())
-		e := diskdb.Delete(barNodeHash.Bytes())
-		t.Log("result ", e, "key", barNodeHash, "data", data)
+		diskdb.Delete(barNodeHash.Bytes())
 	}
 
 	// Create a new iterator that seeks to "bars". Seeking can't proceed because
