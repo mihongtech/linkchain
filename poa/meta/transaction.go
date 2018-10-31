@@ -68,14 +68,14 @@ type Transaction struct {
 
 	Nounce uint32
 
-	Extra []byte
+	Data []byte
 
 	Signs FromSign
 
 	txid math.Hash
 }
 
-func NewTransaction(version uint32, from TransactionPeer, to TransactionPeer, amount Amount, time time.Time, nounce uint32, extra []byte, signs FromSign) *Transaction {
+func NewTransaction(version uint32, from TransactionPeer, to TransactionPeer, amount Amount, time time.Time, nounce uint32, data []byte, signs FromSign) *Transaction {
 	return &Transaction{
 		Version: version,
 		From:    from,
@@ -83,7 +83,7 @@ func NewTransaction(version uint32, from TransactionPeer, to TransactionPeer, am
 		Amount:  amount,
 		Time:    time,
 		Nounce:  nounce,
-		Extra:   extra,
+		Data:    data,
 		Signs:   signs,
 	}
 }
@@ -185,10 +185,9 @@ func (tx *Transaction) Serialize() serialize.SerializeStream {
 		Version: proto.Uint32(tx.Version),
 		From:    from,
 		To:      to,
-		Time:    proto.Int64(tx.Time.Unix()),
 		Amount:  amount,
 		Nounce:  proto.Uint32(tx.Nounce),
-		Extra:   proto.NewBuffer(tx.Extra).Bytes(),
+		Data:    proto.NewBuffer(tx.Data).Bytes(),
 		Sign:    proto.NewBuffer(tx.Signs.Code).Bytes(),
 	}
 	return &t
@@ -205,23 +204,23 @@ func (tx *Transaction) Deserialize(s serialize.SerializeStream) error {
 	if err != nil {
 		return err
 	}
-	tx.Time = time.Unix(*data.Time, 0)
+
 	tx.Nounce = *data.Nounce
 	err = tx.Amount.Deserialize(data.Amount)
 	if err != nil {
 		return err
 	}
-	tx.Extra = data.Extra
+	tx.Data = data.Data
 	tx.Signs = FromSign{Code: data.Sign}
 
 	t := protobuf.Transaction{
 		Version: data.Version,
 		From:    data.From,
 		To:      data.To,
-		Time:    data.Time,
-		Nounce:  data.Nounce,
-		Amount:  data.Amount,
-		Extra:   data.Extra,
+
+		Nounce: data.Nounce,
+		Amount: data.Amount,
+		Data:   data.Data,
 	}
 	tx.txid = math.MakeHash(&t)
 	return nil
