@@ -101,12 +101,13 @@ func testMissingNode(t *testing.T, memonly bool) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-
-	hash := math.HexToHash("0xe1d943cc8f061a0c0b98162830b970395ac9315654824bf21b73b891365262f9")
+	// t.Log("triedb.nodes", triedb.nodes)
+	hash, _ := math.NewHashFromStr("6a36d5fac73e91e7fd5bd4b17691cf77e57e27b9485f3a30aef5d804e9901fd7")
+	// hash := math.HexToHash("0x6a36d5fac73e91e7fd5bd4b17691cf77e57e27b9485f3a30aef5d804e9901fd7")
 	if memonly {
-		delete(triedb.nodes, hash)
+		delete(triedb.nodes, *hash)
 	} else {
-		diskdb.Delete(hash[:])
+		diskdb.Delete(hash.Bytes())
 	}
 
 	trie, _ = New(root, triedb)
@@ -143,22 +144,22 @@ func TestInsert(t *testing.T) {
 	updateString(trie, "dog", "puppy")
 	updateString(trie, "dogglesworth", "cat")
 
-	exp := math.HexToHash("8aad789dff2f538bca5d8ea56e8abe10f4c7ba3a5dea95fea4cd6e7c3a1168d3")
+	exp, _ := math.NewHashFromStr("373980292d5a5e2b49f93c2a0dd509c547855b246a87bbe784251c4a2979104e")
 	root := trie.Hash()
-	if root != exp {
-		t.Errorf("exp %x got %x", exp, root)
+	if root != *exp {
+		t.Errorf("exp %v got %v", exp, root)
 	}
 
 	trie = newEmpty()
 	updateString(trie, "A", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 
-	exp = math.HexToHash("d23786fb4a010da3ce639d66d5e904a11dbc02746d1ce25029e53290cabf28ab")
+	exp, _ = math.NewHashFromStr("5fb71e261982e296b606b1187731268c78a953ae0d50631e05a78349c5af2158")
 	root, err := trie.Commit(nil)
 	if err != nil {
 		t.Fatalf("commit error: %v", err)
 	}
-	if root != exp {
-		t.Errorf("exp %x got %x", exp, root)
+	if root != *exp {
+		t.Errorf("exp %v got %v", exp, root)
 	}
 }
 
@@ -207,9 +208,9 @@ func TestDelete(t *testing.T) {
 	}
 
 	hash := trie.Hash()
-	exp := math.HexToHash("5991bb8c6514148a29db676a14ac506cd2cd5775ace63c30a4fe457715e9ac84")
-	if hash != exp {
-		t.Errorf("expected %x got %x", exp, hash)
+	exp, _ := math.NewHashFromStr("09812aa8c5006f19f40a8726a36bed4985733c7b9494960564df81dda3863b22")
+	if hash != *exp {
+		t.Errorf("expected %v got %v", exp, hash)
 	}
 }
 
@@ -231,9 +232,9 @@ func TestEmptyValues(t *testing.T) {
 	}
 
 	hash := trie.Hash()
-	exp := math.HexToHash("5991bb8c6514148a29db676a14ac506cd2cd5775ace63c30a4fe457715e9ac84")
-	if hash != exp {
-		t.Errorf("expected %x got %x", exp, hash)
+	exp, _ := math.NewHashFromStr("09812aa8c5006f19f40a8726a36bed4985733c7b9494960564df81dda3863b22")
+	if hash != *exp {
+		t.Errorf("expected %v got %v", exp, hash)
 	}
 }
 
