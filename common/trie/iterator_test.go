@@ -280,6 +280,7 @@ func testIteratorContinueAfterError(t *testing.T, memonly bool) {
 	tr, _ := New(math.Hash{}, triedb)
 	for _, val := range testdata1 {
 		tr.Update([]byte(val.k), []byte(val.v))
+		t.Log("key", keybytesToHex([]byte(val.k)), "tr", tr.root)
 	}
 	tr.Commit(nil)
 	if !memonly {
@@ -353,10 +354,10 @@ func testIteratorContinueAfterError(t *testing.T, memonly bool) {
 // certain key prefix behaves correctly when Next is called. The expectation is that Next
 // should retry seeking before returning true for the first time.
 func TestIteratorContinueAfterSeekErrorDisk(t *testing.T) {
-	// testIteratorContinueAfterSeekError(t, false)
+	testIteratorContinueAfterSeekError(t, false)
 }
 func TestIteratorContinueAfterSeekErrorMemonly(t *testing.T) {
-	// testIteratorContinueAfterSeekError(t, true)
+	testIteratorContinueAfterSeekError(t, true)
 }
 
 func testIteratorContinueAfterSeekError(t *testing.T, memonly bool) {
@@ -372,18 +373,22 @@ func testIteratorContinueAfterSeekError(t *testing.T, memonly bool) {
 	if !memonly {
 		triedb.Commit(root, true)
 	}
-	barNodeHash := math.HexToHash("05041990364eb72fcb1127652ce40d8bab765f2bfe53225b1170d276cc101c2e")
+
+	data := "8bb77a52a6624a25d4c59e39206e5627532be8cf1aeb9ec0f6339174fd13318e"
+	barNodeHash, _ := math.NewHashFromStr(data)
 	var (
 		barNodeBlob []byte
 		barNodeObj  *cachedNode
 	)
 	if memonly {
-		barNodeObj = triedb.nodes[barNodeHash]
-		delete(triedb.nodes, barNodeHash)
+		barNodeObj = triedb.nodes[*barNodeHash]
+		delete(triedb.nodes, *barNodeHash)
 	} else {
-		barNodeBlob, _ = diskdb.Get(barNodeHash[:])
-		diskdb.Delete(barNodeHash[:])
+		barNodeBlob, _ = diskdb.Get(barNodeHash.Bytes())
+		e := diskdb.Delete(barNodeHash.Bytes())
+		t.Log("result ", e, "key", barNodeHash, "data", data)
 	}
+
 	// Create a new iterator that seeks to "bars". Seeking can't proceed because
 	// the node is missing.
 	tr, _ := New(root, triedb)
@@ -391,14 +396,14 @@ func testIteratorContinueAfterSeekError(t *testing.T, memonly bool) {
 	missing, ok := it.Error().(*MissingNodeError)
 	if !ok {
 		t.Fatal("want MissingNodeError, got", it.Error())
-	} else if missing.NodeHash != barNodeHash {
+	} else if missing.NodeHash != *barNodeHash {
 		t.Fatal("wrong node missing")
 	}
 	// Reinsert the missing node.
 	if memonly {
-		triedb.nodes[barNodeHash] = barNodeObj
+		triedb.nodes[*barNodeHash] = barNodeObj
 	} else {
-		diskdb.Put(barNodeHash[:], barNodeBlob)
+		diskdb.Put(barNodeHash.Bytes(), barNodeBlob)
 	}
 	// Check that iteration produces the right set of values.
 	if err := checkIteratorOrder(testdata1[2:], NewIterator(it)); err != nil {
