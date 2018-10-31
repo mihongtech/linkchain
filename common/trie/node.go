@@ -1,7 +1,7 @@
 package trie
 
 import (
-	"errors"
+	_ "errors"
 	"fmt"
 	"io"
 	"strings"
@@ -105,16 +105,20 @@ func (n *fullNode) Serialize() serialize.SerializeStream {
 		if err != nil {
 			log.Error("header marshaling error: ", err)
 		}
-		switch nt := child.(type) {
+		switch child.(type) {
 		case valueNode:
-			children = append(children, buffer)
+			if len(child.(valueNode)) == 32 {
+				data := append(child.(valueNode)[:], byte(0))
+				enc = data.Serialize()
+				buffer, _ = proto.Marshal(enc)
+				children = append(children, buffer)
+			} else {
+				children = append(children, buffer)
+			}
 		case hashNode:
 			children = append(children, buffer)
 		default:
-			// children = append(children, buffer)
-			hash := math.HashB(buffer)
-			children = append(children, hash)
-			log.Error("data: ", buffer, "nt", nt)
+			children = append(children, buffer)
 		}
 	}
 
@@ -138,6 +142,12 @@ func (n *shortNode) Serialize() serialize.SerializeStream {
 			Val: buffer,
 		}
 		return &node
+	case hashNode:
+		node := protobuf.ShortNode{
+			Key: n.Key,
+			Val: buffer,
+		}
+		return &node
 	default:
 		log.Info("%v: invalid node: %v", buffer, nt)
 		hash := math.HashB(buffer)
@@ -148,22 +158,6 @@ func (n *shortNode) Serialize() serialize.SerializeStream {
 		}
 		return &node
 	}
-	//	enc := n.Val.Serialize()
-	//	buffer, err := proto.Marshal(enc)
-	//	if err != nil {
-	//		log.Error("header marshaling error: ", err)
-	//	}
-	//	// need hash ?
-	//	hash := math.HashB(buffer)
-	//	val := protobuf.HashNode{
-	//		Data: hash,
-	//	}
-	//
-	//	node := protobuf.ShortNode{
-	//		Key: n.Key,
-	//		Val: &val,
-	//	}
-	//	return &node
 }
 
 func (n hashNode) Serialize() serialize.SerializeStream {
@@ -186,7 +180,7 @@ func (n *fullNode) Deserialize(s serialize.SerializeStream) error {
 	data := *s.(*protobuf.FullNode)
 
 	if len(data.Children) != 17 {
-		return errors.New("parse data error")
+		return fmt.Errorf("parse childern error", data.Children, "len(data.Children)", len(data.Children))
 	}
 	for i := 0; i < 16; i++ {
 		if len(data.Children[i]) == 0 || data.Children[i] == nil {
@@ -194,16 +188,13 @@ func (n *fullNode) Deserialize(s serialize.SerializeStream) error {
 			continue
 		}
 
-		cld, err := decodeRef(data.Children[i])
+		cld, err := decodeRef(data.Children[i], 0)
 		if err != nil {
 			// n.Children[i] = nil
 			return err
 		}
 		n.Children[i] = cld
 	}
-
-	// n.Children[16] = append(valueNode{}, data.Children[16]...)
-	// do not deserialize flags
 
 	return nil
 }
@@ -216,7 +207,7 @@ func (n *shortNode) Deserialize(s serialize.SerializeStream) error {
 	if hasTerm(key) {
 		n.Val = append(valueNode{}, data.Val...)
 	} else {
-		val, err := decodeRef(data.Val)
+		val, err := decodeRef(data.Val, 0)
 		if err != nil {
 			return err
 		}
@@ -280,7 +271,7 @@ func decodeShort(hash, buf []byte, cachegen uint16) (node, error) {
 		return &shortNode{key, append(valueNode{}, n.Data...), flag}, nil
 	}
 
-	r, err := decodeRef(node.Val)
+	r, err := decodeRef(node.Val, cachegen)
 	if err != nil {
 		return nil, err
 	}
@@ -308,20 +299,33 @@ func decodeFull(hash, buf []byte, cachegen uint16) (*fullNode, error) {
 
 const hashLen = len(math.Hash{})
 
-func decodeRef(buf []byte) (node, error) {
-	var node protobuf.HashNode
-	if err := proto.Unmarshal(buf, &node); err != nil {
+func decodeRef(buf []byte, cachegen uint16) (node, error) {
+	var short protobuf.ShortNode
+	if err := proto.Unmarshal(buf, &short); err == nil {
+		if sn, err := decodeShort(nil, buf, cachegen); err == nil {
+			return sn, nil
+		}
+	}
+
+	var n protobuf.HashNode
+	if err := proto.Unmarshal(buf, &n); err != nil {
 		return nil, fmt.Errorf("decodeRef data", buf, "err", err)
 	}
 
 	switch {
-	case len(node.Data) == 0:
+	case len(n.Data) == 0:
 		// empty node
 		return nil, nil
-	case len(node.Data) == 32:
-		return append(hashNode{}, node.Data...), nil
+	case len(n.Data) == 32:
+		return append(hashNode{}, n.Data...), nil
 	default:
-		return append(valueNode{}, node.Data...), nil
+		if len(n.Data) == 33 {
+			if n.Data[32] == byte(0) {
+				return append(valueNode{}, n.Data[:32]...), nil
+			}
+		}
+
+		return append(valueNode{}, n.Data...), nil
 	}
 }
 
