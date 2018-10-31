@@ -11,10 +11,9 @@ message Transaction {
     required TransactionPeer from = 2;
     required TransactionPeer to = 3;
     required Amount amount = 4;
-    required int64 time = 5;
-    required uint32 nounce = 6;
-    optional bytes extra = 7;
-    optional bytes sign = 8;
+    required uint32 nounce = 5;
+    optional bytes data = 6;
+    optional bytes sign = 7;
 }
 
 message TransactionPeer {

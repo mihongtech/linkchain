@@ -170,8 +170,8 @@ func NewBlockHeader(version uint32, height uint32, time time.Time, nounce uint32
 		Difficulty: difficulty,
 		Prev:       prev,
 		TxRoot:     root,
-		Status:     prev, //TODO
-		Sign:       sign, //TODO
+		Status:     prev,
+		Sign:       sign,
 		Data:       extra,
 	}
 }

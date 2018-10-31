@@ -1,27 +1,27 @@
 package meta
 
 import (
-	"crypto/sha256"
 	"encoding/hex"
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/math"
+	"github.com/linkchain/poa/config"
 	"github.com/linkchain/protobuf"
 )
 
 func Test_Serialize_tx(t *testing.T) {
-	fromAddress := math.Hash(sha256.Sum256([]byte("lf")))
-	toAddress := math.Hash(sha256.Sum256([]byte("lc")))
-	formAccount := &Account{AccountID: AccountID{ID: fromAddress.CloneBytes()}}
-	toAccount := &Account{AccountID: AccountID{ID: toAddress.CloneBytes()}}
+	ex, _ := btcec.NewPrivateKey(btcec.S256())
+	formAccount := NewAccount(*NewAccountId(ex.PubKey()), *NewAmout(10), 0)
+	toAccount := NewAccount(*NewAccountId(ex.PubKey()), *NewAmout(10), 0)
 	amount := Amount{Value: 10}
-	tx := Transaction{Version: 0,
-		From:   *NewTransactionPeer(formAccount.AccountID, nil),
-		To:     *NewTransactionPeer(toAccount.AccountID, nil),
-		Amount: amount,
-		Time:   time.Now()}
+	fromId := *formAccount.GetAccountID().(*AccountID)
+	toId := *toAccount.GetAccountID().(*AccountID)
+	fp := *NewTransactionPeer(fromId, nil)
+	tp := *NewTransactionPeer(toId, nil)
+	tx := NewTransaction(config.TransactionVersion, fp, tp, amount, time.Now(), (formAccount.GetNounce() + 1), nil, FromSign{})
 
 	t.Log("createtx", "data", tx)
 
@@ -36,8 +36,8 @@ func Test_Serialize_tx(t *testing.T) {
 }
 
 func Test_DeSerialize_tx(t *testing.T) {
-	txid, _ := math.NewHashFromStr("6208c0bca642dfadb90fd10f949a5dd0a5d1afc75f306fd3f48c68c91db2748a")
-	str := "080012240a220a2039e741eddb03e3118da619625b9200e131832dc8cc8542e2198b1e00e02c48a31a240a220a20ef07b359570add31929a5422d400b16c7c84e35644cb2e84b142f0710973e2a82202080a28a58af0dd053000"
+	txid, _ := math.NewHashFromStr("5e6e12fc6cddbcdac39a9b265402960473fd2640a65ef32e558f89b47be40f64")
+	str := "080112250a230a2102a2a01b4c92af013d703e76838a3d1482f0b93c177761cec9549921bf6ac51e781a250a230a2102a2a01b4c92af013d703e76838a3d1482f0b93c177761cec9549921bf6ac51e782202080a28afbbe0de053001"
 	buffer, _ := hex.DecodeString(str)
 	tx := &protobuf.Transaction{}
 
