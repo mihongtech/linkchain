@@ -344,7 +344,7 @@ func testIteratorContinueAfterError(t *testing.T, memonly bool) {
 			t.Fatal("unexpected error", it.Error())
 		}
 		if len(seen) != wantNodeCount {
-			// t.Fatal("wrong node iteration count, got", len(seen), "want", wantNodeCount)
+			t.Fatal("wrong node iteration count, got", len(seen), "want", wantNodeCount)
 		}
 	}
 }

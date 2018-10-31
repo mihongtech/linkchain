@@ -72,10 +72,12 @@ func TestSecureDelete(t *testing.T) {
 		}
 	}
 	hash := trie.Hash()
-	exp := math.HexToHash("29b235a58c3c25ab83010c327d5932bcf05324b7d6b1185e650798034783ca9d")
+	exp := math.HexToHash("76b89834b90a496855ecf945d042cd995f977800cbf00375ecffaec2ee834e4c")
+
 	if hash != exp {
-		t.Errorf("expected %x got %x", exp, hash)
+		t.Errorf("expected %v got %v, tree %v", common.ToHex(exp[:]), common.ToHex(hash[:]))
 	}
+
 }
 
 func TestSecureGetKey(t *testing.T) {
