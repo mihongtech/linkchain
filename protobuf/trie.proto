@@ -11,10 +11,10 @@ message ValueNode {
 }
 
 message FullNode {
-  repeated HashNode   children  = 1;
+  repeated bytes      children  = 1;
 }
 
 message ShortNode {
   required bytes      key  = 1;
-  required HashNode   val  = 2;
+  required bytes      val  = 2;
 }

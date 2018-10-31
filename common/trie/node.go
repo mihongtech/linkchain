@@ -91,7 +91,7 @@ func (n valueNode) fstring(ind string) string {
 
 //Serialize/Deserialize
 func (n *fullNode) Serialize() serialize.SerializeStream {
-	var children []*protobuf.HashNode
+	var children [][]byte
 
 	for _, child := range n.Children {
 		enc := child.Serialize()
@@ -100,10 +100,7 @@ func (n *fullNode) Serialize() serialize.SerializeStream {
 			log.Error("header marshaling error: ", err)
 		}
 		hash := math.HashB(buffer)
-		hashData := protobuf.HashNode{
-			Data: hash,
-		}
-		children = append(children, &hashData)
+		children = append(children, hash)
 	}
 
 	node := protobuf.FullNode{
@@ -118,17 +115,40 @@ func (n *shortNode) Serialize() serialize.SerializeStream {
 	if err != nil {
 		log.Error("header marshaling error: ", err)
 	}
-	// need hash ?
-	hash := math.HashB(buffer)
-	val := protobuf.HashNode{
-		Data: hash,
-	}
 
-	node := protobuf.ShortNode{
-		Key: n.Key,
-		Val: &val,
+	switch nt := n.Val.(type) {
+	case valueNode:
+		node := protobuf.ShortNode{
+			Key: n.Key,
+			Val: buffer,
+		}
+		return &node
+	default:
+		log.Info("%v: invalid node: %v", buffer, nt)
+		hash := math.HashB(buffer)
+
+		node := protobuf.ShortNode{
+			Key: n.Key,
+			Val: hash,
+		}
+		return &node
 	}
-	return &node
+	//	enc := n.Val.Serialize()
+	//	buffer, err := proto.Marshal(enc)
+	//	if err != nil {
+	//		log.Error("header marshaling error: ", err)
+	//	}
+	//	// need hash ?
+	//	hash := math.HashB(buffer)
+	//	val := protobuf.HashNode{
+	//		Data: hash,
+	//	}
+	//
+	//	node := protobuf.ShortNode{
+	//		Key: n.Key,
+	//		Val: &val,
+	//	}
+	//	return &node
 }
 
 func (n hashNode) Serialize() serialize.SerializeStream {
@@ -150,14 +170,14 @@ func (n valueNode) Serialize() serialize.SerializeStream {
 func (n *fullNode) Deserialize(s serialize.SerializeStream) error {
 	data := *s.(*protobuf.FullNode)
 	for i := 0; i < 16; i++ {
-		cld, err := decodeRef(data.Children[i].Data)
+		cld, err := decodeRef(data.Children[i])
 		if err != nil {
 			return err
 		}
 		n.Children[i] = cld
 	}
 
-	n.Children[16] = append(valueNode{}, data.Children[16].Data...)
+	n.Children[16] = append(valueNode{}, data.Children[16]...)
 	// do not deserialize flags
 
 	return nil
@@ -169,9 +189,13 @@ func (n *shortNode) Deserialize(s serialize.SerializeStream) error {
 
 	key := compactToHex(data.Key)
 	if hasTerm(key) {
-		n.Val = append(valueNode{}, data.Val.Data...)
+		n.Val = append(valueNode{}, data.Val...)
 	} else {
-		n.Val, _ = decodeRef(data.Val.Data)
+		val, err := decodeRef(data.Val)
+		if err != nil {
+			return err
+		}
+		n.Val = val
 	}
 	// do not deserialize flags
 	return nil
@@ -223,10 +247,14 @@ func decodeShort(hash, buf []byte, cachegen uint16) (node, error) {
 	flag := nodeFlag{hash: hash, gen: cachegen}
 	key := compactToHex(node.Key)
 	if hasTerm(key) {
-		return &shortNode{key, append(valueNode{}, node.Val.Data...), flag}, nil
+		var n protobuf.ValueNode
+		if err := proto.Unmarshal(node.Val, &n); err != nil {
+			return nil, err
+		}
+		return &shortNode{key, append(valueNode{}, n.Data...), flag}, nil
 	}
 
-	r, err := decodeRef(node.Val.Data)
+	r, err := decodeRef(node.Val)
 	if err != nil {
 		return nil, err
 	}
@@ -252,14 +280,19 @@ func decodeFull(hash, buf []byte, cachegen uint16) (*fullNode, error) {
 const hashLen = len(math.Hash{})
 
 func decodeRef(buf []byte) (node, error) {
+	var node protobuf.HashNode
+	if err := proto.Unmarshal(buf, &node); err != nil {
+		return nil, err
+	}
+
 	switch {
-	case len(buf) == 0:
+	case len(node.Data) == 0:
 		// empty node
 		return nil, nil
-	case len(buf) == 32:
-		return append(hashNode{}, buf...), nil
+	case len(node.Data) == 32:
+		return append(hashNode{}, node.Data...), nil
 	default:
-		return nil, fmt.Errorf("invalid probuf string size %d (want 0 or 32)", len(buf))
+		return append(valueNode{}, node.Data...), nil
 	}
 }
 

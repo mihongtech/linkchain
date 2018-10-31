@@ -3,9 +3,11 @@
 
 package protobuf
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -29,16 +31,17 @@ func (m *HashNode) Reset()         { *m = HashNode{} }
 func (m *HashNode) String() string { return proto.CompactTextString(m) }
 func (*HashNode) ProtoMessage()    {}
 func (*HashNode) Descriptor() ([]byte, []int) {
-	return fileDescriptor_trie_a3c75dc440be154f, []int{0}
+	return fileDescriptor_77173f6eb0822a18, []int{0}
 }
+
 func (m *HashNode) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HashNode.Unmarshal(m, b)
 }
 func (m *HashNode) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_HashNode.Marshal(b, m, deterministic)
 }
-func (dst *HashNode) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HashNode.Merge(dst, src)
+func (m *HashNode) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_HashNode.Merge(m, src)
 }
 func (m *HashNode) XXX_Size() int {
 	return xxx_messageInfo_HashNode.Size(m)
@@ -67,16 +70,17 @@ func (m *ValueNode) Reset()         { *m = ValueNode{} }
 func (m *ValueNode) String() string { return proto.CompactTextString(m) }
 func (*ValueNode) ProtoMessage()    {}
 func (*ValueNode) Descriptor() ([]byte, []int) {
-	return fileDescriptor_trie_a3c75dc440be154f, []int{1}
+	return fileDescriptor_77173f6eb0822a18, []int{1}
 }
+
 func (m *ValueNode) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ValueNode.Unmarshal(m, b)
 }
 func (m *ValueNode) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ValueNode.Marshal(b, m, deterministic)
 }
-func (dst *ValueNode) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ValueNode.Merge(dst, src)
+func (m *ValueNode) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ValueNode.Merge(m, src)
 }
 func (m *ValueNode) XXX_Size() int {
 	return xxx_messageInfo_ValueNode.Size(m)
@@ -95,26 +99,27 @@ func (m *ValueNode) GetData() []byte {
 }
 
 type FullNode struct {
-	Children             []*HashNode `protobuf:"bytes,1,rep,name=children" json:"children,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
-	XXX_unrecognized     []byte      `json:"-"`
-	XXX_sizecache        int32       `json:"-"`
+	Children             [][]byte `protobuf:"bytes,1,rep,name=children" json:"children,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *FullNode) Reset()         { *m = FullNode{} }
 func (m *FullNode) String() string { return proto.CompactTextString(m) }
 func (*FullNode) ProtoMessage()    {}
 func (*FullNode) Descriptor() ([]byte, []int) {
-	return fileDescriptor_trie_a3c75dc440be154f, []int{2}
+	return fileDescriptor_77173f6eb0822a18, []int{2}
 }
+
 func (m *FullNode) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FullNode.Unmarshal(m, b)
 }
 func (m *FullNode) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_FullNode.Marshal(b, m, deterministic)
 }
-func (dst *FullNode) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FullNode.Merge(dst, src)
+func (m *FullNode) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FullNode.Merge(m, src)
 }
 func (m *FullNode) XXX_Size() int {
 	return xxx_messageInfo_FullNode.Size(m)
@@ -125,7 +130,7 @@ func (m *FullNode) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_FullNode proto.InternalMessageInfo
 
-func (m *FullNode) GetChildren() []*HashNode {
+func (m *FullNode) GetChildren() [][]byte {
 	if m != nil {
 		return m.Children
 	}
@@ -133,27 +138,28 @@ func (m *FullNode) GetChildren() []*HashNode {
 }
 
 type ShortNode struct {
-	Key                  []byte    `protobuf:"bytes,1,req,name=key" json:"key,omitempty"`
-	Val                  *HashNode `protobuf:"bytes,2,req,name=val" json:"val,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
-	XXX_unrecognized     []byte    `json:"-"`
-	XXX_sizecache        int32     `json:"-"`
+	Key                  []byte   `protobuf:"bytes,1,req,name=key" json:"key,omitempty"`
+	Val                  []byte   `protobuf:"bytes,2,req,name=val" json:"val,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *ShortNode) Reset()         { *m = ShortNode{} }
 func (m *ShortNode) String() string { return proto.CompactTextString(m) }
 func (*ShortNode) ProtoMessage()    {}
 func (*ShortNode) Descriptor() ([]byte, []int) {
-	return fileDescriptor_trie_a3c75dc440be154f, []int{3}
+	return fileDescriptor_77173f6eb0822a18, []int{3}
 }
+
 func (m *ShortNode) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ShortNode.Unmarshal(m, b)
 }
 func (m *ShortNode) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ShortNode.Marshal(b, m, deterministic)
 }
-func (dst *ShortNode) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ShortNode.Merge(dst, src)
+func (m *ShortNode) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ShortNode.Merge(m, src)
 }
 func (m *ShortNode) XXX_Size() int {
 	return xxx_messageInfo_ShortNode.Size(m)
@@ -171,7 +177,7 @@ func (m *ShortNode) GetKey() []byte {
 	return nil
 }
 
-func (m *ShortNode) GetVal() *HashNode {
+func (m *ShortNode) GetVal() []byte {
 	if m != nil {
 		return m.Val
 	}
@@ -185,18 +191,18 @@ func init() {
 	proto.RegisterType((*ShortNode)(nil), "protobuf.ShortNode")
 }
 
-func init() { proto.RegisterFile("protobuf/trie.proto", fileDescriptor_trie_a3c75dc440be154f) }
+func init() { proto.RegisterFile("protobuf/trie.proto", fileDescriptor_77173f6eb0822a18) }
 
-var fileDescriptor_trie_a3c75dc440be154f = []byte{
-	// 159 bytes of a gzipped FileDescriptorProto
+var fileDescriptor_77173f6eb0822a18 = []byte{
+	// 147 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x2e, 0x28, 0xca, 0x2f,
 	0xc9, 0x4f, 0x2a, 0x4d, 0xd3, 0x2f, 0x29, 0xca, 0x4c, 0xd5, 0x03, 0xf3, 0x84, 0x38, 0x60, 0x82,
 	0x4a, 0x72, 0x5c, 0x1c, 0x1e, 0x89, 0xc5, 0x19, 0x7e, 0xf9, 0x29, 0xa9, 0x42, 0x42, 0x5c, 0x2c,
 	0x29, 0x89, 0x25, 0x89, 0x12, 0x8c, 0x0a, 0x4c, 0x1a, 0x3c, 0x41, 0x60, 0xb6, 0x92, 0x3c, 0x17,
-	0x67, 0x58, 0x62, 0x4e, 0x69, 0x2a, 0x4e, 0x05, 0x56, 0x5c, 0x1c, 0x6e, 0xa5, 0x39, 0x39, 0x60,
-	0x79, 0x3d, 0x2e, 0x8e, 0xe4, 0x8c, 0xcc, 0x9c, 0x94, 0xa2, 0xd4, 0x3c, 0x09, 0x46, 0x05, 0x66,
-	0x0d, 0x6e, 0x23, 0x21, 0x3d, 0x98, 0x4d, 0x7a, 0x30, 0x6b, 0x82, 0xe0, 0x6a, 0x94, 0x9c, 0xb9,
-	0x38, 0x83, 0x33, 0xf2, 0x8b, 0x4a, 0xc0, 0x9a, 0x05, 0xb8, 0x98, 0xb3, 0x53, 0x2b, 0xa1, 0x66,
-	0x83, 0x98, 0x42, 0x2a, 0x5c, 0xcc, 0x65, 0x89, 0x39, 0x12, 0x4c, 0x0a, 0x4c, 0x38, 0x4c, 0x02,
-	0x49, 0x03, 0x02, 0x00, 0x00, 0xff, 0xff, 0x19, 0xac, 0xa6, 0x51, 0xe1, 0x00, 0x00, 0x00,
+	0x67, 0x58, 0x62, 0x4e, 0x69, 0x2a, 0x4e, 0x05, 0x6a, 0x5c, 0x1c, 0x6e, 0xa5, 0x39, 0x39, 0x60,
+	0x79, 0x29, 0x2e, 0x8e, 0xe4, 0x8c, 0xcc, 0x9c, 0x94, 0xa2, 0xd4, 0x3c, 0x09, 0x46, 0x05, 0x66,
+	0x0d, 0x9e, 0x20, 0x38, 0x5f, 0x49, 0x9f, 0x8b, 0x33, 0x38, 0x23, 0xbf, 0xa8, 0x04, 0xac, 0x50,
+	0x80, 0x8b, 0x39, 0x3b, 0xb5, 0x12, 0x6a, 0x0e, 0x88, 0x09, 0x12, 0x29, 0x4b, 0xcc, 0x91, 0x60,
+	0x82, 0x88, 0x94, 0x25, 0xe6, 0x00, 0x02, 0x00, 0x00, 0xff, 0xff, 0xf5, 0x1e, 0x93, 0xfb, 0xb9,
+	0x00, 0x00, 0x00,
 }
