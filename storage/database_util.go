@@ -27,10 +27,9 @@ type DatabaseDeleter interface {
 }
 
 var (
-	headHeaderKey = []byte("LastHeader")
-	headBlockKey  = []byte("LastBlock")
-	headFastKey   = []byte("LastFast")
-	trieSyncKey   = []byte("TrieSync")
+	headBlockKey = []byte("LastBlock")
+	headFastKey  = []byte("LastFast")
+	trieSyncKey  = []byte("TrieSync")
 
 	// Data item prefixes (use single byte to avoid mixing data types, avoid `i`).
 	blockPrefix         = []byte("h") // blockPrefix + num (uint64 big endian) + hash -> header
@@ -81,14 +80,14 @@ func GetCanonicalHash(db DatabaseReader, number uint64) math.Hash {
 
 // missingNumber is returned by GetBlockNumber if no header with the
 // given block hash has been stored in the database
-const missingNumber = uint64(0xffffffffffffffff)
+const MissingNumber = uint64(0xffffffffffffffff)
 
 // GetBlockNumber returns the block number assigned to a block hash
 // if the corresponding header is present in the database
 func GetBlockNumber(db DatabaseReader, hash math.Hash) uint64 {
 	data, _ := db.Get(append(blockHashPrefix, hash.Bytes()...))
 	if len(data) != 8 {
-		return missingNumber
+		return MissingNumber
 	}
 	return binary.BigEndian.Uint64(data)
 }
@@ -98,15 +97,6 @@ func GetBlockNumber(db DatabaseReader, hash math.Hash) uint64 {
 // last block hash is only updated upon a full block import, the last header
 // hash is updated already at header import, allowing head tracking for the
 // light synchronization mechanism.
-func GetHeadHeaderHash(db DatabaseReader) math.Hash {
-	data, _ := db.Get(headHeaderKey)
-	if len(data) == 0 {
-		return math.Hash{}
-	}
-	return math.BytesToHash(data)
-}
-
-// GetHeadBlockHash retrieves the hash of the current canonical head block.
 func GetHeadBlockHash(db DatabaseReader) math.Hash {
 	data, _ := db.Get(headBlockKey)
 	if len(data) == 0 {
@@ -338,14 +328,6 @@ func WriteCanonicalHash(db lcdb.Putter, hash math.Hash, number uint64) error {
 	key := append(append(blockPrefix, encodeBlockNumber(number)...), numSuffix...)
 	if err := db.Put(key, hash.Bytes()); err != nil {
 		log.Crit("Failed to store number to hash mapping", "err", err)
-	}
-	return nil
-}
-
-// WriteHeadHeaderHash stores the head header's hash.
-func WriteHeadHeaderHash(db lcdb.Putter, hash math.Hash) error {
-	if err := db.Put(headHeaderKey, hash.Bytes()); err != nil {
-		log.Crit("Failed to store last header's hash", "err", err)
 	}
 	return nil
 }
@@ -601,19 +583,19 @@ func WriteChainConfig(db lcdb.Putter, hash *math.Hash, cfg *config.ChainConfig) 
 }
 
 // GetChainConfig will fetch the network settings based on the given hash.
-//func GetChainConfig(db DatabaseReader, hash math.Hash) (*params.ChainConfig, error) {
-//	jsonChainConfig, _ := db.Get(append(configPrefix, hash[:]...))
-//	if len(jsonChainConfig) == 0 {
-//		return nil, ErrChainConfigNotFound
-//	}
-//
-//	var config params.ChainConfig
-//	if err := json.Unmarshal(jsonChainConfig, &config); err != nil {
-//		return nil, err
-//	}
-//
-//	return &config, nil
-//}
+func GetChainConfig(db DatabaseReader, hash math.Hash) (*config.ChainConfig, error) {
+	jsonChainConfig, _ := db.Get(append(configPrefix, hash[:]...))
+	if len(jsonChainConfig) == 0 {
+		return nil, ErrChainConfigNotFound
+	}
+
+	var chainConfig config.ChainConfig
+	if err := json.Unmarshal(jsonChainConfig, &chainConfig); err != nil {
+		return nil, err
+	}
+
+	return &chainConfig, nil
+}
 
 // FindCommonAncestor returns the last common ancestor of two block headers
 //func FindCommonAncestor(db DatabaseReader, a, b *types.Header) *types.Header {
