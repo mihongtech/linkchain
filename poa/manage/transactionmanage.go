@@ -65,7 +65,7 @@ func (m *TransactionManage) CreateTransaction(from account.IAccount, to account.
 	toId := *to.GetAccountID().(*poameta.AccountID)
 	fp := *poameta.NewTransactionPeer(fromId, nil)
 	tp := *poameta.NewTransactionPeer(toId, nil)
-	newTx := poameta.NewTransaction(config.TransactionVersion, fp, tp, *amount.(*poameta.Amount), time.Now(), (from.GetNounce() + 1), nil, poameta.FromSign{})
+	newTx := poameta.NewTransaction(config.DefaultTransactionVersion, fp, tp, *amount.(*poameta.Amount), time.Now(), (from.GetNounce() + 1), nil, poameta.FromSign{})
 	return newTx
 }
 

@@ -67,7 +67,7 @@ func (m *BlockManage) CreateBlock() (block.IBlock, error) {
 	if bestBlock != nil {
 		bestHash := bestBlock.GetBlockID()
 		txs := []poameta.Transaction{}
-		header := poameta.NewBlockHeader(config.BlockVersion, bestBlock.GetHeight()+1, time.Now(), config.DefaultNounce, config.Difficulty, *bestHash.(*math.Hash), math.Hash{}, math.Hash{}, nil, nil)
+		header := poameta.NewBlockHeader(config.DefaultBlockVersion, bestBlock.GetHeight()+1, time.Now(), config.DefaultNounce, config.DefaultDifficulty, *bestHash.(*math.Hash), math.Hash{}, math.Hash{}, nil, nil)
 		b := poameta.NewBlock(*header, txs)
 		return m.RebuildBlock(b)
 	} else {
@@ -91,7 +91,7 @@ func (m *BlockManage) SignBlock(block block.IBlock, sign []byte) (block.IBlock, 
 /** interface: BlockBaseManager **/
 func (m *BlockManage) GetGensisBlock() block.IBlock {
 	txs := []poameta.Transaction{}
-	header := poameta.NewBlockHeader(config.BlockVersion, 0, time.Unix(1487780010, 0), config.DefaultNounce, config.Difficulty, math.Hash{}, math.Hash{}, math.Hash{}, nil, nil)
+	header := poameta.NewBlockHeader(config.DefaultBlockVersion, 0, time.Unix(1487780010, 0), config.DefaultNounce, config.DefaultDifficulty, math.Hash{}, math.Hash{}, math.Hash{}, nil, nil)
 	b := poameta.NewBlock(*header, txs)
 	root := b.CalculateTxTreeRoot()
 	b.Header.SetMerkleRoot(root)

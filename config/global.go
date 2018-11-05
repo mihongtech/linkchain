@@ -7,7 +7,8 @@ const (
 )
 
 var (
-	SignMiners = []string{FirstPubMiner, SecondPubMiner, ThirdPubMiner}
-	varA       = 12
-	VarB       = 33
+	SignMiners    = []string{FirstPubMiner, SecondPubMiner, ThirdPubMiner}
+	varA          = 12
+	VarB          = 33
+	DefaultPeriod = 15
 )

@@ -5,9 +5,9 @@ import (
 	"sync"
 
 	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/config"
 	"github.com/linkchain/function/wallet"
 	meta_block "github.com/linkchain/meta/block"
-	"github.com/linkchain/poa/config"
 	"github.com/linkchain/poa/manage"
 	"time"
 )
@@ -82,7 +82,7 @@ func (w *Miner) StartMine() {
 		}
 		w.minerMtx.Unlock()
 		w.MineBlock()
-		time.Sleep(config.DefaultPeriod * time.Second)
+		time.Sleep(time.Duration(config.DefaultPeriod) * time.Second)
 	}
 }
 
