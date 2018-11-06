@@ -34,6 +34,16 @@ type Genesis struct {
 	Prev   math.Hash `json:"prev"`
 }
 
+// GenesisMismatchError is raised when trying to overwrite an existing
+// genesis block with an incompatible one.
+type GenesisMismatchError struct {
+	Stored, New math.Hash
+}
+
+func (e *GenesisMismatchError) Error() string {
+	return fmt.Sprintf("database already contains an incompatible genesis block (have %x, new %x)", e.Stored[:8], e.New[:8])
+}
+
 // DefaultGenesisBlock returns the Ethereum main net genesis block.
 func DefaultGenesisBlock() *Genesis {
 	return &Genesis{
@@ -77,47 +87,58 @@ func SetupGenesisBlock(db lcdb.Database, genesis *Genesis) (*global_config.Chain
 		return genesis.Config, hash, err
 	}
 
-	// TODO: implement me
-	return nil, math.Hash{}, nil
-	//
-	//	// Check whether the genesis block is already written.
-	//	if genesis != nil {
-	//		hash := genesis.ToBlock(nil).Hash()
-	//		if hash != stored {
-	//			return genesis.Config, hash, &GenesisMismatchError{stored, hash}
-	//		}
-	//	}
-	//
-	//	// Get the existing chain configuration.
-	//	newcfg := genesis.configOrDefault(stored)
-	//	storedcfg, err := GetChainConfig(db, stored)
+	// Check whether the genesis block is already written.
+	if genesis != nil {
+		hash := math.BytesToHash(genesis.ToBlock(nil).GetBlockID().CloneBytes())
+		if hash == stored {
+			return genesis.Config, hash, &GenesisMismatchError{stored, hash}
+		}
+	}
+
+	// Get the existing chain configuration.
+	newcfg := genesis.configOrDefault(stored)
+	//	storedcfg, err := storage.GetChainConfig(db, stored)
 	//	if err != nil {
-	//		if err == ErrChainConfigNotFound {
+	//		if err == storage.ErrChainConfigNotFound {
 	//			// This case happens if a genesis write was interrupted.
 	//			log.Warn("Found genesis block without chain config")
-	//			err = WriteChainConfig(db, stored, newcfg)
+	//			err = storage.WriteChainConfig(db, &stored, newcfg)
 	//		}
 	//		return newcfg, stored, err
 	//	}
-	//	// Special case: don't change the existing config of a non-mainnet chain if no new
-	//	// config is supplied. These chains would get AllProtocolChanges (and a compat error)
-	//	// if we just continued here.
-	//	if genesis == nil && stored != params.MainnetGenesisHash {
+
+	// Special case: don't change the existing config of a non-mainnet chain if no new
+	// config is supplied. These chains would get AllProtocolChanges (and a compat error)
+	// if we just continued here.
+	//	if genesis == nil && stored != global_config.DefaultChainConfig {
 	//		return storedcfg, stored, nil
 	//	}
-	//
-	//	// Check config compatibility and write the config. Compatibility errors
-	//	// are returned to the caller unless we're already at block zero.
-	//	height := GetBlockNumber(db, GetHeadHeaderHash(db))
-	//	if height == missingNumber {
-	//		return newcfg, stored, fmt.Errorf("missing block number for head header hash")
-	//	}
+
+	// Check config compatibility and write the config. Compatibility errors
+	// are returned to the caller unless we're already at block zero.
+	height := storage.GetBlockNumber(db, storage.GetHeadBlockHash(db))
+	if height == storage.MissingNumber {
+		return newcfg, stored, fmt.Errorf("missing block number for head block hash")
+	}
 	//	compatErr := storedcfg.CheckCompatible(newcfg, height)
 	//	if compatErr != nil && height != 0 && compatErr.RewindTo != 0 {
 	//		return newcfg, stored, compatErr
 	//	}
-	//	return newcfg, stored, WriteChainConfig(db, stored, newcfg)
+	return newcfg, stored, storage.WriteChainConfig(db, &stored, newcfg)
 
+}
+
+func (g *Genesis) configOrDefault(ghash math.Hash) *global_config.ChainConfig {
+	switch {
+	case g != nil:
+		return g.Config
+		//	case ghash == params.MainnetGenesisHash:
+		//		return params.MainnetChainConfig
+		//	case ghash == params.TestnetGenesisHash:
+		//		return params.TestnetChainConfig
+	default:
+		return global_config.DefaultChainConfig
+	}
 }
 
 // ToBlock creates the genesis block and writes state of a genesis specification
