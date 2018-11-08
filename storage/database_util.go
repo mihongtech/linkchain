@@ -32,14 +32,12 @@ var (
 	trieSyncKey  = []byte("TrieSync")
 
 	// Data item prefixes (use single byte to avoid mixing data types, avoid `i`).
-	blockPrefix         = []byte("h") // blockPrefix + num (uint64 big endian) + hash -> header
-	tdSuffix            = []byte("t") // blockPrefix + num (uint64 big endian) + hash + tdSuffix -> td
-	numSuffix           = []byte("n") // blockPrefix + num (uint64 big endian) + numSuffix -> hash
-	blockHashPrefix     = []byte("H") // blockHashPrefix + hash -> num (uint64 big endian)
-	bodyPrefix          = []byte("b") // bodyPrefix + num (uint64 big endian) + hash -> block body
-	blockReceiptsPrefix = []byte("r") // blockReceiptsPrefix + num (uint64 big endian) + hash -> block receipts
-	lookupPrefix        = []byte("l") // lookupPrefix + hash -> transaction/receipt lookup metadata
-	bloomBitsPrefix     = []byte("B") // bloomBitsPrefix + bit (uint16 big endian) + section (uint64 big endian) + hash -> bloom bits
+	blockPrefix     = []byte("h") // blockPrefix + num (uint64 big endian) + hash -> block
+	tdSuffix        = []byte("t") // blockPrefix + num (uint64 big endian) + hash + tdSuffix -> td
+	numSuffix       = []byte("n") // blockPrefix + num (uint64 big endian) + numSuffix -> hash
+	blockHashPrefix = []byte("H") // blockHashPrefix + hash -> num (uint64 big endian)
+	lookupPrefix    = []byte("l") // lookupPrefix + hash -> transaction/receipt lookup metadata
+	bloomBitsPrefix = []byte("B") // bloomBitsPrefix + bit (uint16 big endian) + section (uint64 big endian) + hash -> bloom bits
 
 	preimagePrefix = "secure-key-"              // preimagePrefix + hash -> preimage
 	configPrefix   = []byte("ethereum-config-") // config prefix for the db
@@ -158,10 +156,6 @@ func GetTrieSyncProgress(db DatabaseReader) uint64 {
 
 func blockKey(hash math.Hash, number uint64) []byte {
 	return append(append(blockPrefix, encodeBlockNumber(number)...), hash.Bytes()...)
-}
-
-func blockBodyKey(hash math.Hash, number uint64) []byte {
-	return append(append(bodyPrefix, encodeBlockNumber(number)...), hash.Bytes()...)
 }
 
 // GetBody retrieves the block body (transactons, uncles) corresponding to the
@@ -426,27 +420,9 @@ func DeleteHeader(db DatabaseDeleter, hash math.Hash, number uint64) {
 	db.Delete(append(append(blockPrefix, encodeBlockNumber(number)...), hash.Bytes()...))
 }
 
-// DeleteBody removes all block body data associated with a hash.
-func DeleteBody(db DatabaseDeleter, hash math.Hash, number uint64) {
-	db.Delete(append(append(bodyPrefix, encodeBlockNumber(number)...), hash.Bytes()...))
-}
-
-// DeleteTd removes all block total difficulty data associated with a hash.
-func DeleteTd(db DatabaseDeleter, hash math.Hash, number uint64) {
-	db.Delete(append(append(append(blockPrefix, encodeBlockNumber(number)...), hash.Bytes()...), tdSuffix...))
-}
-
 // DeleteBlock removes all block data associated with a hash.
 func DeleteBlock(db DatabaseDeleter, hash math.Hash, number uint64) {
-	DeleteBlockReceipts(db, hash, number)
 	DeleteHeader(db, hash, number)
-	DeleteBody(db, hash, number)
-	DeleteTd(db, hash, number)
-}
-
-// DeleteBlockReceipts removes all receipt data associated with a block hash.
-func DeleteBlockReceipts(db DatabaseDeleter, hash math.Hash, number uint64) {
-	db.Delete(append(append(blockReceiptsPrefix, encodeBlockNumber(number)...), hash.Bytes()...))
 }
 
 // DeleteTxLookupEntry removes all transaction data associated with a hash.

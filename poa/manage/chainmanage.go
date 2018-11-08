@@ -382,6 +382,9 @@ func (m *ChainManage) updateChainIndex() bool {
 
 		m.mainChainIndex = append(m.mainChainIndex, node)
 	}
+
+	hash := m.mainChainIndex[len(m.mainChainIndex)-1].GetNodeHash()
+	storage.WriteHeadBlockHash(m.db, math.BytesToHash(hash.(*math.Hash).Bytes()))
 	return true
 }
 
