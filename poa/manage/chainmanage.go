@@ -1,17 +1,19 @@
 package manage
 
 import (
+	"encoding/hex"
 	"errors"
 	"sync"
 
-	"encoding/hex"
 	"github.com/linkchain/common/btcec"
+	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/log"
 	globalconfig "github.com/linkchain/config"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
 	poameta "github.com/linkchain/poa/meta"
+	"github.com/linkchain/storage"
 )
 
 type ChainManage struct {
@@ -19,6 +21,7 @@ type ChainManage struct {
 	chains         []poameta.Chain     //the chain tree for storing all chains
 	mainChainIndex []poameta.ChainNode //the mainChain is slice for search block
 	mainChain      poameta.BlockChain  //the mainChain is linked list for converting chain
+	db             lcdb.Database
 }
 
 func (m *ChainManage) Init(i interface{}) bool {
@@ -37,6 +40,11 @@ func (m *ChainManage) Init(i interface{}) bool {
 	m.mainChain = poameta.NewBlockChain(gensisChainNode)
 
 	//TODO need to load storage
+	var err error
+	m.db, err = lcdb.NewLDBDatabase("data", 1024, 256)
+	if err != nil {
+		return false
+	}
 
 	//TODO BlockManager need inited
 	return m.UpdateChain()
@@ -162,6 +170,11 @@ func (m *ChainManage) AddBlock(block block.IBlock) {
 	newblock := *block.(*poameta.Block)
 
 	GetManager().BlockManager.AddBlock(&newblock)
+
+	if err := storage.WriteBlock(m.db, block); err != nil {
+		log.Error("WriteBlock to db failed", "error", err)
+		return
+	}
 
 	_, err := m.GetBestNode()
 	if err != nil {

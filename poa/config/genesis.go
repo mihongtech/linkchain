@@ -97,33 +97,12 @@ func SetupGenesisBlock(db lcdb.Database, genesis *Genesis) (*global_config.Chain
 
 	// Get the existing chain configuration.
 	newcfg := genesis.configOrDefault(stored)
-	//	storedcfg, err := storage.GetChainConfig(db, stored)
-	//	if err != nil {
-	//		if err == storage.ErrChainConfigNotFound {
-	//			// This case happens if a genesis write was interrupted.
-	//			log.Warn("Found genesis block without chain config")
-	//			err = storage.WriteChainConfig(db, &stored, newcfg)
-	//		}
-	//		return newcfg, stored, err
-	//	}
 
-	// Special case: don't change the existing config of a non-mainnet chain if no new
-	// config is supplied. These chains would get AllProtocolChanges (and a compat error)
-	// if we just continued here.
-	//	if genesis == nil && stored != global_config.DefaultChainConfig {
-	//		return storedcfg, stored, nil
-	//	}
-
-	// Check config compatibility and write the config. Compatibility errors
-	// are returned to the caller unless we're already at block zero.
 	height := storage.GetBlockNumber(db, storage.GetHeadBlockHash(db))
 	if height == storage.MissingNumber {
 		return newcfg, stored, fmt.Errorf("missing block number for head block hash")
 	}
-	//	compatErr := storedcfg.CheckCompatible(newcfg, height)
-	//	if compatErr != nil && height != 0 && compatErr.RewindTo != 0 {
-	//		return newcfg, stored, compatErr
-	//	}
+
 	return newcfg, stored, storage.WriteChainConfig(db, &stored, newcfg)
 
 }
@@ -132,10 +111,6 @@ func (g *Genesis) configOrDefault(ghash math.Hash) *global_config.ChainConfig {
 	switch {
 	case g != nil:
 		return g.Config
-		//	case ghash == params.MainnetGenesisHash:
-		//		return params.MainnetChainConfig
-		//	case ghash == params.TestnetGenesisHash:
-		//		return params.TestnetChainConfig
 	default:
 		return global_config.DefaultChainConfig
 	}
@@ -148,15 +123,7 @@ func (g *Genesis) ToBlock(db lcdb.Database) *poa_meta.Block {
 		db, _ = lcdb.NewMemDatabase()
 	}
 	//	statedb, _ := state.New(math.Hash{}, state.NewDatabase(db))
-	//	for addr, account := range g.Alloc {
-	//		statedb.AddBalance(addr, account.Balance)
-	//		statedb.SetCode(addr, account.Code)
-	//		statedb.SetNonce(addr, account.Nonce)
-	//		for key, value := range account.Storage {
-	//			statedb.SetState(addr, key, value)
-	//		}
-	//	}
-	//	root := statedb.IntermediateRoot(false)
+
 	head := poa_meta.BlockHeader{
 		Version:    g.Version,
 		Height:     g.Height,
@@ -165,9 +132,7 @@ func (g *Genesis) ToBlock(db lcdb.Database) *poa_meta.Block {
 		Data:       g.Data,
 		Difficulty: g.Difficulty,
 	}
-	//	if g.Difficulty == nil {
-	//		head.Difficulty = params.GenesisDifficulty
-	//	}
+
 	//	statedb.Commit(false)
 	//	statedb.Database().TrieDB().Commit(root, true)
 
@@ -181,24 +146,19 @@ func (g *Genesis) Commit(db lcdb.Database) (*poa_meta.Block, error) {
 	if block.GetHeight() != 0 {
 		return nil, fmt.Errorf("can't commit genesis block with number > 0")
 	}
-	//	if err := WriteTd(db, block.Hash(), block.NumberU64(), g.Difficulty); err != nil {
-	//		return nil, err
-	//	}
+
 	if err := storage.WriteBlock(db, block); err != nil {
 		return nil, err
 	}
-	//	if err := WriteBlockReceipts(db, block.Hash(), block.NumberU64(), nil); err != nil {
-	//		return nil, err
-	//	}
-	//	if err := WriteCanonicalHash(db, block.Hash(), block.NumberU64()); err != nil {
-	//		return nil, err
-	//	}
-	//	if err := WriteHeadBlockHash(db, block.Hash()); err != nil {
-	//		return nil, err
-	//	}
-	//	if err := WriteHeadHeaderHash(db, block.Hash()); err != nil {
-	//		return nil, err
-	//	}
+
+	if err := storage.WriteCanonicalHash(db, math.BytesToHash((block.GetBlockID().(*math.Hash)).Bytes()), uint64(block.GetHeight())); err != nil {
+		return nil, err
+	}
+
+	if err := storage.WriteHeadBlockHash(db, math.BytesToHash((block.GetBlockID().(*math.Hash)).Bytes())); err != nil {
+		return nil, err
+	}
+
 	config := g.Config
 	if config == nil {
 		config = global_config.DefaultChainConfig

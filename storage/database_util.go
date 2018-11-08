@@ -357,57 +357,6 @@ func WriteTrieSyncProgress(db lcdb.Putter, count uint64) error {
 	return nil
 }
 
-// WriteHeader serializes a block header into the database.
-//func WriteHeader(db lcdb.Putter, header *types.Header) error {
-//	data, err := rlp.EncodeToBytes(header)
-//	if err != nil {
-//		return err
-//	}
-//	hash := header.Hash().Bytes()
-//	num := header.Number.Uint64()
-//	encNum := encodeBlockNumber(num)
-//	key := append(blockHashPrefix, hash...)
-//	if err := db.Put(key, encNum); err != nil {
-//		log.Crit("Failed to store hash to number mapping", "err", err)
-//	}
-//	key = append(append(headerPrefix, encNum...), hash...)
-//	if err := db.Put(key, data); err != nil {
-//		log.Crit("Failed to store header", "err", err)
-//	}
-//	return nil
-//}
-
-// WriteBody serializes the body of a block into the database.
-//func WriteBody(db lcdb.Putter, hash math.Hash, number uint64, body *types.Body) error {
-//	data, err := rlp.EncodeToBytes(body)
-//	if err != nil {
-//		return err
-//	}
-//	return WriteBodyRLP(db, hash, number, data)
-//}
-
-// WriteBodyRLP writes a serialized body of a block into the database.
-//func WriteBodyRLP(db lcdb.Putter, hash math.Hash, number uint64, rlp rlp.RawValue) error {
-//	key := append(append(bodyPrefix, encodeBlockNumber(number)...), hash.Bytes()...)
-//	if err := db.Put(key, rlp); err != nil {
-//		log.Crit("Failed to store block body", "err", err)
-//	}
-//	return nil
-//}
-
-// WriteTd serializes the total difficulty of a block into the database.
-//func WriteTd(db lcdb.Putter, hash math.Hash, number uint64, td *big.Int) error {
-//	data, err := rlp.EncodeToBytes(td)
-//	if err != nil {
-//		return err
-//	}
-//	key := append(append(append(headerPrefix, encodeBlockNumber(number)...), hash.Bytes()...), tdSuffix...)
-//	if err := db.Put(key, data); err != nil {
-//		log.Crit("Failed to store block total difficulty", "err", err)
-//	}
-//	return nil
-//}
-
 // WriteBlock serializes a block into the database, header and body separately.
 func WriteBlock(db lcdb.Putter, block block.IBlock) error {
 
@@ -431,27 +380,6 @@ func WriteBlock(db lcdb.Putter, block block.IBlock) error {
 	}
 	return nil
 }
-
-// WriteBlockReceipts stores all the transaction receipts belonging to a block
-// as a single receipt slice. This is used during chain reorganisations for
-// rescheduling dropped transactions.
-//func WriteBlockReceipts(db lcdb.Putter, hash math.Hash, number uint64, receipts types.Receipts) error {
-//	// Convert the receipts into their storage form and serialize them
-//	storageReceipts := make([]*types.ReceiptForStorage, len(receipts))
-//	for i, receipt := range receipts {
-//		storageReceipts[i] = (*types.ReceiptForStorage)(receipt)
-//	}
-//	bytes, err := rlp.EncodeToBytes(storageReceipts)
-//	if err != nil {
-//		return err
-//	}
-//	// Store the flattened receipt slice
-//	key := append(append(blockReceiptsPrefix, encodeBlockNumber(number)...), hash.Bytes()...)
-//	if err := db.Put(key, bytes); err != nil {
-//		log.Crit("Failed to store block receipts", "err", err)
-//	}
-//	return nil
-//}
 
 // WriteTxLookupEntries stores a positional metadata for every transaction from
 // a block, enabling hash based transaction and receipt lookups.
