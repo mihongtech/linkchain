@@ -45,8 +45,8 @@ func (m *BlockManage) Init(i interface{}) bool {
 	log.Info("BlockManage init...")
 	m.mapBlockIndexByHash = make(map[math.Hash]poameta.Block)
 	//load gensis block
-	gensisBlock := GetManager().BlockManager.GetGensisBlock()
-	m.AddBlock(gensisBlock)
+	// gensisBlock := GetManager().BlockManager.GetGensisBlock()
+	// m.AddBlock(gensisBlock)
 	//load block by chainmanager
 
 	return true
@@ -90,13 +90,14 @@ func (m *BlockManage) SignBlock(block block.IBlock, sign []byte) (block.IBlock, 
 
 /** interface: BlockBaseManager **/
 func (m *BlockManage) GetGensisBlock() block.IBlock {
-	txs := []poameta.Transaction{}
-	header := poameta.NewBlockHeader(config.DefaultBlockVersion, 0, time.Unix(1487780010, 0), config.DefaultNounce, config.DefaultDifficulty, math.Hash{}, math.Hash{}, math.Hash{}, nil, nil)
-	b := poameta.NewBlock(*header, txs)
-	root := b.CalculateTxTreeRoot()
-	b.Header.SetMerkleRoot(root)
 
-	return b
+	block, err := GetManager().ChainManager.GetBlockByHeight(0)
+	if err != nil {
+		log.Error("get genesis block failed")
+		return nil
+	}
+
+	return block
 }
 
 /** interface: BlockPoolManager **/
@@ -196,6 +197,7 @@ func (m *BlockManage) CheckBlock(block block.IBlock) bool {
 }
 
 func (s *BlockManage) ProcessBlock(block block.IBlock) error {
+
 	//log.Info("POA ProcessBlock ...")
 	//1.checkBlock
 	if !s.CheckBlock(block) {
@@ -219,8 +221,9 @@ func (s *BlockManage) ProcessBlock(block block.IBlock) error {
 	//log.Info("POA ProcessBlock successed")
 	//GetManager().ChainManager.GetBlockChainInfo()
 
-	return nil
 	//4.updateStorage
 
 	//5.broadcast
+
+	return nil
 }

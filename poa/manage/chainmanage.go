@@ -2,7 +2,9 @@ package manage
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"os"
 	"sync"
 
 	"github.com/linkchain/common/btcec"
@@ -12,6 +14,7 @@ import (
 	globalconfig "github.com/linkchain/config"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
+	"github.com/linkchain/poa/config"
 	poameta "github.com/linkchain/poa/meta"
 	"github.com/linkchain/storage"
 )
@@ -27,10 +30,41 @@ type ChainManage struct {
 func (m *ChainManage) Init(i interface{}) bool {
 	log.Info("ChainManage init...")
 
-	//create gensis chain
-	gensisBlock := GetManager().BlockManager.GetGensisBlock()
+	//load genesis from storage
+	var err error
+	m.db, err = lcdb.NewLDBDatabase("data", 1024, 256)
+	if err != nil {
+		return false
+	}
 
+	genesisPath := "genesis.json"
+	if len(genesisPath) == 0 {
+		return false
+	}
+	file, err := os.Open(genesisPath)
+	if err != nil {
+		log.Error("genesis file open failed")
+		return false
+	}
+	defer file.Close()
+
+	genesis := new(config.Genesis)
+	if err := json.NewDecoder(file).Decode(genesis); err != nil {
+		log.Error("invalid genesis file")
+		return false
+	}
+
+	_, _, err = config.SetupGenesisBlock(m.db, genesis)
+	if err != nil {
+		log.Error("Setup genesis failed")
+		return false
+	}
+
+	//create gensis chain
+	gensisBlock := genesis.ToBlock(nil)
+	GetManager().BlockManager.AddBlock(gensisBlock)
 	gensisChain := poameta.NewPOAChain(gensisBlock, nil)
+
 	m.chains = make([]poameta.Chain, 0)
 	m.chains = append(m.chains, gensisChain)
 
@@ -39,12 +73,7 @@ func (m *ChainManage) Init(i interface{}) bool {
 
 	m.mainChain = poameta.NewBlockChain(gensisChainNode)
 
-	//TODO need to load storage
-	var err error
-	m.db, err = lcdb.NewLDBDatabase("data", 1024, 256)
-	if err != nil {
-		return false
-	}
+	//TODO load all blocks from storage
 
 	//TODO BlockManager need inited
 	return m.UpdateChain()

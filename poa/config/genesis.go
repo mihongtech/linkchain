@@ -49,6 +49,9 @@ func DefaultGenesisBlock() *Genesis {
 	return &Genesis{
 		Config:  global_config.DefaultChainConfig,
 		Version: DefaultBlockVersion,
+		Time:    1487780010,
+		Height:  0,
+		Data:    nil,
 		// Data:  hexutil.MustDecode("0x11bbe8db4e347b4e8c937c1c8370e4b5ed33adb3db69cbdb7a38e1e50b1b82fa"),
 		Difficulty: DefaultDifficulty,
 	}
@@ -128,15 +131,23 @@ func (g *Genesis) ToBlock(db lcdb.Database) *poa_meta.Block {
 		Version:    g.Version,
 		Height:     g.Height,
 		Time:       time.Unix(g.Time, 0),
-		Prev:       g.Prev,
+		Prev:       math.Hash{},
 		Data:       g.Data,
+		Nonce:      DefaultNounce,
+		TxRoot:     math.Hash{},
+		Status:     math.Hash{},
 		Difficulty: g.Difficulty,
+		Sign:       nil,
 	}
 
 	//	statedb.Commit(false)
 	//	statedb.Database().TrieDB().Commit(root, true)
 
-	return poa_meta.NewBlock(head, nil)
+	block := poa_meta.NewBlock(head, []poa_meta.Transaction{})
+	root := block.CalculateTxTreeRoot()
+	block.Header.SetMerkleRoot(root)
+
+	return block
 }
 
 // Commit writes the block and state of a genesis specification to the database.
