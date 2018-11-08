@@ -43,25 +43,28 @@ func (m *ChainManage) Init(i interface{}) bool {
 	}
 	file, err := os.Open(genesisPath)
 	if err != nil {
-		log.Error("genesis file open failed")
-		return false
+		log.Info("genesis file not found, use default Genesis")
 	}
 	defer file.Close()
 
 	genesis := new(config.Genesis)
-	if err := json.NewDecoder(file).Decode(genesis); err != nil {
-		log.Error("invalid genesis file")
-		return false
+	if err == nil {
+		if err := json.NewDecoder(file).Decode(genesis); err != nil {
+			log.Error("invalid genesis file")
+			return false
+		}
+	} else {
+		genesis = nil
 	}
 
-	_, _, err = config.SetupGenesisBlock(m.db, genesis)
+	_, hash, err := config.SetupGenesisBlock(m.db, genesis)
 	if err != nil {
-		log.Error("Setup genesis failed")
+		log.Error("Setup genesis failed", err)
 		return false
 	}
 
 	//create gensis chain
-	gensisBlock := genesis.ToBlock(nil)
+	gensisBlock := storage.GetBlock(m.db, hash, 0)
 	GetManager().BlockManager.AddBlock(gensisBlock)
 	gensisChain := poameta.NewPOAChain(gensisBlock, nil)
 

@@ -72,12 +72,14 @@ func DefaultGenesisBlock() *Genesis {
 // The returned chain configuration is never nil.
 func SetupGenesisBlock(db lcdb.Database, genesis *Genesis) (*global_config.ChainConfig, math.Hash, error) {
 	if genesis != nil && genesis.Config == nil {
-		return global_config.DefaultChainConfig, math.Hash{}, errGenesisNoConfig
+		log.Error("genesis.Config can not be nil")
+		return nil, math.Hash{}, errGenesisNoConfig
 	}
 
 	// Just commit the new block if there is no stored genesis block.
 	stored := storage.GetCanonicalHash(db, 0)
-	if (stored == math.Hash{}) {
+	log.Info("stored data is", "store", stored)
+	if (stored.IsEqual(&math.Hash{})) {
 		if genesis == nil {
 			log.Info("Writing default main-net genesis block")
 			genesis = DefaultGenesisBlock()
@@ -90,6 +92,22 @@ func SetupGenesisBlock(db lcdb.Database, genesis *Genesis) (*global_config.Chain
 		return genesis.Config, hash, err
 	}
 
+	newcfg := global_config.DefaultChainConfig
+
+	storedcfg, err := storage.GetChainConfig(db, stored)
+	if err != nil {
+		if err == storage.ErrChainConfigNotFound {
+			// This case happens if a genesis write was interrupted.
+			log.Warn("Found genesis block without chain config")
+			err = storage.WriteChainConfig(db, &stored, newcfg)
+		}
+		return newcfg, stored, err
+	}
+	if genesis == nil {
+		newcfg = global_config.DefaultChainConfig
+	}
+	newcfg = storedcfg
+
 	// Check whether the genesis block is already written.
 	if genesis != nil {
 		hash := math.BytesToHash(genesis.ToBlock(nil).GetBlockID().CloneBytes())
@@ -98,12 +116,9 @@ func SetupGenesisBlock(db lcdb.Database, genesis *Genesis) (*global_config.Chain
 		}
 	}
 
-	// Get the existing chain configuration.
-	newcfg := genesis.configOrDefault(stored)
-
 	height := storage.GetBlockNumber(db, storage.GetHeadBlockHash(db))
 	if height == storage.MissingNumber {
-		return newcfg, stored, fmt.Errorf("missing block number for head block hash")
+		return genesis.Config, stored, fmt.Errorf("missing block number for head block hash")
 	}
 
 	return newcfg, stored, storage.WriteChainConfig(db, &stored, newcfg)
