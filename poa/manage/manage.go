@@ -34,17 +34,24 @@ type Manage struct {
 
 func (m *Manage) Init(i interface{}) bool {
 	log.Info("Manage init...")
-	m.AccountManager.Init(i)
-	m.BlockManager.Init(i)
-	m.ChainManager.Init(i)
-	m.TransactionManager.Init(i)
+	if !m.AccountManager.Init(i) {
+		return false
+	}
+	if !m.BlockManager.Init(i) {
+		return false
+	}
+	if !m.ChainManager.Init(i) {
+		return false
+	}
+	if !m.TransactionManager.Init(i) {
+		return false
+	}
 	return true
 }
 
 func (m *Manage) Start() bool {
 	log.Info("Manage start...")
-	m.ChainManager.Start()
-	return true
+	return m.ChainManager.Start()
 }
 
 func (m *Manage) Stop() {

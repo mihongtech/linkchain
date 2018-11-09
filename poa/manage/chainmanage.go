@@ -38,6 +38,7 @@ func (m *ChainManage) Init(i interface{}) bool {
 	}
 	hash, err := m.InitGenesis()
 	if err != nil {
+		log.Error("Init genesis failed , exit", "err", err)
 		return false
 	}
 
@@ -54,9 +55,9 @@ func (m *ChainManage) Init(i interface{}) bool {
 
 	m.mainChain = poameta.NewBlockChain(gensisChainNode)
 
-	//TODO load all blocks from storage
 	err = m.LoadBlocks()
 	if err != nil {
+		log.Error("Load blocks from db failed , exit", "err", err)
 		return false
 	}
 

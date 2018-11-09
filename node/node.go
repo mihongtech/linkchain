@@ -24,12 +24,25 @@ var (
 	}
 )
 
-func Init() {
+func Init() bool {
 	log.Info("Node init...")
 
-	svcList[0].Init(nil)                                       //consensus init
-	svcList[1].Init(GetConsensusService().GetAccountManager()) //wallet init
-	svcList[2].Init(GetConsensusService())                     //p2p init
+	//consensus init
+	if !svcList[0].Init(nil) {
+		return false
+	}
+
+	//wallet init
+	if !svcList[1].Init(GetConsensusService().GetAccountManager()) {
+		return false
+	}
+
+	//p2p init
+	if !svcList[2].Init(GetConsensusService()) {
+		return false
+	}
+
+	return true
 }
 
 func Run() {
@@ -37,7 +50,9 @@ func Run() {
 
 	//start all service
 	for _, v := range svcList {
-		v.Start()
+		if !v.Start() {
+			return
+		}
 	}
 
 	/*block :=svcList[1].(*consensus.Service).GetBlockManager().CreateBlock()

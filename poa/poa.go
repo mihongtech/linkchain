@@ -10,14 +10,12 @@ type Service struct {
 
 func (s *Service) Init(i interface{}) bool {
 	log.Info("poa consensus service init...")
-	s.GetManager().Init(nil)
-	return true
+	return s.GetManager().Init(nil)
 }
 
 func (s *Service) Start() bool {
 	log.Info("poa consensus service start...")
-	s.GetManager().Start()
-	return true
+	return s.GetManager().Start()
 }
 
 func (s *Service) Stop() {

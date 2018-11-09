@@ -16,14 +16,13 @@ type Service struct {
 func (s *Service) Init(i interface{}) bool {
 	//log.Info("consensus service init...");
 	service = poa.Service{}
-	service.Init(i)
-	return true
+	return service.Init(i)
+
 }
 
 func (s *Service) Start() bool {
 	//log.Info("consensus service start...");
-	service.Start()
-	return true
+	return service.Start()
 }
 
 func (s *Service) Stop() {
