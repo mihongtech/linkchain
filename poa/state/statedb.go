@@ -146,12 +146,6 @@ func (s *StateDB) UpdateAccountsByBlock(block block.IBlock) error {
 			coinBase.Addition(*tx.GetToValue())
 		}
 
-		log.Info("statedb", "tx", tx)
-		log.Info("startdb", "tcs", tcs)
-		for index, _ := range tcs {
-			log.Info("statedb", "tc", tcs[index])
-		}
-
 		for index, _ := range tcs {
 			cacheA, err := processCache[tcs[index].GetId().String()]
 			if !err {

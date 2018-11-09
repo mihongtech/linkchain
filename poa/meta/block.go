@@ -18,7 +18,7 @@ import (
 )
 
 type BlockTransaction struct {
-	Transaction
+	Transaction `json:"tx"`
 }
 
 func ConvertToBlockTransaction(tx tx.ITx) BlockTransaction {
@@ -26,8 +26,8 @@ func ConvertToBlockTransaction(tx tx.ITx) BlockTransaction {
 }
 
 type Block struct {
-	Header BlockHeader
-	TXs    []BlockTransaction
+	Header BlockHeader        `json:"header"`
+	TXs    []BlockTransaction `json:"txs"`
 }
 
 func NewBlock(header BlockHeader, txs []Transaction) *Block {
@@ -118,20 +118,6 @@ func (b *Block) String() string {
 	return string(data)
 }
 
-func (b *Block) GetBlockInfo() string {
-	txs := make([]string, 0)
-	for _, c := range b.TXs {
-		txs = append(txs, c.GetTxID().String())
-	}
-	data, _ := json.Marshal(txs)
-	m := map[string]interface{}{
-		"header": b.Header.String(),
-		"txs":    string(data),
-	}
-	data1, _ := json.Marshal(m)
-	return string(data1)
-}
-
 func (b *Block) GetTxs() []tx.ITx {
 	txs := make([]tx.ITx, 0)
 	for index, _ := range b.TXs {
@@ -158,35 +144,35 @@ func (b *Block) IsGensis() bool {
 
 type BlockHeader struct {
 	// Version of the block.  This is not the same as the protocol version.
-	Version uint32
+	Version uint32 `json:"version,int"`
 
 	//the height of block
-	Height uint32
+	Height uint32 `json:"height,int"`
 
 	// Time the block was created.  This is, unfortunately, encoded as a
 	// uint32 on the wire and therefore is limited to 2106.
-	Time time.Time
+	Time time.Time `json:"time"`
 
 	// Nonce used to generate the block.
-	Nonce uint32
+	Nonce uint32 `json:"nonce"`
 
 	// Difficulty target for the block.
-	Difficulty uint32
+	Difficulty uint32 `json:"difficulty"`
 
 	// Hash of the previous block header in the block chain.
-	Prev meta.BlockID
+	Prev meta.BlockID `json:"prev"`
 
 	// Merkle tree reference to hash of all transactions for the block.
-	TxRoot meta.TreeID
+	TxRoot meta.TreeID `json:"txroot"`
 
 	// The status of the whole system
-	Status meta.TreeID
+	Status meta.TreeID `json:"status"`
 
 	// The sign of miner
-	Sign Signature
+	Sign Signature `json:"sign"`
 
 	// Data used to extenion the block.
-	Data []byte
+	Data []byte `json:"data"`
 
 	//The Hash of this block
 	hash meta.BlockID

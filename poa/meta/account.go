@@ -18,7 +18,7 @@ import (
 )
 
 type AccountID struct {
-	ID []byte
+	ID []byte `json:"id"`
 }
 
 func (id *AccountID) String() string {
@@ -63,9 +63,9 @@ func NewAccountId(id *btcec.PublicKey) *AccountID {
 
 type UTXO struct {
 	Ticket
-	LocatedHeight uint32
-	EffectHeight  uint32
-	Value         amount.Amount
+	LocatedHeight uint32        `json:"locatedHeight"`
+	EffectHeight  uint32        `json:"effectHeight"`
+	Value         amount.Amount `json:"value"`
 }
 
 func NewUTXO(tickets *Ticket, locatedHeight uint32, effectHeight uint32, value amount.Amount) *UTXO {
@@ -81,11 +81,11 @@ func (u *UTXO) String() string {
 }
 
 type Account struct {
-	Id          AccountID
-	AccountType uint32
-	UTXOs       []UTXO
-	ClearTime   int64
-	SecurityId  AccountID
+	Id          AccountID `json:"accountId"`
+	AccountType uint32    `json:"accountType"`
+	UTXOs       []UTXO    `json:"AccountUXTO"`
+	ClearTime   int64     `json:"clearTime"`
+	SecurityId  AccountID `json:"securityId"`
 }
 
 func NewAccount(id AccountID, accountType uint32, utxos []UTXO, clearTime int64, securityId AccountID) *Account {

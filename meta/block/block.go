@@ -32,8 +32,6 @@ type IBlock interface {
 
 	IsGensis() bool
 
-	GetBlockInfo() string
-
 	//serialize
 	serialize.ISerialize
 }

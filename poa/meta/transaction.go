@@ -18,8 +18,8 @@ import (
 )
 
 type Ticket struct {
-	Txid  meta.TxID
-	Index uint32
+	Txid  meta.TxID `json:"txid"`
+	Index uint32    `json:"index"`
 }
 
 func NewTicket(txid meta.TxID, index uint32) *Ticket {
@@ -70,8 +70,8 @@ func (t *Ticket) String() string {
 }
 
 type FromCoin struct {
-	Id     AccountID
-	Ticket []Ticket
+	Id     AccountID `json:"accountId"`
+	Ticket []Ticket  `json:"tickets"`
 }
 
 func NewFromCoin(id AccountID, ticket []Ticket) *FromCoin {
@@ -143,7 +143,7 @@ func (fc *FromCoin) String() string {
 }
 
 type TransactionFrom struct {
-	Coins []FromCoin
+	Coins []FromCoin `json:"coins"`
 }
 
 func NewTransactionFrom(coin []FromCoin) *TransactionFrom {
@@ -192,8 +192,8 @@ func (tf *TransactionFrom) String() string {
 }
 
 type ToCoin struct {
-	Id    AccountID
-	Value amount.Amount
+	Id    AccountID     `json:"id"`
+	Value amount.Amount `json:"value"`
 }
 
 func NewToCoin(id AccountID, value *amount.Amount) *ToCoin {
@@ -242,7 +242,7 @@ func (tc *ToCoin) String() string {
 }
 
 type TransactionTo struct {
-	Coins []ToCoin
+	Coins []ToCoin `json:"coins"`
 }
 
 func NewTransactionTo(coins []ToCoin) *TransactionTo {
@@ -291,7 +291,7 @@ func (tt *TransactionTo) String() string {
 }
 
 type Signature struct {
-	Code []byte
+	Code []byte `json:"code"`
 }
 
 func NewSignatrue(code []byte) *Signature {
@@ -337,22 +337,22 @@ func (sign *Signature) Verify(hash []byte, pubKey []byte) error {
 
 type Transaction struct {
 	// The version of the Transaction.  This is not the same as the Blocks version.
-	Version uint32
+	Version uint32 `json:"version"`
 
 	// The type of the Transaction.
-	Type uint32
+	Type uint32 `json:"type"`
 
 	//The accounts of the Transaction related to inputs.
-	From TransactionFrom
+	From TransactionFrom `json:"from"`
 
 	//The accounts of the Transaction related to outputs.
-	To TransactionTo
+	To TransactionTo `json:"to"`
 
 	//The Sign of From, which is represent the Coins each Froms if not can put.
-	Sign []Signature
+	Sign []Signature `json:"signs"`
 
 	//The extra feild of Transaction.
-	Data []byte
+	Data []byte `json:"data"`
 
 	txid meta.TxID
 }

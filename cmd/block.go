@@ -43,7 +43,7 @@ var heightCmd = &cobra.Command{
 		if err != nil {
 			log.Error("getblockbyheight ", "error", err)
 		} else {
-			log.Info("block", "data", block.GetBlockInfo())
+			log.Info("block", "data", block.String())
 		}
 	},
 }
