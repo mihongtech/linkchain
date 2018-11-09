@@ -134,14 +134,14 @@ func (m *ChainManage) LoadBlocks() error {
 		hash = math.BytesToHash(block.GetPrevBlockID().(*math.Hash).Bytes())
 	}
 
+	m.UpdateChain()
+
 	if _, err := m.GetBestNode(); err != nil {
 		return err
 	}
 
 	for i := len(blocks) - 1; i >= 0; i-- {
-		if !m.sortChains(blocks[i]) {
-			return errors.New("add block to chain failed")
-		}
+		m.sortChains(blocks[i])
 	}
 
 	return nil
