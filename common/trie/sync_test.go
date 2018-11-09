@@ -81,7 +81,7 @@ func TestEmptyTrieSync(t *testing.T) {
 	triedbB := NewDatabase(diskdbB)
 
 	emptyA, _ := New(math.Hash{}, triedbA)
-	emptyB, _ := New(emptyRoot, triedbB)
+	emptyB, _ := New(*emptyRoot, triedbB)
 
 	for i, trie := range []*Trie{emptyA, emptyB} {
 		diskdb, _ := lcdb.NewMemDatabase()
