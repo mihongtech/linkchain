@@ -36,30 +36,8 @@ func (m *ChainManage) Init(i interface{}) bool {
 	if err != nil {
 		return false
 	}
-
-	genesisPath := "genesis.json"
-	if len(genesisPath) == 0 {
-		return false
-	}
-	file, err := os.Open(genesisPath)
+	hash, err := m.InitGenesis()
 	if err != nil {
-		log.Info("genesis file not found, use default Genesis")
-	}
-	defer file.Close()
-
-	genesis := new(config.Genesis)
-	if err == nil {
-		if err := json.NewDecoder(file).Decode(genesis); err != nil {
-			log.Error("invalid genesis file")
-			return false
-		}
-	} else {
-		genesis = nil
-	}
-
-	_, hash, err := config.SetupGenesisBlock(m.db, genesis)
-	if err != nil {
-		log.Error("Setup genesis failed", err)
 		return false
 	}
 
@@ -92,6 +70,35 @@ func (m *ChainManage) Stop() {
 	log.Info("ChainManage stop...")
 }
 
+func (m *ChainManage) InitGenesis() (math.Hash, error) {
+	genesisPath := "genesis.json"
+	if len(genesisPath) == 0 {
+		return math.Hash{}, errors.New("genesis file is nil")
+	}
+	file, err := os.Open(genesisPath)
+	if err != nil {
+		log.Info("genesis file not found, use default Genesis")
+	}
+	defer file.Close()
+
+	genesis := new(config.Genesis)
+	if err == nil {
+		if err := json.NewDecoder(file).Decode(genesis); err != nil {
+			log.Error("invalid genesis file")
+			return math.Hash{}, errors.New("invalid genesis file")
+		}
+	} else {
+		genesis = nil
+	}
+
+	_, hash, err := config.SetupGenesisBlock(m.db, genesis)
+	if err != nil {
+		log.Error("Setup genesis failed", err)
+		return math.Hash{}, errors.New("Setup genesis failed")
+	}
+
+	return hash, nil
+}
 func (m *ChainManage) GetBestBlock() block.IBlock {
 	bestHeight, err := m.GetBestHeight()
 	if err != nil {
