@@ -10,8 +10,9 @@ import (
 
 var (
 	// emptyRoot is the known root hash of an empty trie.
-	emptyRoot, _ = math.NewHashFromStr("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
-
+	// emptyRoot, _ = math.NewHashFromStr(math.HexToHash("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421").GetString())
+	emptyRoot, _ = math.NewHashFromStr("21b463e3b52f6201c0ad6c991be0485b6ef8c092e64583ffa655cc1b171fe856")
+	// emptyRoot, _ = math.NewHashFromStr("e3142b39ee98d061aecc7be15ed147cb921f0c19c804c767e9fd139e78c4b5ee")
 	// emptyState is the known hash of an empty state trie entry.
 	emptyState = math.HashH(nil)
 )
@@ -63,7 +64,7 @@ func New(root math.Hash, db *Database) (*Trie, error) {
 		db:           db,
 		originalRoot: root,
 	}
-	if (root != math.Hash{}) && root.IsEqual(emptyRoot) {
+	if (root != math.Hash{}) && !(root.IsEqual(emptyRoot)) {
 		rootnode, err := trie.resolveHash(root[:], nil)
 		if err != nil {
 			return nil, err

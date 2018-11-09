@@ -101,7 +101,7 @@ func TestNodeIteratorCoverage(t *testing.T) {
 	for hash, obj := range db.nodes {
 		if obj != nil && hash != (math.Hash{}) {
 			if _, ok := hashes[hash]; !ok {
-				t.Errorf("state entry not reported %v", hash)
+				t.Errorf("state entry not reported %v, emptyRoot:%v", hash, emptyRoot)
 			}
 		}
 	}
