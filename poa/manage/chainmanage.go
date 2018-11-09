@@ -55,6 +55,10 @@ func (m *ChainManage) Init(i interface{}) bool {
 	m.mainChain = poameta.NewBlockChain(gensisChainNode)
 
 	//TODO load all blocks from storage
+	err = m.LoadBlocks()
+	if err != nil {
+		return false
+	}
 
 	//TODO BlockManager need inited
 	return m.UpdateChain()
@@ -99,6 +103,49 @@ func (m *ChainManage) InitGenesis() (math.Hash, error) {
 
 	return hash, nil
 }
+
+func (m *ChainManage) LoadBlocks() error {
+	hash := storage.GetHeadBlockHash(m.db)
+	number := storage.GetBlockNumber(m.db, hash)
+	var blocks []poameta.Block
+
+	for i := number; i > 0; i-- {
+		block := storage.GetBlock(m.db, hash, i)
+		if block == nil {
+			log.Error("get block failed", "hash", hash, "number", i)
+			return errors.New("get block failed")
+		}
+
+		if err := GetManager().BlockManager.AddBlock(block); err != nil {
+			log.Error("Add block failed", "hash", hash, "block", block)
+			return err
+		}
+
+		// No need add tx to pending tx_pool
+		//		for _, tx := range block.GetTxs() {
+		//			if err := GetManager().TransactionManager.AddTransaction(tx); err != nil {
+		//				return err
+		//			}
+		//		}
+
+		blocks = append(blocks, *(block))
+
+		hash = math.BytesToHash(block.GetPrevBlockID().(*math.Hash).Bytes())
+	}
+
+	if _, err := m.GetBestNode(); err != nil {
+		return err
+	}
+
+	for i := len(blocks) - 1; i >= 0; i-- {
+		if !m.sortChains(blocks[i]) {
+			return errors.New("add block to chain failed")
+		}
+	}
+
+	return nil
+}
+
 func (m *ChainManage) GetBestBlock() block.IBlock {
 	bestHeight, err := m.GetBestHeight()
 	if err != nil {

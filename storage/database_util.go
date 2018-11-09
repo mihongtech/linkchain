@@ -129,66 +129,14 @@ func GetTrieSyncProgress(db DatabaseReader) uint64 {
 
 // GetHeaderRLP retrieves a block header in its raw RLP database encoding, or nil
 // if the header's not found.
-// TODO: implement
 func GetBlockBytes(db DatabaseReader, hash math.Hash, number uint64) []byte {
 	data, _ := db.Get(blockKey(hash, number))
 	return data
 }
 
-// GetHeader retrieves the block header corresponding to the hash, nil if none
-// found.
-//func GetHeader(db DatabaseReader, hash math.Hash, number uint64) *types.Header {
-//	data := GetHeaderRLP(db, hash, number)
-//	if len(data) == 0 {
-//		return nil
-//	}
-//	header := new(types.Header)
-//	if err := rlp.Decode(bytes.NewReader(data), header); err != nil {
-//		log.Error("Invalid block header RLP", "hash", hash, "err", err)
-//		return nil
-//	}
-//	return header
-//}
-
-// GetBodyRLP retrieves the block body (transactions and uncles) in RLP encoding.
-//func GetBodyRLP(db DatabaseReader, hash math.Hash, number uint64) rlp.RawValue {
-//	data, _ := db.Get(blockBodyKey(hash, number))
-//	return data
-//}
-
 func blockKey(hash math.Hash, number uint64) []byte {
 	return append(append(blockPrefix, encodeBlockNumber(number)...), hash.Bytes()...)
 }
-
-// GetBody retrieves the block body (transactons, uncles) corresponding to the
-// hash, nil if none found.
-//func GetBody(db DatabaseReader, hash math.Hash, number uint64) *types.Body {
-//	data := GetBodyRLP(db, hash, number)
-//	if len(data) == 0 {
-//		return nil
-//	}
-//	body := new(types.Body)
-//	if err := rlp.Decode(bytes.NewReader(data), body); err != nil {
-//		log.Error("Invalid block body RLP", "hash", hash, "err", err)
-//		return nil
-//	}
-//	return body
-//}
-
-// GetTd retrieves a block's total difficulty corresponding to the hash, nil if
-// none found.
-//func GetTd(db DatabaseReader, hash math.Hash, number uint64) *big.Int {
-//	data, _ := db.Get(append(append(append(headerPrefix, encodeBlockNumber(number)...), hash[:]...), tdSuffix...))
-//	if len(data) == 0 {
-//		return nil
-//	}
-//	td := new(big.Int)
-//	if err := rlp.Decode(bytes.NewReader(data), td); err != nil {
-//		log.Error("Invalid block total difficulty RLP", "hash", hash, "err", err)
-//		return nil
-//	}
-//	return td
-//}
 
 // GetBlock retrieves an entire block corresponding to the hash, assembling it
 // back from the stored header and body. If either the header or body could not
@@ -261,33 +209,6 @@ func GetBlock(db DatabaseReader, hash math.Hash, number uint64) *poa_meta.Block 
 //		return nil, math.Hash{}, 0, 0
 //	}
 //	return &tx, entry.BlockHash, entry.BlockIndex, entry.Index
-//}
-
-// GetReceipt retrieves a specific transaction receipt from the database, along with
-// its added positional metadata.
-//func GetReceipt(db DatabaseReader, hash math.Hash) (*types.Receipt, math.Hash, uint64, uint64) {
-//	// Retrieve the lookup metadata and resolve the receipt from the receipts
-//	blockHash, blockNumber, receiptIndex := GetTxLookupEntry(db, hash)
-//
-//	if blockHash != (math.Hash{}) {
-//		receipts := GetBlockReceipts(db, blockHash, blockNumber)
-//		if len(receipts) <= int(receiptIndex) {
-//			log.Error("Receipt refereced missing", "number", blockNumber, "hash", blockHash, "index", receiptIndex)
-//			return nil, math.Hash{}, 0, 0
-//		}
-//		return receipts[receiptIndex], blockHash, blockNumber, receiptIndex
-//	}
-//	// Old receipt representation, load the receipt and set an unknown metadata
-//	data, _ := db.Get(append(oldReceiptsPrefix, hash[:]...))
-//	if len(data) == 0 {
-//		return nil, math.Hash{}, 0, 0
-//	}
-//	var receipt types.ReceiptForStorage
-//	err := rlp.DecodeBytes(data, &receipt)
-//	if err != nil {
-//		log.Error("Invalid receipt RLP", "hash", hash, "err", err)
-//	}
-//	return (*types.Receipt)(&receipt), math.Hash{}, 0, 0
 //}
 
 // GetBloomBits retrieves the compressed bloom bit vector belonging to the given
@@ -484,30 +405,3 @@ func GetChainConfig(db DatabaseReader, hash math.Hash) (*config.ChainConfig, err
 
 	return &chainConfig, nil
 }
-
-// FindCommonAncestor returns the last common ancestor of two block headers
-//func FindCommonAncestor(db DatabaseReader, a, b *types.Header) *types.Header {
-//	for bn := b.Number.Uint64(); a.Number.Uint64() > bn; {
-//		a = GetHeader(db, a.ParentHash, a.Number.Uint64()-1)
-//		if a == nil {
-//			return nil
-//		}
-//	}
-//	for an := a.Number.Uint64(); an < b.Number.Uint64(); {
-//		b = GetHeader(db, b.ParentHash, b.Number.Uint64()-1)
-//		if b == nil {
-//			return nil
-//		}
-//	}
-//	for a.Hash() != b.Hash() {
-//		a = GetHeader(db, a.ParentHash, a.Number.Uint64()-1)
-//		if a == nil {
-//			return nil
-//		}
-//		b = GetHeader(db, b.ParentHash, b.Number.Uint64()-1)
-//		if b == nil {
-//			return nil
-//		}
-//	}
-//	return a
-//}

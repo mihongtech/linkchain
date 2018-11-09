@@ -6,7 +6,6 @@ import (
 	"math/big"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/linkchain/common"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/protobuf"
@@ -172,8 +171,6 @@ func (hash *Hash) ToString() string {
 	return hash.String()
 }
 
-func StringToHash(s string) Hash { return BytesToHash([]byte(s)) }
-func BigToHash(b *big.Int) Hash  { return BytesToHash(b.Bytes()) }
-func HexToHash(s string) Hash    { return BytesToHash(common.FromHex(s)) }
+func BigToHash(b *big.Int) Hash { return BytesToHash(b.Bytes()) }
 
 func (h Hash) Bytes() []byte { return h[:] }
