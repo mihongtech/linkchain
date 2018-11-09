@@ -62,7 +62,7 @@ func (m *ChainManage) Init(i interface{}) bool {
 	}
 
 	//TODO BlockManager need inited
-	return m.UpdateChain()
+	return true
 }
 
 func (m *ChainManage) Start() bool {
@@ -109,7 +109,7 @@ func (m *ChainManage) LoadBlocks() error {
 	hash := storage.GetHeadBlockHash(m.db)
 	number := storage.GetBlockNumber(m.db, hash)
 	var blocks []poameta.Block
-
+	log.Info("Best Node is", "hash", hash, "number", number)
 	for i := number; i > 0; i-- {
 		block := storage.GetBlock(m.db, hash, i)
 		if block == nil {
@@ -121,7 +121,7 @@ func (m *ChainManage) LoadBlocks() error {
 			log.Error("Add block failed", "hash", hash, "block", block)
 			return err
 		}
-
+		log.Debug("Load block is", "hash", hash, "number", number, "block", block)
 		// No need add tx to pending tx_pool
 		//		for _, tx := range block.GetTxs() {
 		//			if err := GetManager().TransactionManager.AddTransaction(tx); err != nil {
@@ -141,7 +141,9 @@ func (m *ChainManage) LoadBlocks() error {
 	}
 
 	for i := len(blocks) - 1; i >= 0; i-- {
+		log.Debug("sort block is", "block", blocks[i], "hash", blocks[i].GetBlockID())
 		m.sortChains(blocks[i])
+		m.updateChain()
 	}
 
 	return nil

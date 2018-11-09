@@ -78,7 +78,7 @@ func SetupGenesisBlock(db lcdb.Database, genesis *Genesis) (*global_config.Chain
 
 	// Just commit the new block if there is no stored genesis block.
 	stored := storage.GetCanonicalHash(db, 0)
-	log.Info("stored data is", "store", stored)
+	log.Debug("stored data is", "store", stored)
 	if (stored.IsEqual(&math.Hash{})) {
 		if genesis == nil {
 			log.Info("Writing default main-net genesis block")
