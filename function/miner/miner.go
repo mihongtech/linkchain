@@ -3,13 +3,15 @@ package miner
 import (
 	"encoding/hex"
 	"sync"
+	"time"
 
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/config"
 	"github.com/linkchain/function/wallet"
+	"github.com/linkchain/meta/amount"
 	meta_block "github.com/linkchain/meta/block"
 	"github.com/linkchain/poa/manage"
-	"time"
+	"github.com/linkchain/util"
 )
 
 var fristPrivMiner, _ = hex.DecodeString("55b55e136cc6671014029dcbefc42a7db8ad9b9d11f62677a47fd2ed77eeef7b")
@@ -31,9 +33,9 @@ func (w *Miner) Init(i interface{}) bool {
 
 func (w *Miner) Start() bool {
 	log.Info("Miner start...")
-	fristWA := wallet.CreateWAccountFromBytes(fristPrivMiner, 0)
-	secondWA := wallet.CreateWAccountFromBytes(secondPrivMiner, 0)
-	thirdWA := wallet.CreateWAccountFromBytes(thirdPrivMiner, 0)
+	fristWA := wallet.CreateWAccountFromBytes(fristPrivMiner, amount.NewAmount(0))
+	secondWA := wallet.CreateWAccountFromBytes(secondPrivMiner, amount.NewAmount(0))
+	thirdWA := wallet.CreateWAccountFromBytes(thirdPrivMiner, amount.NewAmount(0))
 	w.signers = append(w.signers, fristWA)
 	w.signers = append(w.signers, secondWA)
 	w.signers = append(w.signers, thirdWA)
@@ -46,29 +48,35 @@ func (w *Miner) Stop() {
 }
 
 func (w *Miner) MineBlock() {
-	block, err := manage.GetManager().BlockManager.CreateBlock()
+	best := manage.GetManager().ChainManager.GetBestBlock()
+	block, err := util.CreateBlock(best.GetHeight(), *best.GetBlockID())
 	if err != nil {
 		log.Error("Miner", "New Block error", err)
 		return
 	}
-	txs := manage.GetManager().TransactionManager.GetAllTransaction()
-	block.SetTx(txs)
+	mineIndex := block.GetHeight() % 3
 
-	block, err = manage.GetManager().BlockManager.RebuildBlock(block)
+	id := w.signers[mineIndex].GetAccountID()
+	coinbase := util.CreateCoinBaseTx(id, amount.NewAmount(50))
+	block.SetTx(coinbase)
+
+	txs := manage.GetManager().TransactionManager.GetAllTransaction()
+	block.SetTx(txs...)
+
+	w.SignBlock(w.signers[mineIndex], block)
+
+	block, err = util.RebuildBlock(block)
 	if err != nil {
 		log.Error("Miner", "Rebuild Block error", err)
 		return
 	}
-	mineIndex := block.GetHeight() % 3
-	sign := w.signers[mineIndex].Sign(block.GetBlockID().CloneBytes())
-	block, err = manage.GetManager().BlockManager.SignBlock(block, sign)
-	if err != nil {
-		log.Error("Miner", "Sign Block error", err)
-		return
-	}
-
 	manage.GetManager().BlockManager.ProcessBlock(block)
 	manage.GetManager().NewBlockEvent.Post(meta_block.NewMinedBlockEvent{Block: block})
+}
+
+func (w *Miner) SignBlock(signer wallet.WAccount, block meta_block.IBlock) {
+	sign := signer.Sign(block.GetBlockID().CloneBytes())
+	block.SetSign(sign)
 }
 
 func (w *Miner) StartMine() {

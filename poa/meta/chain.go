@@ -1,4 +1,4 @@
-package meta
+package poameta
 
 import (
 	"errors"
@@ -51,7 +51,7 @@ func (bc *Chain) GetHeight() uint32 {
 	return bc.GetLastBlock().GetHeight()
 }
 
-func (bc *Chain) GetBlockByID(id meta.DataID) block.IBlock {
+func (bc *Chain) GetBlockByID(id meta.BlockID) block.IBlock {
 	//TODO need to sorage
 	return nil
 }

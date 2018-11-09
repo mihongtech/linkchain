@@ -15,7 +15,7 @@ message BlockHeader {
     required Hash txRoot = 7;
     required Hash status = 8;
 
-    optional bytes sign = 9;
+    optional Signature sign = 9;
     optional bytes data = 10;
 }
 

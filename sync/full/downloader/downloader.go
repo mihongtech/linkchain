@@ -186,7 +186,7 @@ func (d *Downloader) UnregisterPeer(id string) error {
 
 // Synchronise tries to sync up our local block chain with a remote peer, both
 // adding various sanity checks as well as wrapping it with various log entries.
-func (d *Downloader) Synchronise(id string, head meta.DataID) error {
+func (d *Downloader) Synchronise(id string, head meta.BlockID) error {
 	err := d.synchronise(id, head)
 	switch err {
 	case nil:
@@ -212,7 +212,7 @@ func (d *Downloader) Synchronise(id string, head meta.DataID) error {
 // synchronise will select the peer and use it for synchronising. If an empty string is given
 // it will use the best peer possible and synchronize if its TD is higher than our own. If any of the
 // checks fail an error will be returned. This method is synchronous
-func (d *Downloader) synchronise(id string, hash meta.DataID) error {
+func (d *Downloader) synchronise(id string, hash meta.BlockID) error {
 	// Make sure only one goroutine is ever allowed past this point at once
 	if !atomic.CompareAndSwapInt32(&d.synchronising, 0, 1) {
 		return errBusy
@@ -261,7 +261,7 @@ func (d *Downloader) synchronise(id string, hash meta.DataID) error {
 
 // syncWithPeer starts a block synchronization based on the hash chain from the
 // specified peer and head hash.
-func (d *Downloader) syncWithPeer(p *peerConnection, hash meta.DataID) (err error) {
+func (d *Downloader) syncWithPeer(p *peerConnection, hash meta.BlockID) (err error) {
 	log.Debug("start to sync with peer")
 	d.mux.Post(StartEvent{})
 	defer func() {
@@ -438,7 +438,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 
 	// Wait for the remote response to the head fetch
 	number := uint64(0)
-	var hash meta.DataID
+	var hash meta.BlockID
 
 	ttl := d.requestTTL()
 	timeout := time.After(ttl)
@@ -475,8 +475,8 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 					continue
 				}
 				// Otherwise check if we already know the header or not
-				if d.mode == FullSync && d.blockmanager.HasBlock(blocks[i].GetBlockID()) {
-					number, hash = uint64(blocks[i].GetHeight()), blocks[i].GetBlockID()
+				if d.mode == FullSync && d.blockmanager.HasBlock(*blocks[i].GetBlockID()) {
+					number, hash = uint64(blocks[i].GetHeight()), *blocks[i].GetBlockID()
 
 					// If every header is known, even future ones, the peer straight out lied about its head
 					if number > height && i == limit-1 {
@@ -493,7 +493,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 		}
 	}
 	// If the head fetch already found an ancestor, return
-	if hash != nil && hash.IsEmpty() {
+	if hash.IsEmpty() && hash.IsEmpty() {
 		if int64(number) <= floor {
 			p.log.Warn("Ancestor below allowance", "number", number, "hash", hash, "allowance", floor)
 			return 0, errInvalidAncestor
@@ -534,7 +534,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 				arrived = true
 
 				// Modify the search interval based on the response
-				if d.mode == FullSync && !d.blockmanager.HasBlock(blocks[0].GetBlockID()) {
+				if d.mode == FullSync && !d.blockmanager.HasBlock(*blocks[0].GetBlockID()) {
 					end = check
 					break
 				}
@@ -861,9 +861,9 @@ func (d *Downloader) processBlocks(origin uint64, pivot uint64) error {
 	defer func() {
 		if len(rollback) > 0 {
 			// Flatten the headers and roll them back
-			hashes := make([]meta.DataID, len(rollback))
+			hashes := make([]meta.BlockID, len(rollback))
 			for i, block := range rollback {
-				hashes[i] = block.GetBlockID()
+				hashes[i] = *block.GetBlockID()
 			}
 
 			lastBlock := d.blockchain.GetBestBlock().GetHeight()
@@ -943,7 +943,7 @@ func (d *Downloader) processFullSyncContent() error {
 func (d *Downloader) ImportBlocks(id string, blocks []block.IBlock) error {
 	var results []*fetchResult
 	for _, block := range blocks {
-		results = append(results, &fetchResult{Hash: block.GetBlockID(), Block: block})
+		results = append(results, &fetchResult{Hash: *block.GetBlockID(), Block: block})
 	}
 	return d.importBlockResults(results)
 }
@@ -968,7 +968,7 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 
 	for _, result := range results {
 		log.Trace("Downloaded item processing block", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "block", result.Block)
-		if d.blockmanager.HasBlock(result.Block.GetBlockID()) {
+		if d.blockmanager.HasBlock(*result.Block.GetBlockID()) {
 			continue
 		}
 

@@ -5,11 +5,8 @@ import (
 
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/meta"
-	"github.com/linkchain/meta/account"
 	"github.com/linkchain/meta/tx"
-	"github.com/linkchain/poa/config"
 	poameta "github.com/linkchain/poa/meta"
-	"time"
 )
 
 type TransactionManage struct {
@@ -46,11 +43,11 @@ func (m *TransactionManage) GetAllTransaction() []tx.ITx {
 	return txs
 }
 
-func (m *TransactionManage) RemoveTransaction(txid meta.DataID) error {
+func (m *TransactionManage) RemoveTransaction(txid meta.TxID) error {
 	deleteIndex := make([]int, 0)
 	for index, tx := range m.txpool {
 		txHash := tx.GetTxID()
-		if txHash.IsEqual(txid) {
+		if txHash.IsEqual(&txid) {
 			deleteIndex = append(deleteIndex, index)
 		}
 	}
@@ -58,15 +55,6 @@ func (m *TransactionManage) RemoveTransaction(txid meta.DataID) error {
 		m.txpool = append(m.txpool[:index], m.txpool[index+1:]...)
 	}
 	return nil
-}
-
-func (m *TransactionManage) CreateTransaction(from account.IAccount, to account.IAccount, amount meta.IAmount) tx.ITx {
-	fromId := *from.GetAccountID().(*poameta.AccountID)
-	toId := *to.GetAccountID().(*poameta.AccountID)
-	fp := *poameta.NewTransactionPeer(fromId, nil)
-	tp := *poameta.NewTransactionPeer(toId, nil)
-	newTx := poameta.NewTransaction(config.DefaultTransactionVersion, fp, tp, *amount.(*poameta.Amount), time.Now(), (from.GetNounce() + 1), nil, poameta.FromSign{})
-	return newTx
 }
 
 func (m *TransactionManage) CheckTx(tx tx.ITx) bool {
@@ -77,7 +65,8 @@ func (m *TransactionManage) CheckTx(tx tx.ITx) bool {
 		return false
 	}
 
-	err = GetManager().AccountManager.CheckTxAccount(tx)
+	//TODO
+	//err = GetManager().AccountManager.CheckTxAccount(tx)
 
 	if err != nil {
 		log.Error("POA CheckTx", "failed", err)
@@ -98,9 +87,5 @@ func (m *TransactionManage) ProcessTx(tx tx.ITx) error {
 	m.AddTransaction(tx)
 	log.Info("POA Add Tranasaction Pool  ...", "txid", tx.GetTxID())
 	log.Info("POA Add Tranasaction Pool  ...", "tx", tx)
-	return nil
-}
-
-func (m *TransactionManage) SignTransaction(tx tx.ITx) error {
 	return nil
 }

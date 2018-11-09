@@ -1,54 +1,71 @@
-package meta
+package poameta
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"time"
 
-	"encoding/hex"
-	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/btcec"
-	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/merkle"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/tx"
 	"github.com/linkchain/protobuf"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/linkchain/common/math"
 )
+
+type BlockTransaction struct {
+	Transaction
+}
+
+func ConvertToBlockTransaction(tx tx.ITx) BlockTransaction {
+	return BlockTransaction{*tx.(*Transaction)}
+}
 
 type Block struct {
 	Header BlockHeader
-	TXs    []Transaction
+	TXs    []BlockTransaction
 }
 
 func NewBlock(header BlockHeader, txs []Transaction) *Block {
+	ntxs := make([]BlockTransaction, 0)
+	for _, tx := range txs {
+		ntxs = append(ntxs, ConvertToBlockTransaction(&tx))
+	}
 	return &Block{
 		Header: header,
-		TXs:    txs,
+		TXs:    ntxs,
 	}
 }
 
-func (b *Block) SetTx(newTXs []tx.ITx) error {
+func (b *Block) SetTx(newTXs ...tx.ITx) error {
 	for _, iTx := range newTXs {
-		b.TXs = append(b.TXs, *iTx.(*Transaction))
+		b.TXs = append(b.TXs, ConvertToBlockTransaction(iTx))
 	}
 	b.Header.SetMerkleRoot(b.CalculateTxTreeRoot()) //calculate merkle root
 	return nil
+}
+
+func (b *Block) SetSign(signature math.ISignature) {
+	b.Header.Sign = *signature.(*Signature)
 }
 
 func (b *Block) GetHeight() uint32 {
 	return b.Header.Height
 }
 
-func (b *Block) GetBlockID() meta.DataID {
+func (b *Block) GetBlockID() *meta.BlockID {
 	return b.Header.GetBlockID()
 }
 
-func (b *Block) GetPrevBlockID() meta.DataID {
+func (b *Block) GetPrevBlockID() *meta.BlockID {
 	return &b.Header.Prev
 }
-func (b *Block) GetMerkleRoot() meta.DataID {
-	return &b.Header.TxRoot
+func (b *Block) GetMerkleRoot() *meta.TreeID {
+	return b.Header.GetMerkleRoot()
 }
 func (b *Block) Verify(minerPKStr string) error {
 	return b.Header.Verify(minerPKStr)
@@ -83,7 +100,7 @@ func (b *Block) Deserialize(s serialize.SerializeStream) error {
 	}
 	b.TXs = b.TXs[:0] // transaction clear
 	for _, transaction := range data.TxList.Txs {
-		newTx := Transaction{}
+		newTx := BlockTransaction{}
 		err = newTx.Deserialize(transaction)
 		if err != nil {
 			return err
@@ -101,23 +118,38 @@ func (b *Block) String() string {
 	return string(data)
 }
 
+func (b *Block) GetBlockInfo() string {
+	txs := make([]string, 0)
+	for _, c := range b.TXs {
+		txs = append(txs, c.GetTxID().String())
+	}
+	data, _ := json.Marshal(txs)
+	m := map[string]interface{}{
+		"header": b.Header.String(),
+		"txs":    string(data),
+	}
+	data1, _ := json.Marshal(m)
+	return string(data1)
+}
+
 func (b *Block) GetTxs() []tx.ITx {
 	txs := make([]tx.ITx, 0)
-	for _, transaction := range b.TXs {
-		txs = append(txs, &transaction)
+	for index, _ := range b.TXs {
+		txs = append(txs, &b.TXs[index])
 	}
 	return txs
 }
 
-func (b *Block) CalculateTxTreeRoot() meta.DataID {
+func (b *Block) CalculateTxTreeRoot() meta.TreeID {
 	var transactions [][]byte
 	for _, transaction := range b.TXs {
 		txbuff, _ := proto.Marshal(transaction.Serialize())
 		transactions = append(transactions, txbuff)
 	}
 	mTree := merkle.NewMerkleTree(transactions)
-	hash, _ := math.NewHash(mTree.RootNode.Data)
-	return hash
+
+	hash, _ := meta.MakeTreeID(mTree.RootNode.Data)
+	return *hash
 }
 
 func (b *Block) IsGensis() bool {
@@ -142,25 +174,26 @@ type BlockHeader struct {
 	Difficulty uint32
 
 	// Hash of the previous block header in the block chain.
-	Prev math.Hash
+	Prev meta.BlockID
 
 	// Merkle tree reference to hash of all transactions for the block.
-	TxRoot math.Hash
+	TxRoot meta.TreeID
 
 	// The status of the whole system
-	Status math.Hash
+	Status meta.TreeID
 
 	// The sign of miner
-	Sign []byte
+	Sign Signature
 
 	// Data used to extenion the block.
 	Data []byte
 
 	//The Hash of this block
-	hash math.Hash
+	hash meta.BlockID
 }
 
-func NewBlockHeader(version uint32, height uint32, time time.Time, nounce uint32, difficulty uint32, prev math.Hash, root math.Hash, status math.Hash, sign []byte, extra []byte) *BlockHeader {
+func NewBlockHeader(version uint32, height uint32, time time.Time, nounce uint32, difficulty uint32, prev meta.BlockID, root meta.TreeID, status meta.TreeID, sign Signature, extra []byte) *BlockHeader {
+
 	return &BlockHeader{
 		Version: version,
 		Height:  height,
@@ -170,13 +203,13 @@ func NewBlockHeader(version uint32, height uint32, time time.Time, nounce uint32
 		Difficulty: difficulty,
 		Prev:       prev,
 		TxRoot:     root,
-		Status:     prev,
+		Status:     status,
 		Sign:       sign,
 		Data:       extra,
 	}
 }
 
-func (bh *BlockHeader) GetBlockID() meta.DataID {
+func (bh *BlockHeader) GetBlockID() *meta.BlockID {
 	if bh.hash.IsEmpty() {
 		err := bh.Deserialize(bh.Serialize())
 		if err != nil {
@@ -187,12 +220,12 @@ func (bh *BlockHeader) GetBlockID() meta.DataID {
 	return &bh.hash
 }
 
-func (bh *BlockHeader) GetMerkleRoot() meta.DataID {
+func (bh *BlockHeader) GetMerkleRoot() *meta.TreeID {
 	return &bh.TxRoot
 }
 
-func (bh *BlockHeader) SetMerkleRoot(root meta.DataID) {
-	bh.TxRoot = *root.(*math.Hash)
+func (bh *BlockHeader) SetMerkleRoot(root meta.TreeID) {
+	bh.TxRoot = root
 }
 
 //Serialize/Deserialize
@@ -200,6 +233,7 @@ func (bh *BlockHeader) Serialize() serialize.SerializeStream {
 	prevHash := bh.Prev.Serialize().(*protobuf.Hash)
 	merkleRoot := bh.TxRoot.Serialize().(*protobuf.Hash)
 	status := bh.Status.Serialize().(*protobuf.Hash)
+	sign := bh.Sign.Serialize().(*protobuf.Signature)
 	header := protobuf.BlockHeader{
 		Version:    proto.Uint32(bh.Version),
 		Height:     proto.Uint32(bh.Height),
@@ -209,7 +243,7 @@ func (bh *BlockHeader) Serialize() serialize.SerializeStream {
 		Prev:       prevHash,
 		TxRoot:     merkleRoot,
 		Status:     status,
-		Sign:       proto.NewBuffer(bh.Sign).Bytes(),
+		Sign:       sign,
 		Data:       proto.NewBuffer(bh.Data).Bytes(),
 	}
 	return &header
@@ -222,19 +256,22 @@ func (bh *BlockHeader) Deserialize(s serialize.SerializeStream) error {
 	bh.Time = time.Unix(*data.Time, 0)
 	bh.Nonce = *data.Nounce
 	bh.Difficulty = *data.Difficulty
-	err := bh.Prev.Deserialize(data.Prev)
-	if err != nil {
+	if err := bh.Prev.Deserialize(data.Prev); err != nil {
 		return err
 	}
-	err = bh.TxRoot.Deserialize(data.TxRoot)
-	if err != nil {
+
+	if err := bh.TxRoot.Deserialize(data.TxRoot); err != nil {
 		return err
 	}
-	err = bh.Status.Deserialize(data.Status)
-	if err != nil {
+
+	if err := bh.Status.Deserialize(data.Status); err != nil {
 		return err
 	}
-	bh.Sign = data.Sign
+
+	if err := bh.Sign.Deserialize(data.Sign); err != nil {
+		return err
+	}
+
 	bh.Data = data.Data
 
 	t := protobuf.BlockHeader{
@@ -248,7 +285,13 @@ func (bh *BlockHeader) Deserialize(s serialize.SerializeStream) error {
 		Status:     data.Status,
 		Data:       data.Data,
 	}
-	bh.hash = math.MakeHash(&t)
+
+	buffer, err := proto.Marshal(&t)
+	if err != nil {
+		return err
+	}
+
+	bh.hash = *meta.MakeBlockId(buffer)
 	return nil
 }
 
@@ -265,7 +308,7 @@ func (b *BlockHeader) IsGensis() bool {
 }
 
 func (b *BlockHeader) Verify(minerPKStr string) error {
-	signature, err := btcec.ParseSignature(b.Sign, btcec.S256())
+	signature, err := btcec.ParseSignature(b.Sign.Code, btcec.S256())
 	if err != nil {
 		log.Error("Signer", "VerifySign", err)
 		return err

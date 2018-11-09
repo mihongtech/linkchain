@@ -265,7 +265,7 @@ func WriteBlock(db lcdb.Putter, block block.IBlock) error {
 		return err
 	}
 
-	hash := block.GetBlockID().(*math.Hash).Bytes()
+	hash := block.GetBlockID().CloneBytes()
 	num := block.GetHeight()
 	encNum := encodeBlockNumber(uint64(num))
 	key := append(blockHashPrefix, hash...)

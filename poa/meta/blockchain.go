@@ -1,7 +1,8 @@
-package meta
+package poameta
 
 import (
 	"container/list"
+
 	"github.com/linkchain/consensus/manager"
 	"github.com/linkchain/meta/block"
 )
@@ -87,7 +88,7 @@ func (bc *BlockChain) CloneChainIndex(index []ChainNode) []ChainNode {
 			continue
 		}
 		checkIndexHash := index[forkPosition].GetNodeHash()
-		if checkIndexHash.IsEqual(nodeHash) {
+		if checkIndexHash.IsEqual(&nodeHash) {
 			break
 		}
 		forkPosition--

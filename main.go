@@ -3,10 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/linkchain/cmd"
-	"github.com/linkchain/common/util/log"
 	"os"
 	"strings"
+
+	"github.com/linkchain/cmd"
+	"github.com/linkchain/common/util/log"
 )
 
 func main() {
@@ -21,13 +22,6 @@ func main() {
 	cmd.RootCmd.Execute()
 
 	/*time.Sleep(time.Duration(1) * time.Second)
-
-	send := strings.Fields("tx test")
-
-	cmd.RootCmd.SetArgs(send)
-	cmd.RootCmd.Execute()
-
-	time.Sleep(time.Duration(1) * time.Second)
 
 	cmd.RootCmd.SetArgs(send)
 	cmd.RootCmd.Execute()

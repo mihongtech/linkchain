@@ -2,12 +2,10 @@ package manage
 
 import (
 	"testing"
-	"time"
 
 	"github.com/linkchain/common/btcec"
-	"github.com/linkchain/poa/config"
-	"github.com/linkchain/poa/meta"
 	"github.com/linkchain/unittest"
+	"github.com/linkchain/util"
 )
 
 func TestAccountManage_Init(t *testing.T) {
@@ -25,16 +23,11 @@ func TestAccountManage_Stop(t *testing.T) {
 	m.Stop()
 }
 
-func TestAccountManage_NewAccount(t *testing.T) {
-	m := AccountManage{}
-	a := m.NewAccount()
-	t.Logf(t.Name(), a)
-}
-
 func TestAccountManage_AddAccount(t *testing.T) {
 	m := AccountManage{}
 	m.Init(nil)
-	a := m.NewAccount()
+	priv, _ := btcec.NewPrivateKey(btcec.S256())
+	a, _ := util.CreateNormalAccount(priv)
 	err := m.AddAccount(a)
 	unittest.Equal(t, err, nil)
 }
@@ -42,7 +35,8 @@ func TestAccountManage_AddAccount(t *testing.T) {
 func TestAccountManage_GetAccount(t *testing.T) {
 	m := AccountManage{}
 	m.Init(nil)
-	a := m.NewAccount()
+	priv, _ := btcec.NewPrivateKey(btcec.S256())
+	a, _ := util.CreateNormalAccount(priv)
 	err := m.AddAccount(a)
 	unittest.Equal(t, err, nil)
 
@@ -54,7 +48,8 @@ func TestAccountManage_GetAccount(t *testing.T) {
 func TestAccountManage_RemoveAccount(t *testing.T) {
 	m := AccountManage{}
 	m.Init(nil)
-	a := m.NewAccount()
+	priv, _ := btcec.NewPrivateKey(btcec.S256())
+	a, _ := util.CreateNormalAccount(priv)
 	err := m.AddAccount(a)
 	unittest.Equal(t, err, nil)
 
@@ -77,17 +72,17 @@ func TestAccountManage_CheckTxAccount(t *testing.T) {
 }
 
 func TestAccountManage_GetAccountRelateTXs(t *testing.T) {
-	fpriv, err := btcec.NewPrivateKey(btcec.S256())
+	/*fpriv, err := btcec.NewPrivateKey(btcec.S256())
 	unittest.Equal(t, err, nil)
 	tpriv, err := btcec.NewPrivateKey(btcec.S256())
 	unittest.Equal(t, err, nil)
-	fId := meta.NewAccountId(fpriv.PubKey())
-	tId := meta.NewAccountId(tpriv.PubKey())
+	fId := poameta.NewAccountId(fpriv.PubKey())
+	tId := poameta.NewAccountId(tpriv.PubKey())
 
-	fp := meta.NewTransactionPeer(*fId, nil)
-	tp := meta.NewTransactionPeer(*tId, nil)
-	amount := meta.NewAmout(10)
-	tx := meta.NewTransaction(config.TransactionVersion, *fp, *tp, *amount, time.Now(), 1, nil, meta.FromSign{})
+	fp := poameta.NewTransactionPeer(*fId, nil)
+	tp := poameta.NewTransactionPeer(*tId, nil)
+	amount := poameta.NewAmout(10)
+	tx := poameta.NewTransaction(config.TransactionVersion, *fp, *tp, *amount, time.Now(), 1, nil, poameta.FromSign{})
 	sign, err := fpriv.Sign(tx.GetTxID().CloneBytes())
 	unittest.Equal(t, err, nil)
 	tx.SetSignature(sign.Serialize())
@@ -95,11 +90,11 @@ func TestAccountManage_GetAccountRelateTXs(t *testing.T) {
 
 	m := AccountManage{}
 	m.Init(nil)
-	fromA := meta.NewAccount(*fId, *meta.NewAmout(20), 0)
+	fromA := poameta.NewAccount(*fId, *poameta.NewAmout(20), 0)
 	m.AddAccount(fromA)
 
 	_, err = m.GetAccountRelateTXs(tx, false)
-	unittest.Equal(t, err, nil)
+	unittest.Equal(t, err, nil)*/
 }
 
 func TestAccountManage_GetAccountRelateTXs2(t *testing.T) {

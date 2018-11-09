@@ -136,8 +136,9 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 	}
 
 	pHead, height := peer.Head()
+
 	currentHeight := uint64(0)
-	// currentHeight := uint64(pm.blockmanager.GetGensisBlock().GetHeight())
+
 	if height <= currentHeight {
 		return
 	}

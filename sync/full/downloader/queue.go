@@ -34,8 +34,8 @@ type fetchRequest struct {
 // fetchResult is a struct collecting partial results from data fetchers until
 // all outstanding pieces complete and the result as a whole can be processed.
 type fetchResult struct {
-	Pending int         // Number of data fetches still pending
-	Hash    meta.DataID // Hash of the block to prevent recalculating
+	Pending int          // Number of data fetches still pending
+	Hash    meta.BlockID // Hash of the block to prevent recalculating
 	Block   block.IBlock
 }
 type StorageSize float64
@@ -45,7 +45,7 @@ type queue struct {
 	mode SyncMode // Synchronisation mode to decide on the block parts to schedule for fetching
 
 	// Blocks are "special", they download in batches, supported by a skeleton chain
-	blockHead      meta.DataID                    // [eth/62] Hash of the last queued block to verify order
+	blockHead      meta.BlockID                   // [eth/62] Hash of the last queued block to verify order
 	blockTaskPool  map[uint64]block.IBlock        // [eth/62] Pending block retrieval tasks, mapping starting indexes to skeleton headers
 	blockTaskQueue *prque.Prque                   // [eth/62] Priority queue of the skeleton indexes to fetch the filling headers for
 	blockPeerMiss  map[string]map[uint64]struct{} // [eth/62] Set of per-peer block batches known to be unavailable
@@ -84,7 +84,7 @@ func (q *queue) Reset() {
 	q.closed = false
 	q.mode = FullSync
 
-	q.blockHead = nil
+	q.blockHead = meta.BlockID{}
 
 	q.resultCache = make([]*fetchResult, blockCacheItems)
 	q.resultOffset = 0
@@ -129,7 +129,7 @@ func (q *queue) Idle() bool {
 // resultSlots calculates the number of results slots available for requests
 // whilst adhering to both the item and the memory limit too of the results
 // cache.
-func (q *queue) resultSlots(pendPool map[string]*fetchRequest, donePool map[meta.DataID]struct{}) int {
+func (q *queue) resultSlots(pendPool map[string]*fetchRequest, donePool map[meta.BlockID]struct{}) int {
 	// Calculate the maximum length capped by the memory limit
 	limit := len(q.resultCache)
 	if StorageSize(len(q.resultCache))*q.resultSize > StorageSize(blockCacheMemory) {
@@ -207,12 +207,12 @@ func (q *queue) Schedule(blocks []block.IBlock, from uint64) []block.IBlock {
 	inserts := make([]block.IBlock, 0, len(blocks))
 	for _, block := range blocks {
 		// Make sure chain order is honoured and preserved throughout
-		hash := block.GetBlockID()
+		hash := *block.GetBlockID()
 		if uint64(block.GetHeight()) != from {
 			log.Warn("Header broke chain ordering", "number", block.GetHeight(), "hash", hash, "expected", from)
 			break
 		}
-		if q.blockHead != nil && !q.blockHead.IsEqual(block.GetPrevBlockID()) {
+		if q.blockHead.IsEmpty() && !q.blockHead.IsEqual(block.GetPrevBlockID()) {
 			log.Warn("Header broke chain ancestry", "number", block.GetHeight(), "hash", hash, "q.blockHead", q.blockHead, "block.GetPrevBlockID()", block.GetPrevBlockID())
 			break
 		}
@@ -321,8 +321,8 @@ func (q *queue) ReserveBlocks(p *peerConnection, count int) *fetchRequest {
 // Note, this method expects the queue lock to be already held for writing. The
 // reason the lock is not obtained in here is because the parameters already need
 // to access the queue, so they already need a lock anyway.
-func (q *queue) reserveBlocks(p *peerConnection, count int, taskPool map[meta.DataID]block.IBlock, taskQueue *prque.Prque,
-	pendPool map[string]*fetchRequest, donePool map[meta.DataID]struct{}, isNoop func(block.IBlock) bool) (*fetchRequest, bool, error) {
+func (q *queue) reserveBlocks(p *peerConnection, count int, taskPool map[meta.BlockID]block.IBlock, taskQueue *prque.Prque,
+	pendPool map[string]*fetchRequest, donePool map[meta.BlockID]struct{}, isNoop func(block.IBlock) bool) (*fetchRequest, bool, error) {
 	// Short circuit if the pool has been depleted, or if the peer's already
 	// downloading something (sanity check not to corrupt state)
 	if taskQueue.Empty() {
@@ -341,7 +341,7 @@ func (q *queue) reserveBlocks(p *peerConnection, count int, taskPool map[meta.Da
 	progress := false
 	for proc := 0; proc < space && len(send) < count && !taskQueue.Empty(); proc++ {
 		block := taskQueue.PopItem().(block.IBlock)
-		hash := block.GetBlockID()
+		hash := *block.GetBlockID()
 
 		// If we're the first to request this task, initialise the result container
 		index := int(int64(block.GetHeight()) - int64(q.resultOffset))
@@ -566,8 +566,8 @@ func (q *queue) DeliverBlocks(id string, blocks []block.IBlock, blockProcCh chan
 // Note, this method expects the queue lock to be already held for writing. The
 // reason the lock is not obtained in here is because the parameters already need
 // to access the queue, so they already need a lock anyway.
-func (q *queue) deliver(id string, taskPool map[meta.DataID]block.IBlock, taskQueue *prque.Prque,
-	pendPool map[string]*fetchRequest, donePool map[meta.DataID]struct{},
+func (q *queue) deliver(id string, taskPool map[meta.BlockID]block.IBlock, taskQueue *prque.Prque,
+	pendPool map[string]*fetchRequest, donePool map[meta.BlockID]struct{},
 	results int, reconstruct func(block block.IBlock, index int, result *fetchResult) error) (int, error) {
 
 	// Short circuit if the data was never requested
@@ -582,7 +582,7 @@ func (q *queue) deliver(id string, taskPool map[meta.DataID]block.IBlock, taskQu
 	// If no data items were retrieved, mark them as unavailable for the origin peer
 	if results == 0 {
 		for _, block := range request.Blocks {
-			request.Peer.MarkLacking(block.GetBlockID())
+			request.Peer.MarkLacking(*block.GetBlockID())
 		}
 	}
 	// Assemble each of the results with their headers and retrieved data parts
@@ -606,7 +606,7 @@ func (q *queue) deliver(id string, taskPool map[meta.DataID]block.IBlock, taskQu
 			failure = err
 			break
 		}
-		hash := block.GetBlockID()
+		hash := *block.GetBlockID()
 
 		donePool[hash] = struct{}{}
 		q.resultCache[index].Pending--

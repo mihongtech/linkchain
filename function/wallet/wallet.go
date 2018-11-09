@@ -3,60 +3,88 @@ package wallet
 import (
 	"encoding/hex"
 	"errors"
-	"strings"
 
 	"github.com/linkchain/common/btcec"
+	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/account"
+	"github.com/linkchain/meta/amount"
+	"github.com/linkchain/meta/coin"
 	"github.com/linkchain/meta/events"
 	"github.com/linkchain/meta/tx"
 	"github.com/linkchain/poa/manage"
 	poameta "github.com/linkchain/poa/meta"
+	"github.com/linkchain/util"
 )
 
 var minePriv, _ = hex.DecodeString("55b55e136cc6671014029dcbefc42a7db8ad9b9d11f62677a47fd2ed77eeef7b")
 
 type WAccount struct {
 	privKey btcec.PrivateKey
-	amount  int
-	nounce  uint32
+	account poameta.Account
 }
 
 func NewWSAccount() WAccount {
 	priv, err := btcec.NewPrivateKey(btcec.S256())
 	if err != nil {
-		log.Info("POAAccountManager", "NewAccount - generate private key failed", err)
+		log.Info("Wallet", "NewAccount - generate private key failed", err)
 	}
-	return WAccount{privKey: *priv, amount: 0}
+
+	a, err := util.CreateNormalAccount(priv)
+	if err != nil {
+		log.Info("Wallet", "NewAccount - failed", err)
+	}
+	return WAccount{privKey: *priv, account: *a}
 }
 
-func CreateWAccountFromBytes(privb []byte, amount int) WAccount {
+func CreateWAccountFromBytes(privb []byte, amount *amount.Amount) WAccount {
 	priv, _ := btcec.PrivKeyFromBytes(btcec.S256(), privb)
-	return WAccount{privKey: *priv, amount: amount}
+	a, err := util.CreateNormalAccount(priv)
+	if err != nil {
+		log.Info("Wallet", "NewAccount - failed", err)
+	}
+	return WAccount{privKey: *priv, account: *a}
 }
 
 func (wa *WAccount) UpdateWAccount(iAccount account.IAccount) error {
-	if strings.Compare(iAccount.GetAccountID().String(), hex.EncodeToString(wa.privKey.PubKey().SerializeCompressed())) != 0 {
+	if !wa.account.GetAccountID().IsEqual(iAccount.GetAccountID()) {
 		return errors.New("IAccount is error")
 	}
-	if wa.amount != iAccount.GetAmount().GetInt() || wa.nounce != iAccount.GetNounce() {
-		log.Info("updateWallet", "account", iAccount.GetAccountID().String(), "amount", iAccount.GetAmount().GetInt(), "nounce", iAccount.GetNounce())
-	}
-	wa.amount = iAccount.GetAmount().GetInt()
-	wa.nounce = iAccount.GetNounce()
+	wa.account = *iAccount.(*poameta.Account)
 	return nil
 }
 
-func (wa *WAccount) ConvertAccount() account.IAccount {
-	id := *poameta.NewAccountId(wa.privKey.PubKey())
-	amount := *poameta.NewAmout(int32(wa.amount))
-	return poameta.NewAccount(id, amount, wa.nounce)
+func (wa *WAccount) GetAccountID() meta.IAccountID {
+	id := poameta.NewAccountId(wa.privKey.PubKey())
+	return id
+}
+
+func (wa *WAccount) GetAccount() account.IAccount {
+	return &wa.account
+}
+
+func (wa *WAccount) MakeFromCoin(value *amount.Amount) (coin.IFromCoin, *amount.Amount, error) {
+	if wa.GetAmount() < value.GetInt64() {
+		return nil, nil, errors.New("WAccount MakeFromCoin() amount is too large")
+	}
+	fc := util.CreateFromCoin(wa.GetAccountID())
+	fromAmount := amount.NewAmount(0)
+	for _, v := range wa.account.UTXOs {
+		fromAmount.Addition(v.Value)
+		t := poameta.NewTicket(v.Txid, v.Index)
+		fc.AddTicket(t)
+	}
+
+	return fc, fromAmount, nil
 }
 
 func (wa *WAccount) GetAccountInfo() {
-	log.Info("Wallet Info", "account", hex.EncodeToString(wa.privKey.PubKey().SerializeCompressed()), "amount", wa.GetAmount(), "nounce", wa.GetNounce())
+	log.Info("Wallet Info", "account", wa.account.GetAccountID().String(), "amount", wa.GetAmount(), "accounts", wa.account)
+	for _, c := range wa.account.UTXOs {
+		log.Info("Wallet Info", "Tickets", c.String())
+	}
 }
 
 func (wa *WAccount) GetAccountPubkey() string {
@@ -67,21 +95,17 @@ func (wa *WAccount) GetAccountPrivkey() string {
 	return hex.EncodeToString(wa.privKey.Serialize())
 }
 
-func (wa *WAccount) GetAmount() int {
-	return wa.amount
+func (wa *WAccount) GetAmount() int64 {
+	return wa.account.GetAmount().GetInt64()
 }
 
-func (wa *WAccount) GetNounce() uint32 {
-	return wa.nounce
-}
-
-func (wa *WAccount) Sign(messageHash []byte) []byte {
+func (wa *WAccount) Sign(messageHash []byte) math.ISignature {
 	signature, err := wa.privKey.Sign(messageHash)
 	if err != nil {
 		log.Error("WAccount", "Sign", err)
 		return nil
 	}
-	return signature.Serialize()
+	return poameta.NewSignatrue(signature.Serialize())
 }
 
 type Wallet struct {
@@ -99,12 +123,14 @@ func (w *Wallet) Init(i interface{}) bool {
 
 func (w *Wallet) Start() bool {
 	log.Info("Wallet start...")
-	gensisWA := CreateWAccountFromBytes(minePriv, 50)
+	gensisWA := CreateWAccountFromBytes(minePriv, amount.NewAmount(50))
 	gensisKey := hex.EncodeToString(gensisWA.privKey.PubKey().SerializeCompressed())
 
 	w.accounts[gensisKey] = gensisWA
 	w.updateAccountSub = w.am.NewWalletEvent.Subscribe(events.WAccountEvent{})
+	w.ReScanAllAccount()
 	go w.updateWalletLoop()
+
 	return true
 }
 
@@ -117,32 +143,38 @@ func (w *Wallet) updateWalletLoop() {
 	for obj := range w.updateAccountSub.Chan() {
 		switch ev := obj.Data.(type) {
 		case events.WAccountEvent:
-			//log.Info("POST EVENT")
 			if ev.IsUpdate {
-				newWas := make([]account.IAccount, 0)
-				for key := range w.accounts {
-					wa := w.accounts[key]
-					newWa, err := w.am.GetAccount(wa.ConvertAccount().GetAccountID())
-					if err != nil {
-						continue
-					}
-					newWas = append(newWas, newWa)
-				}
-				for _, wa := range newWas {
-					w.UpdateWalletAccount(wa)
-				}
+				w.ReScanAllAccount()
 			}
 		}
 	}
 }
 
+func (w *Wallet) ReScanAllAccount() {
+	newWas := make([]account.IAccount, 0)
+	for key, _ := range w.accounts {
+		wa := w.accounts[key]
+		newWa, err := w.am.GetAccount(wa.GetAccountID())
+		if err != nil {
+			continue
+		}
+
+		newWas = append(newWas, newWa)
+	}
+	for _, wa := range newWas {
+		w.UpdateWalletAccount(wa)
+	}
+}
+
 func (w *Wallet) UpdateWalletAccount(account account.IAccount) error {
+
 	a, ok := w.accounts[account.GetAccountID().String()]
 	if !ok {
-		return errors.New("ConvertAccount can not find account")
+		return errors.New("GetAccountID can not find account")
 	}
 	err := a.UpdateWAccount(account)
 	if err != nil {
+		log.Error("UpdateWalletAccount", "error", err)
 		return err
 	}
 	w.AddWAccount(a)
@@ -154,11 +186,11 @@ func (w *Wallet) AddWAccount(wa WAccount) {
 	w.accounts[key] = wa
 }
 
-func (w *Wallet) ChooseWAccount(amount meta.IAmount) (WAccount, error) {
+func (w *Wallet) ChooseWAccount(amount *amount.Amount) (WAccount, error) {
 	if len(w.accounts) > 0 {
 		for key := range w.accounts {
 			wa := w.accounts[key]
-			if wa.GetAmount() >= amount.GetInt() {
+			if wa.GetAmount() >= amount.GetInt64() {
 				return w.accounts[key], nil
 			}
 		}
@@ -181,15 +213,27 @@ func (w *Wallet) GetWAccount(key string) (WAccount, error) {
 	}
 	return WAccount{}, errors.New("can not find waccount")
 }
+
 func (w *Wallet) SignTransaction(tx tx.ITx) (tx.ITx, error) {
-	a, ok := w.accounts[tx.GetFrom().GetID().String()]
-	if !ok {
-		return nil, errors.New("SignTransaction can not find tx from account")
+	for _, fc := range tx.GetFromCoins() {
+		sign, err := w.signByFromCoin(fc, tx.GetTxID())
+		if err != nil {
+			return nil, err
+		}
+		tx.AddSignature(sign)
 	}
-	sign := a.Sign(tx.GetTxID().CloneBytes())
-	if sign == nil {
-		return nil, errors.New("SignTransaction failed")
-	}
-	tx.SetSignature(sign)
 	return tx, nil
+}
+
+func (w *Wallet) signByFromCoin(fromCoin coin.IFromCoin, data *meta.TxID) (math.ISignature, error) {
+	a, ok := w.accounts[fromCoin.GetId().String()]
+	if !ok {
+		return nil, errors.New("signByFromCoin can not find tx from account")
+	}
+	sign := a.Sign(data.CloneBytes())
+	if sign == nil {
+		return nil, errors.New("signByFromCoin failed")
+	}
+
+	return sign, nil
 }

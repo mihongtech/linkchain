@@ -1,94 +1,383 @@
-package meta
+package poameta
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/btcec"
-	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/meta"
-	"github.com/linkchain/meta/account"
-	"github.com/linkchain/meta/tx"
+	"github.com/linkchain/meta/amount"
+	"github.com/linkchain/meta/coin"
 	"github.com/linkchain/protobuf"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/linkchain/common/math"
 )
 
-type TransactionPeer struct {
-	AccountID AccountID
-	Extra     []byte
+type Ticket struct {
+	Txid  meta.TxID
+	Index uint32
 }
 
-func NewTransactionPeer(id AccountID, extra []byte) *TransactionPeer {
-	return &TransactionPeer{AccountID: id, Extra: extra}
+func NewTicket(txid meta.TxID, index uint32) *Ticket {
+	return &Ticket{Txid: txid, Index: index}
+}
+
+func (t *Ticket) SetTxid(id meta.TxID) {
+	t.Txid = id
+}
+
+func (t *Ticket) GetTxid() *meta.TxID {
+	return &t.Txid
+}
+
+func (t *Ticket) SetIndex(index uint32) {
+	t.Index = index
+}
+func (t *Ticket) GetIndex() uint32 {
+	return t.Index
 }
 
 //Serialize/Deserialize
-func (txpeer *TransactionPeer) Serialize() serialize.SerializeStream {
-	accountID := txpeer.AccountID.Serialize().(*protobuf.AccountID)
-	peer := protobuf.TransactionPeer{
-		AccountID: accountID,
-		Extra:     proto.NewBuffer(txpeer.Extra).Bytes(),
+func (t *Ticket) Serialize() serialize.SerializeStream {
+	txid := t.Txid.Serialize().(*protobuf.Hash)
+	ticket := protobuf.Ticket{
+		Txid:  txid,
+		Index: proto.Uint32(t.Index),
+	}
+	return &ticket
+}
+
+func (t *Ticket) Deserialize(s serialize.SerializeStream) error {
+	data := *s.(*protobuf.Ticket)
+	err := t.Txid.Deserialize(data.Txid)
+	if err != nil {
+		return err
+	}
+	t.Index = *data.Index
+	return nil
+}
+
+func (t *Ticket) String() string {
+	data, err := json.Marshal(t)
+	if err != nil {
+		return err.Error()
+	}
+	return string(data)
+}
+
+type FromCoin struct {
+	Id     AccountID
+	Ticket []Ticket
+}
+
+func NewFromCoin(id AccountID, ticket []Ticket) *FromCoin {
+	return &FromCoin{Id: id, Ticket: ticket}
+}
+
+func (tc *FromCoin) AddTicket(ticket coin.ITicket) {
+	tc.Ticket = append(tc.Ticket, *ticket.(*Ticket))
+}
+
+func (tc *FromCoin) GetTickets() []coin.ITicket {
+	tks := make([]coin.ITicket, 0)
+	for _, t := range tc.Ticket {
+		tks = append(tks, &t)
+	}
+	return tks
+}
+
+func (tc *FromCoin) SetId(id meta.IAccountID) {
+	tc.Id = *id.(*AccountID)
+}
+
+func (tc *FromCoin) GetId() meta.IAccountID {
+	return &tc.Id
+}
+
+//Serialize/Deserialize
+func (tc *FromCoin) Serialize() serialize.SerializeStream {
+	id := tc.Id.Serialize().(*protobuf.AccountID)
+
+	ticket := make([]*protobuf.Ticket, 0)
+
+	for _, c := range tc.Ticket {
+		ticket = append(ticket, c.Serialize().(*protobuf.Ticket))
+	}
+
+	peer := protobuf.FromCoin{
+		Id:     id,
+		Ticket: ticket,
 	}
 	return &peer
 }
 
-func (txpeer *TransactionPeer) Deserialize(s serialize.SerializeStream) error {
-	data := *s.(*protobuf.TransactionPeer)
-	err := txpeer.AccountID.Deserialize(data.AccountID)
+func (fc *FromCoin) Deserialize(s serialize.SerializeStream) error {
+	data := *s.(*protobuf.FromCoin)
+	err := fc.Id.Deserialize(data.Id)
 	if err != nil {
 		return err
 	}
-	txpeer.Extra = data.Extra
+
+	fc.Ticket = fc.Ticket[:0]
+	for _, ticket := range data.Ticket {
+		nticket := Ticket{}
+		err := nticket.Deserialize(ticket)
+		if err != nil {
+			return err
+		}
+		fc.Ticket = append(fc.Ticket, nticket)
+	}
 	return nil
 }
 
-func (txpeer *TransactionPeer) GetID() account.IAccountID {
-	return &txpeer.AccountID
+func (fc *FromCoin) String() string {
+	data, err := json.Marshal(fc)
+	if err != nil {
+		return err.Error()
+	}
+	return string(data)
 }
 
-type FromSign struct {
+type TransactionFrom struct {
+	Coins []FromCoin
+}
+
+func NewTransactionFrom(coin []FromCoin) *TransactionFrom {
+	return &TransactionFrom{Coins: coin}
+}
+
+func (tf *TransactionFrom) AddFromCoin(coin FromCoin) {
+	tf.Coins = append(tf.Coins, coin)
+}
+
+//Serialize/Deserialize
+func (tf *TransactionFrom) Serialize() serialize.SerializeStream {
+
+	coin := make([]*protobuf.FromCoin, 0)
+
+	for _, c := range tf.Coins {
+		coin = append(coin, c.Serialize().(*protobuf.FromCoin))
+	}
+
+	peer := protobuf.TransactionFrom{
+		Coins: coin,
+	}
+	return &peer
+}
+
+func (tf *TransactionFrom) Deserialize(s serialize.SerializeStream) error {
+	data := *s.(*protobuf.TransactionFrom)
+	tf.Coins = tf.Coins[:0]
+	for _, coin := range data.Coins {
+		nCoin := FromCoin{}
+		err := nCoin.Deserialize(coin)
+		if err != nil {
+			return err
+		}
+		tf.Coins = append(tf.Coins, nCoin)
+	}
+	return nil
+}
+
+func (tf *TransactionFrom) String() string {
+	data, err := json.Marshal(tf)
+	if err != nil {
+		return err.Error()
+	}
+	return string(data)
+}
+
+type ToCoin struct {
+	Id    AccountID
+	Value amount.Amount
+}
+
+func NewToCoin(id AccountID, value *amount.Amount) *ToCoin {
+	return &ToCoin{Id: id, Value: *value}
+}
+
+func (tc *ToCoin) SetId(id meta.IAccountID) {
+	tc.Id = *id.(*AccountID)
+}
+func (tc *ToCoin) GetId() meta.IAccountID {
+	return &tc.Id
+}
+
+func (tc *ToCoin) SetValue(value *amount.Amount) {
+	tc.Value = *value
+}
+func (tc *ToCoin) GetValue() *amount.Amount {
+	return &tc.Value
+}
+
+//Serialize/Deserialize
+func (tc *ToCoin) Serialize() serialize.SerializeStream {
+	peer := &protobuf.ToCoin{
+		Id:    tc.Id.Serialize().(*protobuf.AccountID),
+		Value: proto.NewBuffer(tc.Value.GetBytes()).Bytes(),
+	}
+	return peer
+}
+
+func (tc *ToCoin) Deserialize(s serialize.SerializeStream) error {
+	data := *s.(*protobuf.ToCoin)
+	if err := tc.Id.Deserialize(data.Id); err != nil {
+		return err
+	}
+	tc.Value = *amount.NewAmount(0)
+	tc.Value.SetBytes(data.Value)
+	return nil
+}
+
+func (tc *ToCoin) String() string {
+	data, err := json.Marshal(tc)
+	if err != nil {
+		return err.Error()
+	}
+	return string(data)
+}
+
+type TransactionTo struct {
+	Coins []ToCoin
+}
+
+func NewTransactionTo(coins []ToCoin) *TransactionTo {
+	return &TransactionTo{Coins: coins}
+}
+
+func (tt *TransactionTo) AddToCoin(coin ToCoin) {
+	tt.Coins = append(tt.Coins, coin)
+}
+
+//Serialize/Deserialize
+func (tt *TransactionTo) Serialize() serialize.SerializeStream {
+	coins := make([]*protobuf.ToCoin, 0)
+	for _, c := range tt.Coins {
+		coins = append(coins, c.Serialize().(*protobuf.ToCoin))
+	}
+
+	peer := protobuf.TransactionTo{
+		Coins: coins,
+	}
+	return &peer
+}
+
+func (tt *TransactionTo) Deserialize(s serialize.SerializeStream) error {
+	data := *s.(*protobuf.TransactionTo)
+
+	tt.Coins = tt.Coins[:0]
+	for _, c := range data.Coins {
+		nCoin := ToCoin{}
+		err := nCoin.Deserialize(c)
+		if err != nil {
+			return err
+		}
+		tt.Coins = append(tt.Coins, nCoin)
+	}
+
+	return nil
+}
+
+func (tt *TransactionTo) String() string {
+	data, err := json.Marshal(tt)
+	if err != nil {
+		return err.Error()
+	}
+	return string(data)
+}
+
+type Signature struct {
 	Code []byte
 }
 
-type Transaction struct {
-	// Version of the Transaction.  This is not the same as the Blocks version.
-	Version uint32
-
-	From TransactionPeer
-
-	To TransactionPeer
-
-	Amount Amount
-
-	Time time.Time
-	// Data used to extenion the block.
-
-	Nounce uint32
-
-	Data []byte
-
-	Signs FromSign
-
-	txid math.Hash
+func NewSignatrue(code []byte) *Signature {
+	return &Signature{Code: code}
 }
 
-func NewTransaction(version uint32, from TransactionPeer, to TransactionPeer, amount Amount, time time.Time, nounce uint32, data []byte, signs FromSign) *Transaction {
-	return &Transaction{
-		Version: version,
-		From:    from,
-		To:      to,
-		Amount:  amount,
-		Time:    time,
-		Nounce:  nounce,
-		Data:    data,
-		Signs:   signs,
+//Serialize/Deserialize
+func (sign *Signature) Serialize() serialize.SerializeStream {
+	peer := protobuf.Signature{
+		Code: proto.NewBuffer(sign.Code).Bytes(),
+	}
+	return &peer
+}
+
+func (sign *Signature) Deserialize(s serialize.SerializeStream) error {
+	data := *s.(*protobuf.Signature)
+	sign.Code = data.Code
+	return nil
+}
+
+func (sign *Signature) String() string {
+	return hex.EncodeToString(sign.Code)
+}
+
+func (sign *Signature) Verify(hash []byte, pubKey []byte) error {
+	signature, err := btcec.ParseSignature(sign.Code, btcec.S256())
+	if err != nil {
+		return err
+	}
+
+	pk, err := btcec.ParsePubKey(pubKey, btcec.S256())
+	if err != nil {
+		return errors.New("Transaction VerifySign ParsePubKey is error")
+	}
+
+	verified := signature.Verify(hash, pk)
+	if verified {
+		return nil
+	} else {
+		return errors.New("Transaction VerifySign failed: Error Sign")
 	}
 }
 
-func (tx *Transaction) GetTxID() meta.DataID {
+type Transaction struct {
+	// The version of the Transaction.  This is not the same as the Blocks version.
+	Version uint32
+
+	// The type of the Transaction.
+	Type uint32
+
+	//The accounts of the Transaction related to inputs.
+	From TransactionFrom
+
+	//The accounts of the Transaction related to outputs.
+	To TransactionTo
+
+	//The Sign of From, which is represent the Coins each Froms if not can put.
+	Sign []Signature
+
+	//The extra feild of Transaction.
+	Data []byte
+
+	txid meta.TxID
+}
+
+func NewTransaction(version uint32, txtype uint32, from TransactionFrom, to TransactionTo, sign []Signature, data []byte) *Transaction {
+	return &Transaction{
+		Version: version,
+		Type:    txtype,
+		From:    from,
+		To:      to,
+		Sign:    sign,
+		Data:    data,
+	}
+}
+
+func NewEmptyTransaction(version uint32, txtype uint32) *Transaction {
+	fromcoins := make([]FromCoin, 0)
+	tf := *NewTransactionFrom(fromcoins)
+
+	tocoins := make([]ToCoin, 0)
+	tt := *NewTransactionTo(tocoins)
+	return NewTransaction(version, txtype, tf, tt, nil, nil)
+}
+
+func (tx *Transaction) GetTxID() *meta.TxID {
 	if tx.txid.IsEmpty() {
 		err := tx.Deserialize(tx.Serialize())
 		if err != nil {
@@ -99,130 +388,139 @@ func (tx *Transaction) GetTxID() meta.DataID {
 	return &tx.txid
 }
 
-func (tx *Transaction) SetFrom(from tx.ITxPeer) {
-	txin := *from.(*TransactionPeer)
-	tx.From = txin
+func (tx *Transaction) AddFromCoin(fromCoin coin.IFromCoin) {
+	tx.From.AddFromCoin(*fromCoin.(*FromCoin))
 }
 
-func (tx *Transaction) SetTo(to tx.ITxPeer) {
-	txout := *to.(*TransactionPeer)
-	tx.To = txout
+func (tx *Transaction) AddToCoin(toCoin coin.IToCoin) {
+	tx.To.AddToCoin(*toCoin.(*ToCoin))
 }
 
-func (tx *Transaction) ChangeFromTo() tx.ITx {
-	temp := tx.From
-	tx.From = tx.To
-	tx.To = temp
-	tx.Nounce -= 1
-	return tx
+func (tx *Transaction) AddSignature(signature math.ISignature) {
+	tx.Sign = append(tx.Sign, *signature.(*Signature))
 }
 
-func (tx *Transaction) SetAmount(iAmount meta.IAmount) {
-	amount := *iAmount.(*Amount)
-	tx.Amount = amount
+func (t *Transaction) GetFromCoins() []coin.IFromCoin {
+	fcs := make([]coin.IFromCoin, 0)
+	for index, _ := range t.From.Coins {
+		fcs = append(fcs, &t.From.Coins[index])
+	}
+	return fcs
 }
 
-func (tx *Transaction) SetNounce(nounce uint32) {
-	tx.Nounce = nounce
+func (t *Transaction) GetToCoins() []coin.IToCoin {
+	tcs := make([]coin.IToCoin, 0)
+	for index, _ := range t.To.Coins {
+		tcs = append(tcs, &t.To.Coins[index])
+	}
+	return tcs
 }
 
-func (tx *Transaction) GetFrom() tx.ITxPeer {
-	return &tx.From
-}
-
-func (tx *Transaction) GetTo() tx.ITxPeer {
-	return &tx.To
-}
-
-func (tx *Transaction) GetAmount() meta.IAmount {
-	return &tx.Amount
-}
-
-func (tx *Transaction) GetNounce() uint32 {
-	return tx.Nounce
-}
-
-func (tx *Transaction) Sign() (math.ISignature, error) {
-	//TODO sign need to finish
-	return nil, nil
-}
-
-func (tx *Transaction) GetSignature() math.ISignature {
-	return nil
-}
-
-func (tx *Transaction) SetSignature(code []byte) {
-	tx.Signs = FromSign{Code: code}
+func (t *Transaction) GetToValue() *amount.Amount {
+	sum := amount.NewAmount(0)
+	for _, tc := range t.To.Coins {
+		sum.Addition(tc.Value)
+	}
+	return sum
 }
 
 func (tx *Transaction) Verify() error {
-	signature, err := btcec.ParseSignature(tx.Signs.Code, btcec.S256())
-	if err != nil {
-		log.Error("Transaction", "VerifySign", err)
-		return err
+	for index, sign := range tx.Sign {
+		err := sign.Verify(tx.txid.CloneBytes(), tx.From.Coins[index].Id.ID)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (tx *Transaction) GetVersion() uint32 {
+	return tx.Version
+}
+
+func (tx *Transaction) GetType() uint32 {
+	return tx.Type
+}
+
+// the method is prepared for create new fromcoin from tx
+func (t *Transaction) GetNewFromCoins() []coin.IFromCoin {
+	nfcs := make([]coin.IFromCoin, 0)
+	for index, c := range t.To.Coins {
+		ticket := Ticket{}
+		ticket.SetTxid(*t.GetTxID())
+		ticket.SetIndex(uint32(index))
+
+		nfc := FromCoin{}
+		nfc.SetId(&c.Id)
+		nfc.AddTicket(&ticket)
+
+		nfcs = append(nfcs, &nfc)
 	}
 
-	pk, err := btcec.ParsePubKey(tx.From.AccountID.ID, btcec.S256())
-	if err != nil {
-		return errors.New("Transaction VerifySign ParsePubKey is error")
-	}
-
-	verified := signature.Verify(tx.GetTxID().CloneBytes(), pk)
-	if verified {
-		return nil
-	} else {
-		return errors.New("Transaction VerifySign failed: Error Sign")
-	}
+	return nfcs
 }
 
 //Serialize/Deserialize
 func (tx *Transaction) Serialize() serialize.SerializeStream {
-	from := tx.From.Serialize().(*protobuf.TransactionPeer)
-	to := tx.To.Serialize().(*protobuf.TransactionPeer)
-	amount := tx.Amount.Serialize().(*protobuf.Amount)
+	from := tx.From.Serialize().(*protobuf.TransactionFrom)
+	to := tx.To.Serialize().(*protobuf.TransactionTo)
+
+	signature := make([]*protobuf.Signature, 0)
+
+	for _, content := range tx.Sign {
+		signature = append(signature, content.Serialize().(*protobuf.Signature))
+	}
 
 	t := protobuf.Transaction{
 		Version: proto.Uint32(tx.Version),
+		Type:    proto.Uint32(tx.Type),
 		From:    from,
 		To:      to,
-		Amount:  amount,
-		Nounce:  proto.Uint32(tx.Nounce),
+		Sign:    signature,
 		Data:    proto.NewBuffer(tx.Data).Bytes(),
-		Sign:    proto.NewBuffer(tx.Signs.Code).Bytes(),
 	}
 	return &t
 }
 
-func (tx *Transaction) Deserialize(s serialize.SerializeStream) error {
+func (t *Transaction) Deserialize(s serialize.SerializeStream) error {
 	data := *s.(*protobuf.Transaction)
-	tx.Version = *data.Version
-	err := tx.From.Deserialize(data.From)
-	if err != nil {
-		return err
-	}
-	err = tx.To.Deserialize(data.To)
-	if err != nil {
+	t.Version = *data.Version
+	t.Type = *data.Type
+
+	if err := t.From.Deserialize(data.From); err != nil {
 		return err
 	}
 
-	tx.Nounce = *data.Nounce
-	err = tx.Amount.Deserialize(data.Amount)
-	if err != nil {
+	if err := t.To.Deserialize(data.To); err != nil {
 		return err
 	}
-	tx.Data = data.Data
-	tx.Signs = FromSign{Code: data.Sign}
 
-	t := protobuf.Transaction{
+	t.Sign = t.Sign[:0]
+
+	for _, cointent := range data.Sign {
+		nSignatrue := Signature{}
+
+		if err := nSignatrue.Deserialize(cointent); err != nil {
+			return err
+		}
+		t.Sign = append(t.Sign, nSignatrue)
+	}
+
+	t.Data = data.Data
+
+	pt := protobuf.Transaction{
 		Version: data.Version,
+		Type:    data.Type,
 		From:    data.From,
 		To:      data.To,
-
-		Nounce: data.Nounce,
-		Amount: data.Amount,
-		Data:   data.Data,
+		Data:    data.Data,
 	}
-	tx.txid = math.MakeHash(&t)
+	buffer, err := proto.Marshal(&pt)
+	if err != nil {
+		return err
+	}
+
+	t.txid = *meta.MakeTxID(buffer)
 	return nil
 }
 

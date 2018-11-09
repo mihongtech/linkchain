@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"math/big"
 
+	"encoding/json"
 	"github.com/golang/protobuf/proto"
+	"github.com/linkchain/common"
 	"github.com/linkchain/common/serialize"
-	"github.com/linkchain/meta"
 	"github.com/linkchain/protobuf"
 )
 
@@ -78,14 +79,15 @@ func (hash *Hash) SetBytes(newHash []byte) error {
 }
 
 // IsEqual returns true if target is the same as hash.
-func (hash *Hash) IsEqual(id meta.DataID) bool {
-	if hash == nil && id == nil {
+func (hash *Hash) IsEqual(h *Hash) bool {
+	if hash == nil && h == nil {
 		return true
 	}
-	if hash == nil || id == nil {
+	if hash == nil || h == nil {
 		return false
 	}
-	return *hash == *id.(*Hash)
+
+	return *hash == *h
 }
 
 // NewHash returns a new Hash from a byte slice.  An error is returned if
@@ -171,6 +173,17 @@ func (hash *Hash) ToString() string {
 	return hash.String()
 }
 
-func BigToHash(b *big.Int) Hash { return BytesToHash(b.Bytes()) }
+func StringToHash(s string) Hash { return BytesToHash([]byte(s)) }
+func BigToHash(b *big.Int) Hash  { return BytesToHash(b.Bytes()) }
+func HexToHash(s string) Hash    { return BytesToHash(common.FromHex(s)) }
 
 func (h Hash) Bytes() []byte { return h[:] }
+
+//Json Hash convert to Hex
+func (h Hash) MarshalJSON() ([]byte, error) {
+	return json.Marshal(h.String())
+}
+
+func (h *Hash) UnmarshalJSON(data []byte) error {
+	return nil
+}

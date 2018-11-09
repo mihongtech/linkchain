@@ -1,17 +1,14 @@
 package manage
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"os"
 	"sync"
 
-	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/log"
-	globalconfig "github.com/linkchain/config"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
 	"github.com/linkchain/poa/config"
@@ -131,7 +128,7 @@ func (m *ChainManage) LoadBlocks() error {
 
 		blocks = append(blocks, *(block))
 
-		hash = math.BytesToHash(block.GetPrevBlockID().(*math.Hash).Bytes())
+		hash = *block.GetPrevBlockID()
 	}
 
 	m.UpdateChain()
@@ -174,10 +171,10 @@ func (m *ChainManage) GetBestNode() (poameta.ChainNode, error) {
 	return node, nil
 }
 
-func (m *ChainManage) GetBestBlockHash() meta.DataID {
+func (m *ChainManage) GetBestBlockHash() meta.BlockID {
 	bestHeight, err := m.GetBestHeight()
 	if err != nil {
-		return nil
+		return meta.BlockID{}
 	}
 
 	m.chainMtx.RLock()
@@ -198,7 +195,7 @@ func (m *ChainManage) GetBestHeight() (uint32, error) {
 
 func (m *ChainManage) GetBlockByHash(hash math.Hash) (block.IBlock, error) {
 	//TODO need to lock chain
-	b, err := GetManager().BlockManager.GetBlockByID(&hash)
+	b, err := GetManager().BlockManager.GetBlockByID(hash)
 	if err != nil {
 		return b, err
 	}
@@ -428,7 +425,7 @@ func (m *ChainManage) updateChainIndex() bool {
 			continue
 		}
 		checkIndexHash := m.mainChainIndex[forkPosition].GetNodeHash()
-		if checkIndexHash.IsEqual(nodeHash) {
+		if checkIndexHash.IsEqual(&nodeHash) {
 			break
 		}
 		forkPosition--
@@ -473,7 +470,7 @@ func (m *ChainManage) updateChainIndex() bool {
 	}
 
 	hash := m.mainChainIndex[len(m.mainChainIndex)-1].GetNodeHash()
-	storage.WriteHeadBlockHash(m.db, math.BytesToHash(hash.(*math.Hash).Bytes()))
+	storage.WriteHeadBlockHash(m.db, math.BytesToHash(hash.CloneBytes()))
 	return true
 }
 
@@ -502,29 +499,15 @@ func (m *ChainManage) updateChain() bool {
 func (m *ChainManage) updateStatus(block block.IBlock, isAdd bool) error {
 	//GetManager().AccountManager.GetAllAccounts()
 	//update mine account status
-	poablock := *block.(*poameta.Block)
 
-	amount := poameta.NewAmout(50)
-	signerIndex := block.GetHeight() % uint32(len(globalconfig.SignMiners))
-	minerPK, err := hex.DecodeString(globalconfig.SignMiners[signerIndex])
-	if err != nil {
-		return err
-	}
-	pk, err := btcec.ParsePubKey(minerPK, btcec.S256())
-	sAccount := poameta.NewAccountId(pk)
-	tp := poameta.NewTransactionPeer(*sAccount, poablock.Header.Sign)
-	mineTx := poameta.NewTransaction(0, poameta.TransactionPeer{}, *tp, *amount, poablock.Header.Time, poablock.Header.Nonce, nil, poameta.FromSign{})
-	cachTxs := block.GetTxs()
-	mineIndex := len(cachTxs)
-	cachTxs = append(cachTxs, mineTx)
 	if isAdd {
-		err := GetManager().AccountManager.UpdateAccountsByTxs(cachTxs, mineIndex)
-		if err != nil {
+		//add block account status
+		if err := GetManager().AccountManager.UpdateAccountsByBlock(block); err != nil {
 			return err
 		}
 	} else {
-		err := GetManager().AccountManager.RevertAccountsByTxs(cachTxs, mineIndex)
-		if err != nil {
+		//remove block account status
+		if err := GetManager().AccountManager.RevertAccountsByBlock(block); err != nil {
 			return err
 		}
 	}
@@ -534,7 +517,7 @@ func (m *ChainManage) updateStatus(block block.IBlock, isAdd bool) error {
 	//cachTxs = append(cachTxs[:mineIndex], cachTxs[mineIndex+1:]...) //Delete mineTx
 	for _, tx := range block.GetTxs() {
 		if isAdd {
-			GetManager().TransactionManager.RemoveTransaction(tx.GetTxID())
+			GetManager().TransactionManager.RemoveTransaction(*tx.GetTxID())
 		} else {
 			GetManager().TransactionManager.AddTransaction(tx)
 		}

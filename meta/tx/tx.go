@@ -4,35 +4,28 @@ import (
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/meta"
-	"github.com/linkchain/meta/account"
+	"github.com/linkchain/meta/amount"
+	"github.com/linkchain/meta/coin"
 )
-
-type ITxPeer interface {
-	GetID() account.IAccountID
-}
 
 type TxEvent struct{ Tx ITx }
 
 type ITx interface {
-	GetTxID() meta.DataID
+	GetTxID() *meta.TxID
 
 	//tx content
-	SetFrom(from ITxPeer)
-	SetTo(to ITxPeer)
-	SetAmount(meta.IAmount)
-	SetNounce(nounce uint32)
 
-	GetFrom() ITxPeer
-	GetTo() ITxPeer
-	GetAmount() meta.IAmount
-	GetNounce() uint32
+	AddFromCoin(fromcoin coin.IFromCoin)
+	AddToCoin(tocoin coin.IToCoin)
+	AddSignature(signature math.ISignature)
 
-	ChangeFromTo() ITx
+	GetFromCoins() []coin.IFromCoin
+	GetToCoins() []coin.IToCoin
+	GetToValue() *amount.Amount
+	GetVersion() uint32
+	GetType() uint32
+	GetNewFromCoins() []coin.IFromCoin
 
-	//signature
-	Sign() (math.ISignature, error)
-	SetSignature(code []byte)
-	GetSignature() math.ISignature
 	Verify() error
 
 	//serialize

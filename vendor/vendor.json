@@ -9,10 +9,85 @@
 			"revisionTime": "2018-08-29T17:58:32Z"
 		},
 		{
+			"path": "github.com/btcsuite/btcd/btcec",
+			"revision": "cff30e1d23fc9e800b2b5b4b41ef1817dda07e9f",
+			"revisionTime": "2018-09-03T23:29:27Z"
+		},
+		{
+			"path": "github.com/btcsuite/btcd/chaincfg/chainhash",
+			"revision": "cff30e1d23fc9e800b2b5b4b41ef1817dda07e9f",
+			"revisionTime": "2018-09-03T23:29:27Z"
+		},
+		{
 			"checksumSHA1": "aENNVxKxF9h9PfvTIstiAS5I3Lg=",
 			"path": "github.com/davecgh/go-spew/spew",
 			"revision": "d8f796af33cc11cb798c1aaeb27a4ebc5099927d",
 			"revisionTime": "2018-08-30T19:11:22Z"
+		},
+		{
+			"path": "github.com/ethereum/go-ethereum/common",
+			"revision": "2688dab48c9b8ae71b8d95c7678817eaa17f2b53",
+			"revisionTime": "2018-05-14T10:14:17Z"
+		},
+		{
+			"path": "github.com/ethereum/go-ethereum/common/hexutil",
+			"revision": "2688dab48c9b8ae71b8d95c7678817eaa17f2b53",
+			"revisionTime": "2018-05-14T10:14:17Z"
+		},
+		{
+			"path": "github.com/ethereum/go-ethereum/common/math",
+			"revision": "2688dab48c9b8ae71b8d95c7678817eaa17f2b53",
+			"revisionTime": "2018-05-14T10:14:17Z"
+		},
+		{
+			"path": "github.com/ethereum/go-ethereum/core/types",
+			"revision": "2688dab48c9b8ae71b8d95c7678817eaa17f2b53",
+			"revisionTime": "2018-05-14T10:14:17Z"
+		},
+		{
+			"path": "github.com/ethereum/go-ethereum/crypto",
+			"revision": "2688dab48c9b8ae71b8d95c7678817eaa17f2b53",
+			"revisionTime": "2018-05-14T10:14:17Z"
+		},
+		{
+			"path": "github.com/ethereum/go-ethereum/crypto/secp256k1",
+			"revision": "2688dab48c9b8ae71b8d95c7678817eaa17f2b53",
+			"revisionTime": "2018-05-14T10:14:17Z"
+		},
+		{
+			"path": "github.com/ethereum/go-ethereum/crypto/sha3",
+			"revision": "2688dab48c9b8ae71b8d95c7678817eaa17f2b53",
+			"revisionTime": "2018-05-14T10:14:17Z"
+		},
+		{
+			"path": "github.com/ethereum/go-ethereum/ethdb",
+			"revision": "2688dab48c9b8ae71b8d95c7678817eaa17f2b53",
+			"revisionTime": "2018-05-14T10:14:17Z"
+		},
+		{
+			"path": "github.com/ethereum/go-ethereum/log",
+			"revision": "2688dab48c9b8ae71b8d95c7678817eaa17f2b53",
+			"revisionTime": "2018-05-14T10:14:17Z"
+		},
+		{
+			"path": "github.com/ethereum/go-ethereum/metrics",
+			"revision": "2688dab48c9b8ae71b8d95c7678817eaa17f2b53",
+			"revisionTime": "2018-05-14T10:14:17Z"
+		},
+		{
+			"path": "github.com/ethereum/go-ethereum/params",
+			"revision": "2688dab48c9b8ae71b8d95c7678817eaa17f2b53",
+			"revisionTime": "2018-05-14T10:14:17Z"
+		},
+		{
+			"path": "github.com/ethereum/go-ethereum/rlp",
+			"revision": "2688dab48c9b8ae71b8d95c7678817eaa17f2b53",
+			"revisionTime": "2018-05-14T10:14:17Z"
+		},
+		{
+			"path": "github.com/ethereum/go-ethereum/trie",
+			"revision": "2688dab48c9b8ae71b8d95c7678817eaa17f2b53",
+			"revisionTime": "2018-05-14T10:14:17Z"
 		},
 		{
 			"checksumSHA1": "luu+ud4XYZhlCoNnSAwCJlbh0Bg=",
@@ -65,8 +140,8 @@
 		{
 			"checksumSHA1": "iDAyJMnswBRktzVlZSg7qdI5+A8=",
 			"path": "github.com/golang/snappy",
-			"revision": "2e65f85255dbc3072edf28d6b5b8efc472979f5a",
-			"revisionTime": "2018-05-18T05:39:59Z"
+			"revision": "2688dab48c9b8ae71b8d95c7678817eaa17f2b53",
+			"revisionTime": "2018-05-14T10:14:17Z"
 		},
 		{
 			"checksumSHA1": "kH45ZS6tfxl5R6xer2oJIqEp6kQ=",

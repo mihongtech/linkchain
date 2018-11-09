@@ -2,13 +2,15 @@ package cmd
 
 import (
 	"encoding/hex"
+
 	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/function/wallet"
+	"github.com/linkchain/meta/amount"
 	"github.com/linkchain/meta/tx"
 	"github.com/linkchain/node"
 	"github.com/linkchain/poa/manage"
-	"github.com/linkchain/poa/meta"
+	"github.com/linkchain/util"
 	"github.com/spf13/cobra"
 	"strconv"
 )
@@ -71,16 +73,25 @@ var sendMoneyCmd = &cobra.Command{
 			log.Error("send", "error", "please input money:int", "example", "tx send 55b55e136cc6671014029dcbefc42a7db8ad9b9d11f62677a47fd2ed77eeef7b 10")
 			return
 		}
-		amount := meta.NewAmout(int32(a))
-		toAID := meta.NewAccountId(pb)
+		amount := amount.NewAmount(int64(a))
+		toID, err := util.CreateAccountIdByPubKey(hex.EncodeToString(pb.SerializeCompressed()))
+		toCoin := util.CreateToCoin(toID, amount)
+
 		from, err := node.GetWallet().ChooseWAccount(amount)
 		if err != nil {
 			log.Error("send ", "error", "input is more than account's amount", "season", err)
 			return
 		}
-		to := meta.NewAccount(*toAID, *amount, 0)
+		fromCoin, fromAmount, err := from.MakeFromCoin(amount)
+		if err != nil {
+			log.Error("send ", "error", "input is more than account's amount", "season", err)
+			return
+		}
+		toFromCoin := util.CreateToCoin(from.GetAccountID(), fromAmount.Subtraction(*amount))
 
-		transaction := manage.GetManager().TransactionManager.CreateTransaction(from.ConvertAccount(), to, amount)
+		transaction := util.CreateTransaction(fromCoin, toCoin)
+		transaction.AddToCoin(toFromCoin)
+
 		transaction, err = node.GetWallet().SignTransaction(transaction)
 		if err != nil {
 			log.Error("send ", "error", "sign tx is failed", "season", err)
@@ -105,7 +116,7 @@ var importKeyCmd = &cobra.Command{
 			log.Error("importprivkey ", "error", "hex Decode failed")
 			return
 		}
-		wa := wallet.CreateWAccountFromBytes(buffer, 0)
+		wa := wallet.CreateWAccountFromBytes(buffer, amount.NewAmount(0))
 		node.GetWallet().AddWAccount(wa)
 		log.Info("Wallet Info", "new wallet account", wa.GetAccountPubkey())
 	},

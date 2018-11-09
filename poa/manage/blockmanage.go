@@ -3,14 +3,12 @@ package manage
 import (
 	"errors"
 	"sync"
-	"time"
 
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/log"
 	globalconfig "github.com/linkchain/config"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
-	"github.com/linkchain/poa/config"
 	poameta "github.com/linkchain/poa/meta"
 )
 
@@ -45,8 +43,6 @@ func (m *BlockManage) Init(i interface{}) bool {
 	log.Info("BlockManage init...")
 	m.mapBlockIndexByHash = make(map[math.Hash]poameta.Block)
 	//load gensis block
-	// gensisBlock := GetManager().BlockManager.GetGensisBlock()
-	// m.AddBlock(gensisBlock)
 	//load block by chainmanager
 
 	return true
@@ -61,48 +57,9 @@ func (m *BlockManage) Stop() {
 	log.Info("BlockManage stop...")
 }
 
-/** interface: BlockBaseManager **/
-func (m *BlockManage) CreateBlock() (block.IBlock, error) {
-	bestBlock := GetManager().ChainManager.GetBestBlock()
-	if bestBlock != nil {
-		bestHash := bestBlock.GetBlockID()
-		txs := []poameta.Transaction{}
-		header := poameta.NewBlockHeader(config.DefaultBlockVersion, bestBlock.GetHeight()+1, time.Now(), config.DefaultNounce, config.DefaultDifficulty, *bestHash.(*math.Hash), math.Hash{}, math.Hash{}, nil, nil)
-		b := poameta.NewBlock(*header, txs)
-		return m.RebuildBlock(b)
-	} else {
-		return m.GetGensisBlock(), nil
-	}
-}
-
-func (m *BlockManage) RebuildBlock(block block.IBlock) (block.IBlock, error) {
-	pb := *block.(*poameta.Block)
-	root := pb.CalculateTxTreeRoot()
-	pb.Header.SetMerkleRoot(root)
-	return &pb, nil
-}
-
-func (m *BlockManage) SignBlock(block block.IBlock, sign []byte) (block.IBlock, error) {
-	pb := *block.(*poameta.Block)
-	pb.Header.Sign = sign
-	return &pb, nil
-}
-
-/** interface: BlockBaseManager **/
-func (m *BlockManage) GetGensisBlock() block.IBlock {
-
-	block, err := GetManager().ChainManager.GetBlockByHeight(0)
-	if err != nil {
-		log.Error("get genesis block failed")
-		return nil
-	}
-
-	return block
-}
-
 /** interface: BlockPoolManager **/
-func (m *BlockManage) GetBlockByID(hash meta.DataID) (block.IBlock, error) {
-	index, ok := m.readBlock(*hash.(*math.Hash))
+func (m *BlockManage) GetBlockByID(hash meta.BlockID) (block.IBlock, error) {
+	index, ok := m.readBlock(hash)
 	if ok {
 		return &index, nil
 	}
@@ -124,7 +81,7 @@ func (m *BlockManage) GetBlockAncestor(block block.IBlock, height uint32) (block
 		ancestor := block
 		var e error
 		for height < ancestor.GetHeight() {
-			ancestor, e = m.GetBlockByID(ancestor.GetPrevBlockID())
+			ancestor, e = m.GetBlockByID(*ancestor.GetPrevBlockID())
 			if e != nil {
 				log.Error("ChainManage", "GetBlockAncestor error", "can not find ancestor")
 				return nil, errors.New("ChainManage :GetBlockAncestor error->can not find ancestor")
@@ -135,7 +92,7 @@ func (m *BlockManage) GetBlockAncestor(block block.IBlock, height uint32) (block
 }
 
 func (m *BlockManage) AddBlock(block block.IBlock) error {
-	hash := *block.GetBlockID().(*math.Hash)
+	hash := *block.GetBlockID()
 	m.writeBlock(hash, *(block.(*poameta.Block)))
 	return nil
 }
@@ -147,13 +104,13 @@ func (m *BlockManage) AddBlocks(blocks []block.IBlock) error {
 	return nil
 }
 
-func (m *BlockManage) RemoveBlock(hash meta.DataID) error {
-	m.removeBlock(*hash.(*math.Hash))
+func (m *BlockManage) RemoveBlock(hash meta.BlockID) error {
+	m.removeBlock(hash)
 	return nil
 }
 
-func (m *BlockManage) HasBlock(hash meta.DataID) bool {
-	_, ok := m.readBlock(*hash.(*math.Hash))
+func (m *BlockManage) HasBlock(hash meta.BlockID) bool {
+	_, ok := m.readBlock(hash)
 	return ok
 }
 
@@ -161,13 +118,13 @@ func (m *BlockManage) HasBlock(hash meta.DataID) bool {
 func (m *BlockManage) CheckBlock(block block.IBlock) bool {
 	//log.Info("POA CheckBlock ...")
 	croot := block.CalculateTxTreeRoot()
-	if !block.GetMerkleRoot().IsEqual(croot) {
+	if !block.GetMerkleRoot().IsEqual(&croot) {
 		log.Error("POA CheckBlock", "check merkle root", false)
 		return false
 	}
 
 	//check poa
-	prevBlock, err := GetManager().BlockManager.GetBlockByID(block.GetPrevBlockID())
+	prevBlock, err := GetManager().BlockManager.GetBlockByID(*block.GetPrevBlockID())
 
 	if err != nil {
 		log.Error("BlockManage", "CheckBlock", err)

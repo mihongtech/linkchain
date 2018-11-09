@@ -3,7 +3,6 @@ package cmd
 import (
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/log"
-	meta_block "github.com/linkchain/meta/block"
 	"github.com/linkchain/poa/manage"
 	"github.com/spf13/cobra"
 	"strconv"
@@ -12,34 +11,12 @@ import (
 func init() {
 	RootCmd.AddCommand(chainInfoCmd)
 	RootCmd.AddCommand(blockCmd)
-	blockCmd.AddCommand(heightCmd, mineCmd, hashCmd)
+	blockCmd.AddCommand(heightCmd, hashCmd)
 }
 
 var blockCmd = &cobra.Command{
 	Use:   "block",
 	Short: "block command",
-}
-
-var mineCmd = &cobra.Command{
-	Use:   "mine",
-	Short: "generate a new block",
-	Run: func(cmd *cobra.Command, args []string) {
-		block, err := manage.GetManager().BlockManager.CreateBlock()
-		if err != nil {
-			log.Error("mine", "New Block error", err)
-			return
-		}
-		txs := manage.GetManager().TransactionManager.GetAllTransaction()
-		block.SetTx(txs)
-
-		block, err = manage.GetManager().BlockManager.RebuildBlock(block)
-		if err != nil {
-			log.Error("mine", "Rebuild Block error", err)
-			return
-		}
-		manage.GetManager().BlockManager.ProcessBlock(block)
-		manage.GetManager().NewBlockEvent.Post(meta_block.NewMinedBlockEvent{Block: block})
-	},
 }
 
 var heightCmd = &cobra.Command{
@@ -66,7 +43,7 @@ var heightCmd = &cobra.Command{
 		if err != nil {
 			log.Error("getblockbyheight ", "error", err)
 		} else {
-			log.Info("block", "data", block)
+			log.Info("block", "data", block.GetBlockInfo())
 		}
 	},
 }

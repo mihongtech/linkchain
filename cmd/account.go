@@ -38,14 +38,14 @@ var getAccountByPubCmd = &cobra.Command{
 			return
 		}
 
-		id := meta.NewAccountId(pb)
+		id := poameta.NewAccountId(pb)
 
 		a, err := manage.GetManager().AccountManager.GetAccount(id)
 		if err != nil {
 			log.Error("send ", "error", "get account is error", "season", err)
 			return
 		}
-		log.Info("send", "account", a.GetAccountID(), "amount", a.GetAmount().GetInt(), "nounce", a.GetNounce())
+		log.Info("send", "account", a.GetAccountID(), "amount", a.GetAmount().GetInt64(), "nounce", a.GetAmount().GetInt64())
 	},
 }
 

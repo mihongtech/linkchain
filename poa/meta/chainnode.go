@@ -1,22 +1,22 @@
-package meta
+package poameta
 
 import (
-	"github.com/linkchain/common/math"
+	"strconv"
+
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
-	"strconv"
 )
 
 type ChainNode struct {
-	curentHash math.Hash
-	prevHash   math.Hash
+	curentHash meta.BlockID
+	prevHash   meta.BlockID
 	height     uint32
 }
 
 func NewPOAChainNode(block block.IBlock) ChainNode {
 	return ChainNode{
-		curentHash: *block.GetBlockID().(*math.Hash),
-		prevHash:   *block.GetPrevBlockID().(*math.Hash),
+		curentHash: *block.GetBlockID(),
+		prevHash:   *block.GetPrevBlockID(),
 		height:     block.GetHeight()}
 }
 
@@ -24,12 +24,12 @@ func (bn *ChainNode) GetNodeHeight() uint32 {
 	return bn.height
 }
 
-func (bn *ChainNode) GetNodeHash() meta.DataID {
-	return &bn.curentHash
+func (bn *ChainNode) GetNodeHash() meta.BlockID {
+	return bn.curentHash
 }
 
-func (bn *ChainNode) GetPrevHash() meta.DataID {
-	return &bn.prevHash
+func (bn *ChainNode) GetPrevHash() meta.BlockID {
+	return bn.prevHash
 }
 
 func (bn *ChainNode) CheckPrev(prevNode ChainNode) bool {

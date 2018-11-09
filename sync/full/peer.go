@@ -81,19 +81,19 @@ func (p *peer) Info() *PeerInfo {
 
 // Head retrieves a copy of the current head hash and total difficulty of the
 // peer.
-func (p *peer) Head() (hash meta.DataID, height uint64) {
+func (p *peer) Head() (hash meta.BlockID, height uint64) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
 	// copy(hash[:], p.head[:])
-	hash = &math.Hash{}
+	hash = meta.BlockID{}
 	hash.SetBytes(p.head[:])
 	height = p.height
 	return hash, height
 }
 
 // SetHead updates the head hash and total difficulty of the peer.
-func (p *peer) SetHead(hash meta.DataID, height uint64) {
+func (p *peer) SetHead(hash meta.BlockID, height uint64) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -104,7 +104,7 @@ func (p *peer) SetHead(hash meta.DataID, height uint64) {
 
 // MarkBlock marks a block as known for the peer, ensuring that the block will
 // never be propagated to this particular peer.
-func (p *peer) MarkBlock(hash meta.DataID) {
+func (p *peer) MarkBlock(hash meta.BlockID) {
 	// If we reached the memory allowance, drop a previously known block hash
 	for p.knownBlocks.Size() >= maxKnownBlocks {
 		p.knownBlocks.Pop()
@@ -114,7 +114,7 @@ func (p *peer) MarkBlock(hash meta.DataID) {
 
 // MarkTransaction marks a transaction as known for the peer, ensuring that it
 // will never be propagated to this particular peer.
-func (p *peer) MarkTransaction(hash meta.DataID) {
+func (p *peer) MarkTransaction(hash meta.TxID) {
 	// If we reached the memory allowance, drop a previously known transaction hash
 	for p.knownTxs.Size() >= maxKnownTxs {
 		p.knownTxs.Pop()
@@ -156,7 +156,7 @@ func (p *peer) SendBlock(blocks []block.IBlock) error {
 
 // RequestBodies fetches a batch of blocks' bodies corresponding to the hashes
 // specified.
-func (p *peer) RequestBlock(hashes []meta.DataID) error {
+func (p *peer) RequestBlock(hashes []meta.BlockID) error {
 	p.Log().Trace("Fetching batch of block bodies", "count", len(hashes))
 	for _, hash := range hashes {
 		data := &getBlockHeadersData{Hash: hash, Amount: 1}
@@ -167,7 +167,7 @@ func (p *peer) RequestBlock(hashes []meta.DataID) error {
 	return nil
 }
 
-func (p *peer) RequestOneBlock(hash meta.DataID) error {
+func (p *peer) RequestOneBlock(hash meta.BlockID) error {
 	p.Log().Trace("Fetching single block", "hash", hash)
 	data := &getBlockHeadersData{Hash: hash, Amount: 1}
 	log.Debug("Send GetBlockMsg", "query data is", data)
@@ -176,7 +176,7 @@ func (p *peer) RequestOneBlock(hash meta.DataID) error {
 
 // Handshake executes the eth protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(network uint64, height uint64, head meta.DataID, genesis meta.DataID) error {
+func (p *peer) Handshake(network uint64, height uint64, head meta.BlockID, genesis meta.BlockID) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
 	var status statusData // safe to read after two values have been received from errc
@@ -216,7 +216,7 @@ func errResp(code errCode, format string, v ...interface{}) error {
 	return fmt.Errorf("%v - %v", code, fmt.Sprintf(format, v...))
 }
 
-func (p *peer) readStatus(network uint64, status *statusData, genesis meta.DataID) (err error) {
+func (p *peer) readStatus(network uint64, status *statusData, genesis meta.BlockID) (err error) {
 	msg, err := p.rw.ReadMsg()
 	if err != nil {
 		return err
@@ -234,7 +234,7 @@ func (p *peer) readStatus(network uint64, status *statusData, genesis meta.DataI
 	}
 	log.Trace("read status data is", "data", data, "current status is", status)
 	status.Deserialize(&data)
-	if !status.GenesisBlock.IsEqual(genesis) {
+	if !status.GenesisBlock.IsEqual(&genesis) {
 		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status.GenesisBlock, genesis)
 	}
 	if status.NetworkId != network {
@@ -253,7 +253,7 @@ func (p *peer) String() string {
 	)
 }
 
-func (p *peer) RequestBlocksByHash(h meta.DataID, amount int, skip int) error {
+func (p *peer) RequestBlocksByHash(h meta.BlockID, amount int, skip int) error {
 	p.Log().Trace("Fetching block by hash", "hash", h)
 	data := &getBlockHeadersData{Hash: h, Amount: uint64(amount), Skip: uint64(skip)}
 	log.Debug("Send GetBlockMsg", "query data is", data)
@@ -344,7 +344,7 @@ func (ps *peerSet) Len() int {
 
 // PeersWithoutBlock retrieves a list of peers that do not have a given block in
 // their set of known hashes.
-func (ps *peerSet) PeersWithoutBlock(hash meta.DataID) []*peer {
+func (ps *peerSet) PeersWithoutBlock(hash meta.BlockID) []*peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 
@@ -359,7 +359,7 @@ func (ps *peerSet) PeersWithoutBlock(hash meta.DataID) []*peer {
 
 // PeersWithoutTx retrieves a list of peers that do not have a given transaction
 // in their set of known hashes.
-func (ps *peerSet) PeersWithoutTx(hash meta.DataID) []*peer {
+func (ps *peerSet) PeersWithoutTx(hash meta.BlockID) []*peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 

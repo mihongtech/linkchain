@@ -88,7 +88,7 @@ func SetupGenesisBlock(db lcdb.Database, genesis *Genesis) (*global_config.Chain
 		}
 		block, err := genesis.Commit(db)
 
-		hash := math.BytesToHash(block.GetBlockID().(*math.Hash).CloneBytes())
+		hash := math.BytesToHash(block.GetBlockID().CloneBytes())
 		return genesis.Config, hash, err
 	}
 
@@ -152,7 +152,6 @@ func (g *Genesis) ToBlock(db lcdb.Database) *poa_meta.Block {
 		TxRoot:     math.Hash{},
 		Status:     math.Hash{},
 		Difficulty: g.Difficulty,
-		Sign:       nil,
 	}
 
 	//	statedb.Commit(false)
@@ -174,14 +173,15 @@ func (g *Genesis) Commit(db lcdb.Database) (*poa_meta.Block, error) {
 	}
 
 	if err := storage.WriteBlock(db, block); err != nil {
+		log.Info("Commit", "err", err)
 		return nil, err
 	}
 
-	if err := storage.WriteCanonicalHash(db, math.BytesToHash((block.GetBlockID().(*math.Hash)).Bytes()), uint64(block.GetHeight())); err != nil {
+	if err := storage.WriteCanonicalHash(db, *block.GetBlockID(), uint64(block.GetHeight())); err != nil {
 		return nil, err
 	}
 
-	if err := storage.WriteHeadBlockHash(db, math.BytesToHash((block.GetBlockID().(*math.Hash)).Bytes())); err != nil {
+	if err := storage.WriteHeadBlockHash(db, *block.GetBlockID()); err != nil {
 		return nil, err
 	}
 
@@ -189,5 +189,5 @@ func (g *Genesis) Commit(db lcdb.Database) (*poa_meta.Block, error) {
 	if config == nil {
 		config = global_config.DefaultChainConfig
 	}
-	return block, storage.WriteChainConfig(db, block.GetBlockID().(*math.Hash), config)
+	return block, storage.WriteChainConfig(db, block.GetBlockID(), config)
 }

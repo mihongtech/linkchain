@@ -184,11 +184,11 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	var (
 		genesis, _ = pm.blockchain.GetBlockByHeight(0)
 		current    = pm.blockchain.GetBestBlock()
-		hash       = current.GetBlockID()
+		hash       = *current.GetBlockID()
 		number     = uint64(current.GetHeight())
 	)
 	p.Log().Debug("Linkchain handshake data", "genesis", genesis, "number", current.GetHeight(), "current", hash)
-	if err := p.Handshake(pm.networkId, number, hash, genesis.GetBlockID()); err != nil {
+	if err := p.Handshake(pm.networkId, number, hash, *genesis.GetBlockID()); err != nil {
 		p.Log().Debug("Linkchain handshake failed", "err", err)
 		return err
 	}
@@ -346,11 +346,11 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		block.Deserialize(&b)
 
 		// Mark the peer as owning the block and schedule it for import
-		p.MarkBlock(block.GetBlockID())
+		p.MarkBlock(*block.GetBlockID())
 		pm.fetcher.Enqueue(p.id, block)
 
 		var (
-			trueHead = block.GetPrevBlockID()
+			trueHead = *block.GetPrevBlockID()
 		)
 		log.Debug("Receive NewBlockMsg", "block is", block)
 		p.SetHead(trueHead, uint64(block.GetHeight()))
@@ -366,7 +366,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		transaction := &poa_meta.Transaction{}
 		transaction.Deserialize(&t)
-		p.MarkTransaction(transaction.GetTxID())
+		p.MarkTransaction(*transaction.GetTxID())
 		log.Debug("Receive TxMsg", "transaction is", transaction)
 		pm.txmanager.AddTransaction(transaction)
 		//		for _, t := range pm.txmanager.GetAllTransaction() {
@@ -405,9 +405,9 @@ func (pm *ProtocolManager) removePeer(id string) {
 // NodeInfo represents a short summary of the Linkchain sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {
-	Network uint64      `json:"network"` // Linkchain network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
-	Genesis meta.DataID `json:"genesis"` // hash of the host's genesis block
-	Head    meta.DataID `json:"head"`    // hash of the host's best owned block
+	Network uint64       `json:"network"` // Linkchain network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
+	Genesis meta.BlockID `json:"genesis"` // hash of the host's genesis block
+	Head    meta.BlockID `json:"head"`    // hash of the host's best owned block
 }
 
 // NodeInfo retrieves some protocol metadata about the running host node.
@@ -415,8 +415,8 @@ func (self *ProtocolManager) NodeInfo() *NodeInfo {
 	genesis, _ := self.blockchain.GetBlockByHeight(0)
 	return &NodeInfo{
 		Network: self.networkId,
-		Genesis: genesis.GetBlockID(),
-		Head:    self.blockchain.GetBestBlock().GetBlockID(),
+		Genesis: *genesis.GetBlockID(),
+		Head:    *self.blockchain.GetBestBlock().GetBlockID(),
 	}
 }
 
@@ -424,7 +424,7 @@ func (self *ProtocolManager) txBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.txCh:
-			self.BroadcastTx(event.Tx.GetTxID(), event.Tx)
+			self.BroadcastTx(*event.Tx.GetTxID(), event.Tx)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-self.txSub.Err():
@@ -448,7 +448,7 @@ func (self *ProtocolManager) minedBroadcastLoop() {
 // BroadcastBlock will either propagate a block to a subset of it's peers, or
 // will only announce it's availability (depending what's requested).
 func (pm *ProtocolManager) BroadcastBlock(block block.IBlock, propagate bool) {
-	hash := block.GetBlockID()
+	hash := *block.GetBlockID()
 	peers := pm.peers.PeersWithoutBlock(hash)
 
 	// If propagation is requested, send to a subset of the peer
@@ -473,7 +473,7 @@ func (pm *ProtocolManager) BroadcastBlock(block block.IBlock, propagate bool) {
 
 // BroadcastTx will propagate a transaction to all peers which are not known to
 // already have the given transaction.
-func (pm *ProtocolManager) BroadcastTx(hash meta.DataID, t tx.ITx) {
+func (pm *ProtocolManager) BroadcastTx(hash meta.TxID, t tx.ITx) {
 	// Broadcast transaction to a batch of peers not knowing about it
 	peers := pm.peers.PeersWithoutTx(hash)
 	//FIXME include this again: peers = peers[:int(math.Sqrt(float64(len(peers))))]

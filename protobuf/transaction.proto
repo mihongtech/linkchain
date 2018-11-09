@@ -8,27 +8,45 @@ message Transactions {
 
 message Transaction {
     required uint32 version = 1;
-    required TransactionPeer from = 2;
-    required TransactionPeer to = 3;
-    required Amount amount = 4;
-    required uint32 nounce = 5;
+    required uint32 type = 2;
+    required TransactionFrom from = 3;
+    required TransactionTo to = 4;
+    repeated Signature sign = 5;
     optional bytes data = 6;
-    optional bytes sign = 7;
+
 }
 
-message TransactionPeer {
-    required AccountID accountID = 1;
-    optional bytes extra = 2 ;
+message FromCoin {
+    required AccountID id = 1;
+    repeated Ticket ticket = 2 ;
+}
+
+message TransactionFrom {
+    repeated FromCoin coins = 1;
+}
+
+message ToCoin {
+    required AccountID id = 1;
+    required bytes value = 2;
+}
+
+message TransactionTo {
+    repeated ToCoin coins = 1;
+}
+
+message Ticket {
+    required Hash txid = 1;
+	required uint32 index = 2;
 }
 
 message AccountID {
-    required bytes id=1;
+    required bytes id = 1;
+}
+
+message Signature {
+    optional bytes code = 1;
 }
 
 message Hash {
     required bytes data = 1;
-}
-
-message Amount {
-    required int32 value = 1;
 }

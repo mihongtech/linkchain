@@ -2,8 +2,9 @@ package manager
 
 import (
 	"github.com/linkchain/common"
+	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/account"
-	"github.com/linkchain/meta/tx"
+	"github.com/linkchain/meta/block"
 )
 
 type AccountManager interface {
@@ -11,17 +12,15 @@ type AccountManager interface {
 
 	AccountPoolManager
 
-	NewAccount() account.IAccount
+	//NewAccount() account.IAccount
 }
 
 type AccountPoolManager interface {
 	AddAccount(iAccount account.IAccount) error
-	GetAccount(id account.IAccountID) (account.IAccount, error)
+	GetAccount(id meta.IAccountID) (account.IAccount, error)
 	GetAllAccounts()
-	RemoveAccount(id account.IAccountID) error
+	RemoveAccount(id meta.IAccountID) error
 
-	GetAccountRelateTXs(txs tx.ITx, isMine bool) ([]account.IAccount, error)
-	UpdateAccountsByTxs(txs []tx.ITx, mineIndex int) error
-	RevertAccountsByTxs(txs []tx.ITx, mineIndex int) error
-	CheckTxAccount(tx tx.ITx) error
+	UpdateAccountsByBlock(block block.IBlock) error
+	RevertAccountsByBlock(block block.IBlock) error
 }
