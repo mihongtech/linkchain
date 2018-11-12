@@ -210,8 +210,13 @@ func (tc *ToCoin) GetId() meta.IAccountID {
 func (tc *ToCoin) SetValue(value *amount.Amount) {
 	tc.Value = *value
 }
+
 func (tc *ToCoin) GetValue() *amount.Amount {
 	return &tc.Value
+}
+
+func (tc *ToCoin) CheckValue() bool {
+	return tc.Value.GetInt64() > 0
 }
 
 //Serialize/Deserialize

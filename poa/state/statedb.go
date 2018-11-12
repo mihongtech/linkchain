@@ -88,6 +88,9 @@ func (s *StateDB) UpdateAccountsByBlock(block block.IBlock) error {
 
 		tcs := tx.GetToCoins()
 		for _, tc := range tcs {
+			if !tc.CheckValue() {
+				return errors.New("Transaction toCoin-Value need plus 0")
+			}
 			if cacheA, ok := s.accounts[tc.GetId().String()]; ok {
 				processCache[cacheA.GetAccountID().String()] = cacheA
 			}

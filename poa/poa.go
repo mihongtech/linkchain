@@ -10,7 +10,7 @@ type Service struct {
 
 func (s *Service) Init(i interface{}) bool {
 	log.Info("poa consensus service init...")
-	return s.GetManager().Init(nil)
+	return s.GetManager().Init(i)
 }
 
 func (s *Service) Start() bool {

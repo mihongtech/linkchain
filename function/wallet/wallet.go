@@ -19,7 +19,7 @@ import (
 	"github.com/linkchain/util"
 )
 
-var minePriv, _ = hex.DecodeString("55b55e136cc6671014029dcbefc42a7db8ad9b9d11f62677a47fd2ed77eeef7b")
+var minePriv, _ = hex.DecodeString("7a9c6f2b865c98c9fe174869de5818f4c62bc845441c08269487cdba6688f6b1")
 
 type WAccount struct {
 	privKey btcec.PrivateKey
@@ -167,7 +167,6 @@ func (w *Wallet) ReScanAllAccount() {
 }
 
 func (w *Wallet) UpdateWalletAccount(account account.IAccount) error {
-
 	a, ok := w.accounts[account.GetAccountID().String()]
 	if !ok {
 		return errors.New("GetAccountID can not find account")
