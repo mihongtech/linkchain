@@ -470,6 +470,8 @@ func (m *ChainManage) updateChainIndex() bool {
 	}
 
 	hash := m.mainChainIndex[len(m.mainChainIndex)-1].GetNodeHash()
+	// TODO: add code to WriteCanonicalHash
+	// storage.WriteCanonicalHash(m.db, math.BytesToHash(hash.CloneBytes()), uint64(m.mainChainIndex[len(m.mainChainIndex)-1].GetNodeHeight()))
 	storage.WriteHeadBlockHash(m.db, math.BytesToHash(hash.CloneBytes()))
 	return true
 }
