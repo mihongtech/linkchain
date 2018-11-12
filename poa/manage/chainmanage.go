@@ -140,7 +140,7 @@ func (m *ChainManage) LoadBlocks() error {
 	for i := len(blocks) - 1; i >= 0; i-- {
 		log.Debug("sort block is", "block", blocks[i], "hash", blocks[i].GetBlockID())
 		m.sortChains(blocks[i])
-		m.updateChain()
+		m.UpdateChain()
 	}
 
 	return nil
