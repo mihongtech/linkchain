@@ -7,6 +7,7 @@ import (
 
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/config"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
 	"github.com/linkchain/meta/chain"
@@ -41,7 +42,7 @@ func (s *Storage) Init(i interface{}) bool {
 	//load genesis from storage
 	var err error
 	name := "chaindata"
-
+	s.dataDir = i.(*config.LinkChainConfig).DataDir
 	s.db, err = s.OpenDatabase(name, 1024, 256)
 	if err != nil {
 		return false
@@ -54,6 +55,8 @@ func (s *Storage) OpenDatabase(name string, cache, handles int) (lcdb.Database, 
 	if s.dataDir == "" {
 		return lcdb.NewMemDatabase()
 	}
+
+	log.Info("pash is", "path", s.resolvePath(name))
 	return lcdb.NewLDBDatabase(s.resolvePath(name), cache, handles)
 }
 
