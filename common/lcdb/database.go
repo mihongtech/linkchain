@@ -24,6 +24,13 @@ type LDBDatabase struct {
 	log log.Logger // Contextual logger tracking the database path
 }
 
+//func (n *Node) OpenDatabase(name string, cache, handles int) (lcdb.Database, error) {
+//	if n.config.DataDir == "" {
+//		return lcdb.NewMemDatabase()
+//	}
+//	return lcdb.NewLDBDatabase(n.config.resolvePath(name), cache, handles)
+//}
+
 // NewLDBDatabase returns a LevelDB wrapped object.
 func NewLDBDatabase(file string, cache int, handles int) (*LDBDatabase, error) {
 	logger := log.New("database", file)
