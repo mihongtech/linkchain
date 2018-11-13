@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -11,9 +12,13 @@ import (
 )
 
 func main() {
+	var (
+		loglevel = flag.Int("loglevel", 3, "log level")
+	)
+	flag.Parse()
 	//init log
 	log.Root().SetHandler(
-		log.LvlFilterHandler(log.Lvl(log.LvlInfo),
+		log.LvlFilterHandler(log.Lvl(*loglevel),
 			log.StreamHandler(os.Stdout, log.TerminalFormat(true))))
 
 	start := strings.Fields("start")
