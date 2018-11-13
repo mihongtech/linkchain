@@ -8,6 +8,8 @@ import (
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/config"
+	"github.com/linkchain/consensus"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/account"
 	"github.com/linkchain/meta/amount"
@@ -117,7 +119,8 @@ type Wallet struct {
 func (w *Wallet) Init(i interface{}) bool {
 	log.Info("Wallet init...")
 	w.accounts = make(map[string]WAccount)
-	w.am = *i.(*manage.AccountManage)
+	consensusService := i.(*config.LinkChainConfig).ConsensusService.(*consensus.Service)
+	w.am = *(consensusService.GetAccountManager().(*manage.AccountManage))
 	return true
 }
 

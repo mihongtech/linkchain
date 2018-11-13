@@ -8,6 +8,7 @@ import (
 	"github.com/linkchain/common"
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/config"
 	"github.com/linkchain/consensus"
 	"github.com/linkchain/function/miner"
 	"github.com/linkchain/function/wallet"
@@ -27,18 +28,22 @@ var (
 func Init() bool {
 	log.Info("Node init...")
 
+	globalConfig := &config.LinkChainConfig{}
+
 	//consensus init
 	if !svcList[0].Init(nil) {
 		return false
 	}
 
+	globalConfig.ConsensusService = svcList[0]
+
 	//wallet init
-	if !svcList[1].Init(GetConsensusService().GetAccountManager()) {
+	if !svcList[1].Init(globalConfig) {
 		return false
 	}
 
 	//p2p init
-	if !svcList[2].Init(GetConsensusService()) {
+	if !svcList[2].Init(globalConfig) {
 		return false
 	}
 
