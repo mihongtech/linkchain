@@ -32,12 +32,14 @@ func Init() bool {
 
 	globalConfig := &config.LinkChainConfig{}
 	//storage init
-	if !svcList[0].Init(nil) {
+	if !svcList[0].Init(globalConfig) {
 		return false
+	} else {
+		globalConfig.StorageService = svcList[0]
 	}
 
 	//consensus init
-	if !svcList[1].Init(GetStorage()) {
+	if !svcList[1].Init(globalConfig) {
 		return false
 	}
 

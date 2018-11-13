@@ -9,6 +9,7 @@ import (
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/log"
+	globalconfig "github.com/linkchain/config"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/block"
 	"github.com/linkchain/poa/config"
@@ -28,7 +29,7 @@ func (m *ChainManage) Init(i interface{}) bool {
 	log.Info("ChainManage init...")
 
 	//load genesis from storage
-	m.db = i.(*storage.Storage).GetDB()
+	m.db = i.(*globalconfig.LinkChainConfig).StorageService.(*storage.Storage).GetDB()
 
 	hash, err := m.InitGenesis()
 	if err != nil {
