@@ -2,18 +2,14 @@ package config
 
 import (
 	"os"
+	"os/user"
 	"path/filepath"
-	"strings"
+	"runtime"
 
 	"github.com/linkchain/common"
 )
 
 type LinkChainConfig struct {
-	// Name sets the instance name of the node. It must not contain the / character and is
-	// used in the devp2p node identifier. The instance name of geth is "geth". If no
-	// value is specified, the basename of the current executable is used.
-	Name string `toml:"-"`
-
 	// DataDir is the file system folder the node should use for any data storage
 	// requirements. The configured data directory will not be directly shared with
 	// registered services, instead those can use utility methods to create/access
@@ -25,32 +21,30 @@ type LinkChainConfig struct {
 	ListenAddress    string
 }
 
-func (c *LinkChainConfig) instanceDir() string {
-	if c.DataDir == "" {
-		return ""
-	}
-	return filepath.Join(c.DataDir, c.name())
-}
-
-func (c *LinkChainConfig) name() string {
-	if c.Name == "" {
-		progname := strings.TrimSuffix(filepath.Base(os.Args[0]), ".exe")
-		if progname == "" {
-			panic("empty executable name, set Config.Name")
+// DefaultDataDir is the default data directory to use for the databases and other
+// persistence requirements.
+func DefaultDataDir() string {
+	// Try to place the data folder in the user's home dir
+	home := homeDir()
+	if home != "" {
+		if runtime.GOOS == "darwin" {
+			return filepath.Join(home, "Library", "Linkchain")
+		} else if runtime.GOOS == "windows" {
+			return filepath.Join(home, "AppData", "Roaming", "Linkchain")
+		} else {
+			return filepath.Join(home, ".linkchain")
 		}
-		return progname
 	}
-	return c.Name
+	// As we cannot guess a stable location, return empty and handle later
+	return ""
 }
 
-// resolvePath resolves path in the instance directory.
-func (c *LinkChainConfig) resolvePath(path string) string {
-	if filepath.IsAbs(path) {
-		return path
+func homeDir() string {
+	if home := os.Getenv("HOME"); home != "" {
+		return home
 	}
-	if c.DataDir == "" {
-		return ""
+	if usr, err := user.Current(); err == nil {
+		return usr.HomeDir
 	}
-
-	return filepath.Join(c.instanceDir(), path)
+	return ""
 }

@@ -17,7 +17,7 @@ func main() {
 	var (
 		logLevel   = flag.Int("loglevel", 3, "log level")
 		listenPort = flag.Int("listenport", 40000, "linkchain listen port")
-		dataDir    = flag.String("datadir", ".linkchain", "linkchain data dir")
+		dataDir    = flag.String("datadir", config.DefaultDataDir(), "linkchain data dir")
 	)
 	flag.Parse()
 
