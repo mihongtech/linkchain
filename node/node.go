@@ -22,10 +22,9 @@ var (
 	}
 )
 
-func Init() bool {
+func Init(globalConfig *config.LinkChainConfig) bool {
 	log.Info("Node init...")
 
-	globalConfig := &config.LinkChainConfig{}
 	//storage init
 	if !svcList[0].Init(globalConfig) {
 		return false
@@ -69,6 +68,10 @@ func Run() {
 
 	/*block :=svcList[1].(*consensus.Service).GetBlockManager().CreateBlock()
 	svcList[1].(*consensus.Service).GetBlockManager().ProcessBlock(block)*/
+}
+
+func Stop() {
+	// TODO implement me
 }
 
 //get service

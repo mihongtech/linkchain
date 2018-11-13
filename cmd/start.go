@@ -13,7 +13,7 @@ var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "start linkchain node",
 	Run: func(cmd *cobra.Command, args []string) {
-		if !node.Init() {
+		if !node.Init(nil) {
 			return
 		}
 		node.Run()

@@ -9,44 +9,40 @@ import (
 
 	"github.com/linkchain/cmd"
 	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/config"
+	"github.com/linkchain/node"
 )
 
 func main() {
 	var (
-		loglevel = flag.Int("loglevel", 3, "log level")
+		logLevel   = flag.Int("loglevel", 3, "log level")
+		listenPort = flag.Int("listenport", 40000, "linkchain listen port")
+		dataDir    = flag.String("datadir", ".linkchain", "linkchain data dir")
 	)
 	flag.Parse()
+
 	//init log
 	log.Root().SetHandler(
-		log.LvlFilterHandler(log.Lvl(*loglevel),
+		log.LvlFilterHandler(log.Lvl(*logLevel),
 			log.StreamHandler(os.Stdout, log.TerminalFormat(true))))
 
-	start := strings.Fields("start")
+	// init config
+	globalConfig := &config.LinkChainConfig{}
+	globalConfig.ListenAddress = fmt.Sprintf(":%d", *listenPort)
+	globalConfig.DataDir = *dataDir
 
-	cmd.RootCmd.SetArgs(start)
-	cmd.RootCmd.Execute()
+	// start node
+	if !node.Init(globalConfig) {
+		return
+	}
+	node.Run()
+	defer node.Stop()
 
-	/*time.Sleep(time.Duration(1) * time.Second)
+	// start console cmd
+	startCmd()
+}
 
-	cmd.RootCmd.SetArgs(send)
-	cmd.RootCmd.Execute()
-
-	time.Sleep(time.Duration(1) * time.Second)
-
-	mine := strings.Fields("mine")
-
-	cmd.RootCmd.SetArgs(mine)
-	cmd.RootCmd.Execute()
-
-	time.Sleep(time.Duration(1) * time.Second)
-
-	cmd.RootCmd.SetArgs(mine)
-	cmd.RootCmd.Execute()*/
-	/*mine := strings.Fields("mine")
-
-	cmd.RootCmd.SetArgs(mine)
-	cmd.RootCmd.Execute()*/
-
+func startCmd() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print(">")

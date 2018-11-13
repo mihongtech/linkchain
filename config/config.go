@@ -22,7 +22,7 @@ type LinkChainConfig struct {
 	DataDir          string
 	ConsensusService common.IService
 	StorageService   common.IService
-	ListenPort       int
+	ListenAddress    string
 }
 
 func (c *LinkChainConfig) instanceDir() string {

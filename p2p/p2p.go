@@ -10,6 +10,7 @@ import (
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/common/util/mclock"
+	"github.com/linkchain/config"
 	"github.com/linkchain/p2p/message"
 	"github.com/linkchain/p2p/netutil"
 	"github.com/linkchain/p2p/node"
@@ -131,7 +132,7 @@ type peerDrop struct {
 func (srv *Service) Init(i interface{}) bool {
 	log.Info("p2p service init...")
 	// TODO: init config
-	srv.ListenAddr = "0.0.0.0:40000"
+	srv.ListenAddr = i.(*config.LinkChainConfig).ListenAddress
 	srv.PrivateKey, _ = btcec.NewPrivateKey(btcec.S256())
 	srv.sync = &data_sync.Service{}
 	srv.sync.Init(i)
