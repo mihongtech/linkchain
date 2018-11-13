@@ -32,6 +32,8 @@ type IToCoin interface {
 
 	SetValue(value *amount.Amount)
 	GetValue() *amount.Amount
+	CheckValue() bool
+
 	//serialize
 	serialize.ISerialize
 }

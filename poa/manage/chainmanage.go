@@ -28,11 +28,8 @@ func (m *ChainManage) Init(i interface{}) bool {
 	log.Info("ChainManage init...")
 
 	//load genesis from storage
-	var err error
-	m.db, err = lcdb.NewLDBDatabase("data", 1024, 256)
-	if err != nil {
-		return false
-	}
+	m.db = i.(*storage.Storage).GetDB()
+
 	hash, err := m.InitGenesis()
 	if err != nil {
 		log.Error("Init genesis failed , exit", "err", err)
@@ -240,14 +237,14 @@ func (m *ChainManage) GetBlockChainInfo() string {
 		log.Info("ChainManage chains", "chainId", i, "chainHeight", chain.GetHeight(), "bestHash", chain.GetLastBlock().GetBlockID().GetString())
 	}
 
-	/*for e := m.mainChain.GetLastElement(); e != nil; e = e.Prev() {
+	for e := m.mainChain.GetLastElement(); e != nil; e = e.Prev() {
 		currentNode := e.Value.(poameta.ChainNode)
 		log.Info("ChainManage mainchain", "Height", currentNode.GetNodeHeight(), "current hash", currentNode.GetNodeHash(), "prev hash", currentNode.GetPrevHash())
-	}*/
+	}
 
-	/*for _, b := range m.mainChainIndex {
+	for _, b := range m.mainChainIndex {
 		log.Info("ChainManage mainchainIndex", "chainHeight", b.GetNodeHeight(), "bestHash", b.GetNodeHash())
-	}*/
+	}
 
 	return "this is poa chain"
 }
@@ -516,7 +513,6 @@ func (m *ChainManage) updateStatus(block block.IBlock, isAdd bool) error {
 
 	//update tx pool
 	//update normal account status
-	//cachTxs = append(cachTxs[:mineIndex], cachTxs[mineIndex+1:]...) //Delete mineTx
 	for _, tx := range block.GetTxs() {
 		if isAdd {
 			GetManager().TransactionManager.RemoveTransaction(*tx.GetTxID())

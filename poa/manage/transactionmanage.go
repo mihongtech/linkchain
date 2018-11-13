@@ -65,8 +65,13 @@ func (m *TransactionManage) CheckTx(tx tx.ITx) bool {
 		return false
 	}
 
-	//TODO
-	//err = GetManager().AccountManager.CheckTxAccount(tx)
+	//Check Tx Amount > 0
+	for _, coin := range tx.GetToCoins() {
+		if !coin.CheckValue() {
+			log.Error("POA CheckTx", "failed", "Transaction toCoin-Value need plus 0")
+			return false
+		}
+	}
 
 	if err != nil {
 		log.Error("POA CheckTx", "failed", err)

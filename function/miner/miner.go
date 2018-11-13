@@ -85,10 +85,11 @@ func (w *Miner) StartMine() {
 	w.minerMtx.Unlock()
 	for true {
 		w.minerMtx.Lock()
-		if !w.isMining {
+		tempMing := w.isMining
+		w.minerMtx.Unlock()
+		if !tempMing {
 			break
 		}
-		w.minerMtx.Unlock()
 		w.MineBlock()
 		time.Sleep(time.Duration(config.DefaultPeriod) * time.Second)
 	}

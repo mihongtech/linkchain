@@ -63,8 +63,6 @@ func (m *AccountManage) RemoveAccount(id meta.IAccountID) error {
 //TODO need to test
 //update accountmanage by tx when add block on chain and if error message is nil,update success.
 func (m *AccountManage) UpdateAccountsByBlock(block block.IBlock) error {
-
-	//Notice wallet
 	err := m.stateDB.UpdateAccountsByBlock(block)
 	m.NewWalletEvent.Post(events.WAccountEvent{IsUpdate: true})
 	return err
