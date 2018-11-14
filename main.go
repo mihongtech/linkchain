@@ -15,9 +15,10 @@ import (
 
 func main() {
 	var (
-		logLevel   = flag.Int("loglevel", 3, "log level")
-		listenPort = flag.Int("listenport", 40000, "linkchain listen port")
-		dataDir    = flag.String("datadir", config.DefaultDataDir(), "linkchain data dir")
+		logLevel    = flag.Int("loglevel", 3, "log level")
+		listenPort  = flag.Int("port", 40000, "linkchain listen port")
+		dataDir     = flag.String("datadir", config.DefaultDataDir(), "linkchain data dir")
+		genesispath = flag.String("genesis", "genesis.json", "linkchain genesis config file path")
 	)
 	flag.Parse()
 
@@ -30,6 +31,7 @@ func main() {
 	globalConfig := &config.LinkChainConfig{}
 	globalConfig.ListenAddress = fmt.Sprintf(":%d", *listenPort)
 	globalConfig.DataDir = *dataDir
+	globalConfig.GenesisPath = *genesispath
 
 	// start node
 	if !node.Init(globalConfig) {

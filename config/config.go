@@ -16,6 +16,7 @@ type LinkChainConfig struct {
 	// databases or flat files. This enables ephemeral nodes which can fully reside
 	// in memory.
 	DataDir          string
+	GenesisPath      string
 	ConsensusService common.IService
 	StorageService   common.IService
 	ListenAddress    string
