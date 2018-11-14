@@ -2,6 +2,7 @@ package manager
 
 import (
 	"github.com/linkchain/common"
+	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/account"
 	"github.com/linkchain/meta/block"
@@ -9,7 +10,7 @@ import (
 
 type AccountManager interface {
 	common.IService
-
+	GetWalletEvent() *event.TypeMux
 	AccountPoolManager
 
 	//NewAccount() account.IAccount

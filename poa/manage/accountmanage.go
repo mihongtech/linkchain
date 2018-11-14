@@ -82,3 +82,7 @@ func (m *AccountManage) RevertAccountsByBlock(block block.IBlock) error {
 func (m *AccountManage) GetAllAccounts() {
 	m.stateDB.GetAllAccount()
 }
+
+func (m *AccountManage) GetWalletEvent() *event.TypeMux {
+	return m.NewWalletEvent
+}

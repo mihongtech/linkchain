@@ -49,7 +49,7 @@ func Init(globalConfig *config.LinkChainConfig) bool {
 		return false
 	}
 
-	//storage init
+	//miner init
 	if !svcList[4].Init(nil) {
 		return false
 	}

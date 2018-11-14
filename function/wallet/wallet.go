@@ -10,13 +10,13 @@ import (
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/config"
 	"github.com/linkchain/consensus"
+	"github.com/linkchain/consensus/manager"
 	"github.com/linkchain/meta"
 	"github.com/linkchain/meta/account"
 	"github.com/linkchain/meta/amount"
 	"github.com/linkchain/meta/coin"
 	"github.com/linkchain/meta/events"
 	"github.com/linkchain/meta/tx"
-	"github.com/linkchain/poa/manage"
 	poameta "github.com/linkchain/poa/meta"
 	"github.com/linkchain/util"
 )
@@ -112,7 +112,7 @@ func (wa *WAccount) Sign(messageHash []byte) math.ISignature {
 
 type Wallet struct {
 	accounts         map[string]WAccount
-	am               manage.AccountManage
+	am               manager.AccountManager
 	updateAccountSub *event.TypeMuxSubscription
 }
 
@@ -120,7 +120,7 @@ func (w *Wallet) Init(i interface{}) bool {
 	log.Info("Wallet init...")
 	w.accounts = make(map[string]WAccount)
 	consensusService := i.(*config.LinkChainConfig).ConsensusService.(*consensus.Service)
-	w.am = *(consensusService.GetAccountManager().(*manage.AccountManage))
+	w.am = consensusService.GetAccountManager()
 	return true
 }
 
@@ -130,7 +130,7 @@ func (w *Wallet) Start() bool {
 	gensisKey := hex.EncodeToString(gensisWA.privKey.PubKey().SerializeCompressed())
 
 	w.accounts[gensisKey] = gensisWA
-	w.updateAccountSub = w.am.NewWalletEvent.Subscribe(events.WAccountEvent{})
+	w.updateAccountSub = w.am.GetWalletEvent().Subscribe(events.WAccountEvent{})
 	w.ReScanAllAccount()
 	go w.updateWalletLoop()
 
