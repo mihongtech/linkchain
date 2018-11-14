@@ -30,8 +30,8 @@ func (m *ChainManage) Init(i interface{}) bool {
 
 	//load genesis from storage
 	m.db = i.(*globalconfig.LinkChainConfig).StorageService.(*storage.Storage).GetDB()
-
-	hash, err := m.InitGenesis()
+	genesisPath := "genesis.json"
+	hash, err := m.InitGenesis(genesisPath)
 	if err != nil {
 		log.Error("Init genesis failed , exit", "err", err)
 		return false
@@ -70,8 +70,7 @@ func (m *ChainManage) Stop() {
 	log.Info("ChainManage stop...")
 }
 
-func (m *ChainManage) InitGenesis() (math.Hash, error) {
-	genesisPath := "genesis.json"
+func (m *ChainManage) InitGenesis(genesisPath string) (math.Hash, error) {
 	if len(genesisPath) == 0 {
 		return math.Hash{}, errors.New("genesis file is nil")
 	}
