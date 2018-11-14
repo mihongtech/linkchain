@@ -92,7 +92,7 @@ func (m *ChainManage) InitGenesis(genesisPath string) (math.Hash, error) {
 
 	_, hash, err := config.SetupGenesisBlock(m.db, genesis)
 	if err != nil {
-		log.Error("Setup genesis failed", err)
+		log.Error("Setup genesis failed", "err", err)
 		return math.Hash{}, errors.New("Setup genesis failed")
 	}
 
