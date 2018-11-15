@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/linkchain/common/lcdb"
-	_ "github.com/linkchain/common/math"
+	"github.com/linkchain/common/math"
 	"github.com/linkchain/poa/meta"
 )
 
@@ -37,112 +37,63 @@ func TestBlockStorage(t *testing.T) {
 	}
 }
 
-// Tests that partial block contents don't get reassembled into full blocks.
-//func TestPartialBlockStorage(t *testing.T) {
-//	db, _ := lcdb.NewMemDatabase()
-//	block := types.NewBlockWithHeader(&types.Header{
-//		Extra:       []byte("test block"),
-//		UncleHash:   types.EmptyUncleHash,
-//		TxHash:      types.EmptyRootHash,
-//		ReceiptHash: types.EmptyRootHash,
-//	})
-//	// Store a header and check that it's not recognized as a block
-//	if err := WriteHeader(db, block.Header()); err != nil {
-//		t.Fatalf("Failed to write header into database: %v", err)
-//	}
-//	if entry := GetBlock(db, block.Hash(), block.NumberU64()); entry != nil {
-//		t.Fatalf("Non existent block returned: %v", entry)
-//	}
-//	DeleteHeader(db, block.Hash(), block.NumberU64())
-//
-//	// Store a body and check that it's not recognized as a block
-//	if err := WriteBody(db, block.Hash(), block.NumberU64(), block.Body()); err != nil {
-//		t.Fatalf("Failed to write body into database: %v", err)
-//	}
-//	if entry := GetBlock(db, block.Hash(), block.NumberU64()); entry != nil {
-//		t.Fatalf("Non existent block returned: %v", entry)
-//	}
-//	DeleteBody(db, block.Hash(), block.NumberU64())
-//
-//	// Store a header and a body separately and check reassembly
-//	if err := WriteHeader(db, block.Header()); err != nil {
-//		t.Fatalf("Failed to write header into database: %v", err)
-//	}
-//	if err := WriteBody(db, block.Hash(), block.NumberU64(), block.Body()); err != nil {
-//		t.Fatalf("Failed to write body into database: %v", err)
-//	}
-//	if entry := GetBlock(db, block.Hash(), block.NumberU64()); entry == nil {
-//		t.Fatalf("Stored block not found")
-//	} else if entry.Hash() != block.Hash() {
-//		t.Fatalf("Retrieved block mismatch: have %v, want %v", entry, block)
-//	}
-//}
-//
-//// Tests that canonical numbers can be mapped to hashes and retrieved.
-//func TestCanonicalMappingStorage(t *testing.T) {
-//	db, _ := lcdb.NewMemDatabase()
-//
-//	// Create a test canonical number and assinged hash to move around
-//	hash, number := common.Hash{0: 0xff}, uint64(314)
-//	if entry := GetCanonicalHash(db, number); entry != (common.Hash{}) {
-//		t.Fatalf("Non existent canonical mapping returned: %v", entry)
-//	}
-//	// Write and verify the TD in the database
-//	if err := WriteCanonicalHash(db, hash, number); err != nil {
-//		t.Fatalf("Failed to write canonical mapping into database: %v", err)
-//	}
-//	if entry := GetCanonicalHash(db, number); entry == (common.Hash{}) {
-//		t.Fatalf("Stored canonical mapping not found")
-//	} else if entry != hash {
-//		t.Fatalf("Retrieved canonical mapping mismatch: have %v, want %v", entry, hash)
-//	}
-//	// Delete the TD and verify the execution
-//	DeleteCanonicalHash(db, number)
-//	if entry := GetCanonicalHash(db, number); entry != (common.Hash{}) {
-//		t.Fatalf("Deleted canonical mapping returned: %v", entry)
-//	}
-//}
-//
-//// Tests that head headers and head blocks can be assigned, individually.
-//func TestHeadStorage(t *testing.T) {
-//	db, _ := lcdb.NewMemDatabase()
-//
-//	blockHead := types.NewBlockWithHeader(&types.Header{Extra: []byte("test block header")})
-//	blockFull := types.NewBlockWithHeader(&types.Header{Extra: []byte("test block full")})
-//	blockFast := types.NewBlockWithHeader(&types.Header{Extra: []byte("test block fast")})
-//
-//	// Check that no head entries are in a pristine database
-//	if entry := GetHeadHeaderHash(db); entry != (common.Hash{}) {
-//		t.Fatalf("Non head header entry returned: %v", entry)
-//	}
-//	if entry := GetHeadBlockHash(db); entry != (common.Hash{}) {
-//		t.Fatalf("Non head block entry returned: %v", entry)
-//	}
-//	if entry := GetHeadFastBlockHash(db); entry != (common.Hash{}) {
-//		t.Fatalf("Non fast head block entry returned: %v", entry)
-//	}
-//	// Assign separate entries for the head header and block
-//	if err := WriteHeadHeaderHash(db, blockHead.Hash()); err != nil {
-//		t.Fatalf("Failed to write head header hash: %v", err)
-//	}
-//	if err := WriteHeadBlockHash(db, blockFull.Hash()); err != nil {
-//		t.Fatalf("Failed to write head block hash: %v", err)
-//	}
-//	if err := WriteHeadFastBlockHash(db, blockFast.Hash()); err != nil {
-//		t.Fatalf("Failed to write fast head block hash: %v", err)
-//	}
-//	// Check that both heads are present, and different (i.e. two heads maintained)
-//	if entry := GetHeadHeaderHash(db); entry != blockHead.Hash() {
-//		t.Fatalf("Head header hash mismatch: have %v, want %v", entry, blockHead.Hash())
-//	}
-//	if entry := GetHeadBlockHash(db); entry != blockFull.Hash() {
-//		t.Fatalf("Head block hash mismatch: have %v, want %v", entry, blockFull.Hash())
-//	}
-//	if entry := GetHeadFastBlockHash(db); entry != blockFast.Hash() {
-//		t.Fatalf("Fast head block hash mismatch: have %v, want %v", entry, blockFast.Hash())
-//	}
-//}
-//
+// Tests that canonical numbers can be mapped to hashes and retrieved.
+func TestCanonicalMappingStorage(t *testing.T) {
+	db, _ := lcdb.NewMemDatabase()
+
+	// Create a test canonical number and assinged hash to move around
+	hash, number := math.Hash{0: 0xff}, uint64(314)
+	if entry := GetCanonicalHash(db, number); entry != (math.Hash{}) {
+		t.Fatalf("Non existent canonical mapping returned: %v", entry)
+	}
+	// Write and verify the TD in the database
+	if err := WriteCanonicalHash(db, hash, number); err != nil {
+		t.Fatalf("Failed to write canonical mapping into database: %v", err)
+	}
+	if entry := GetCanonicalHash(db, number); entry == (math.Hash{}) {
+		t.Fatalf("Stored canonical mapping not found")
+	} else if entry != hash {
+		t.Fatalf("Retrieved canonical mapping mismatch: have %v, want %v", entry, hash)
+	}
+	// Delete the TD and verify the execution
+	DeleteCanonicalHash(db, number)
+	if entry := GetCanonicalHash(db, number); entry != (math.Hash{}) {
+		t.Fatalf("Deleted canonical mapping returned: %v", entry)
+	}
+}
+
+// Tests that head headers and head blocks can be assigned, individually.
+func TestHeadStorage(t *testing.T) {
+	db, _ := lcdb.NewMemDatabase()
+	blockFull := poameta.NewBlock(poameta.BlockHeader{
+		Data: []byte("test block full"),
+	}, []poameta.Transaction{})
+	blockFast := poameta.NewBlock(poameta.BlockHeader{
+		Data: []byte("test block fast"),
+	}, []poameta.Transaction{})
+
+	// Check that no head entries are in a pristine database
+	if entry := GetHeadBlockHash(db); entry != (math.Hash{}) {
+		t.Fatalf("Non head header entry returned: %v", entry)
+	}
+	if entry := GetHeadFastBlockHash(db); entry != (math.Hash{}) {
+		t.Fatalf("Non fast head block entry returned: %v", entry)
+	}
+	if err := WriteHeadBlockHash(db, *blockFull.GetBlockID()); err != nil {
+		t.Fatalf("Failed to write head block hash: %v", err)
+	}
+	if err := WriteHeadFastBlockHash(db, *blockFast.GetBlockID()); err != nil {
+		t.Fatalf("Failed to write fast head block hash: %v", err)
+	}
+	// Check that both heads are present, and different (i.e. two heads maintained)
+	if entry := GetHeadBlockHash(db); entry != *blockFull.GetBlockID() {
+		t.Fatalf("Head block hash mismatch: have %v, want %v", entry, blockFull.GetBlockID())
+	}
+	if entry := GetHeadFastBlockHash(db); entry != *blockFast.GetBlockID() {
+		t.Fatalf("Fast head block hash mismatch: have %v, want %v", entry, blockFast.GetBlockID())
+	}
+}
+
 //// Tests that positional lookup metadata can be stored and retrieved.
 //func TestLookupStorage(t *testing.T) {
 //	db, _ := lcdb.NewMemDatabase()
