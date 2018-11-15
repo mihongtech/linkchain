@@ -36,7 +36,7 @@ func initChainManager(database lcdb.Database, path string) bool {
 
 	//create gensis chain
 	gensisBlock := storage.GetBlock(db, hash, 0)
-	addBlock(gensisBlock)
+	addBlockCache(gensisBlock)
 	gensisChain := meta.NewPOAChain(gensisBlock, nil)
 
 	chains = make([]meta.Chain, 0)
@@ -243,7 +243,7 @@ func GetBlockChainInfo() string {
 func addBlock(block *meta.Block) {
 	newblock := block
 
-	addBlock(newblock)
+	addBlockCache(newblock)
 
 	if err := storage.WriteBlock(db, block); err != nil {
 		log.Error("WriteBlock to db failed", "error", err)

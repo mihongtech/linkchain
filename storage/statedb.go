@@ -8,7 +8,7 @@ import (
 	"github.com/linkchain/core/meta"
 
 	poameta "github.com/linkchain/core/meta"
-	"github.com/linkchain/node"
+	//"github.com/linkchain/node"
 	"github.com/linkchain/config"
 )
 
@@ -84,11 +84,11 @@ func (s *StateDB) UpdateAccountsByBlock(block *meta.Block) error {
 	for _, tx := range txs {
 
 		tcs := tx.GetToCoins()
-		for _, tc := range tcs {
-			if !tc.CheckValue() {
+		for i, _ := range tcs {
+			if !tcs[i].CheckValue() {
 				return errors.New("transaction toCoin-Value need plus 0")
 			}
-			if cacheA, ok := s.accounts[tc.GetId().String()]; ok {
+			if cacheA, ok := s.accounts[tcs[i].GetId().String()]; ok {
 				processCache[cacheA.GetAccountID().String()] = cacheA
 			}
 		}
@@ -149,7 +149,7 @@ func (s *StateDB) UpdateAccountsByBlock(block *meta.Block) error {
 		for index := range tcs {
 			cacheA, err := processCache[tcs[index].GetId().String()]
 			if !err {
-				cacheA = *node.CreateTempleteAccount(tcs[index].GetId())
+				//cacheA = *node.CreateTempleteAccount(tcs[index].GetId())
 			}
 			nTicket := poameta.NewTicket(*tx.GetTxID(), uint32(index))
 			nUTXO := poameta.NewUTXO(nTicket, block.GetHeight(), block.GetHeight(), *tcs[index].GetValue())

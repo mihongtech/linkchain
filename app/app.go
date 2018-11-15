@@ -1,31 +1,30 @@
 package app
 
 import (
-	"github.com/linkchain/common"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/config"
 	"github.com/linkchain/p2p"
 	"github.com/linkchain/node"
+	"github.com/linkchain/app/context"
 )
 
-var (
-	//service collection
-	svcList = []common.Service{
-		&p2p.Service{},
-		&node.Node{},
-	}
-)
+
+var appContext context.Context
 
 func Init(globalConfig *config.LinkChainConfig) bool {
 	log.Info("Node init...")
 
-	//p2p init
-	if !svcList[0].Init(globalConfig) {
+	appContext.Node = &node.Node{}
+	appContext.P2P = &p2p.Service{}
+	appContext.Config = globalConfig
+
+	//node init
+	if !appContext.Node.Init(&appContext) {
 		return false
 	}
 
-	//node init
-	if !svcList[1].Init(globalConfig) {
+	//p2p init
+	if !appContext.P2P.Init(&appContext) {
 		return false
 	}
 
@@ -36,11 +35,8 @@ func Run() {
 	log.Info("Node is running...")
 
 	//start all service
-	for _, v := range svcList {
-		if !v.Start() {
-			return
-		}
-	}
+	appContext.Node.Start()
+	appContext.P2P.Start()
 }
 
 func Stop() {
@@ -48,5 +44,5 @@ func Stop() {
 }
 
 func GetP2pService() *p2p.Service {
-	return svcList[0].(*p2p.Service)
+	return appContext.P2P.(*p2p.Service)
 }

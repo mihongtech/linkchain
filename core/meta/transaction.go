@@ -454,7 +454,7 @@ func (tx *Transaction) GetNewFromCoins() []FromCoin {
 
 		nfc := FromCoin{}
 		nfc.SetId(c.Id)
-		nfc.AddTicket(ticket)
+		nfc.AddTicket(&ticket)
 
 		nfcs = append(nfcs, nfc)
 	}

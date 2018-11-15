@@ -5,6 +5,7 @@ import (
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/config"
 	"github.com/linkchain/storage"
+	appContext "github.com/linkchain/app/context"
 )
 
 var (
@@ -17,9 +18,8 @@ type Node struct {
 }
 
 
-
 func (m *Node) Init(i interface{}) bool {
-	globalConfig := i.(*config.LinkChainConfig)
+	globalConfig := i.(*appContext.Context).Config
 
 	log.Info("Manage init...")
 
@@ -27,8 +27,10 @@ func (m *Node) Init(i interface{}) bool {
 	m.NewTxEvent = new(event.Feed)
 
 	initAccountManager()
-	initChainManager(globalConfig.StorageService.(*storage.Storage).GetDB(),
-		globalConfig.GenesisPath)
+
+	s := storage.NewStrorage(globalConfig.DataDir)
+
+	initChainManager(s.GetDB(), globalConfig.GenesisPath)
 
 	return true
 }

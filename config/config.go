@@ -5,8 +5,6 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
-
-	"github.com/linkchain/common"
 )
 
 type LinkChainConfig struct {
@@ -17,7 +15,7 @@ type LinkChainConfig struct {
 	// in memory.
 	DataDir          string
 	GenesisPath      string
-	NodeService 	  common.Service
+	//NodeService 	  common.Service
 	ListenAddress    string
 }
 

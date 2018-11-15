@@ -18,23 +18,23 @@ type AccountID struct {
 	ID []byte `json:"id"`
 }
 
-func (a *AccountID) String() string {
+func (a AccountID) String() string {
 	return hex.EncodeToString(a.ID)
 }
 
-func (a *AccountID) IsEqual(other AccountID) bool {
+func (a AccountID) IsEqual(other AccountID) bool {
 	return strings.Compare(a.String(), other.String()) == 0
 }
 
 //Serialize/Deserialize
-func (a *AccountID) Serialize() serialize.SerializeStream {
+func (a AccountID) Serialize() serialize.SerializeStream {
 	accountId := protobuf.AccountID{
 		Id: proto.NewBuffer(a.ID).Bytes(),
 	}
 	return &accountId
 }
 
-func (a *AccountID) Deserialize(s serialize.SerializeStream) error {
+func (a AccountID) Deserialize(s serialize.SerializeStream) error {
 	data := s.(*protobuf.AccountID)
 	pk, err := btcec.ParsePubKey(data.Id, btcec.S256())
 	if err != nil {
@@ -50,7 +50,7 @@ func (a AccountID) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a.String())
 }
 
-func (a *AccountID) UnmarshalJSON(data []byte) error {
+func (a AccountID) UnmarshalJSON(data []byte) error {
 	return nil
 }
 

@@ -7,7 +7,6 @@ import (
 
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/config"
 )
 
 type Storage struct {
@@ -16,19 +15,21 @@ type Storage struct {
 	dataDir string
 }
 
-func (s *Storage) Init(i interface{}) bool {
+func NewStrorage(dataDir string) *Storage {
 	log.Info("Stroage init...")
+
+	s := &Storage{}
 
 	//load genesis from storage
 	var err error
-	name := "chaindata"
-	s.dataDir = i.(*config.LinkChainConfig).DataDir
-	s.db, err = s.OpenDatabase(name, 1024, 256)
+	s.Name = "chaindata"
+	s.dataDir = dataDir
+	s.db, err = s.OpenDatabase(s.Name, 1024, 256)
 	if err != nil {
-		return false
+		return nil
 	}
 
-	return true
+	return s
 }
 
 func (s *Storage) OpenDatabase(name string, cache, handles int) (lcdb.Database, error) {
