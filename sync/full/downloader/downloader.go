@@ -75,8 +75,8 @@ type Downloader struct {
 	committed     int32
 
 	// Channels
-	blockCh     chan dataPack       // [eth/62] Channel receiving inbound block headers
-	blockProcCh chan []block.IBlock // [eth/62] Channel to feed the header processor new tasks
+	blockCh     chan dataPack       // [full/01] Channel receiving inbound block headers
+	blockProcCh chan []block.IBlock // [full/01] Channel to feed the header processor new tasks
 
 	// Cancellation and termination
 	cancelPeer string        // Identifier of the peer currently being used as the master (cancel on drop)
@@ -107,34 +107,6 @@ func New(mux *event.TypeMux, chain manager.ChainManager, blockManager manager.Bl
 	go dl.qosTuner()
 	return dl
 }
-
-// Progress retrieves the synchronisation boundaries, specifically the origin
-// block where synchronisation started at (may have failed/suspended); the block
-// or header sync is currently at; and the latest known block which the sync targets.
-//
-// In addition, during the state download phase of fast synchronisation the number
-// of processed and the total number of known states are also returned. Otherwise
-// these are zero.
-//func (d *Downloader) Progress() ethereum.SyncProgress {
-//	// Lock the current stats and return the progress
-//	d.syncStatsLock.RLock()
-//	defer d.syncStatsLock.RUnlock()
-//
-//	current := uint64(0)
-//	switch d.mode {
-//	case FullSync:
-//		current = uint64(d.blockchain.GetBestBlock().GetHeight())
-//		//	case FastSync:
-//		//		current = d.blockchain.CurrentFastBlock().NumberU64()
-//		//	case LightSync:
-//		//		current = d.lightchain.CurrentHeader().Number.Uint64()
-//	}
-//	return ethereum.SyncProgress{
-//		StartingBlock: d.syncStatsChainOrigin,
-//		CurrentBlock:  current,
-//		HighestBlock:  d.syncStatsChainHeight,
-//	}
-//}
 
 // Synchronising returns whether the downloader is currently retrieving blocks.
 func (d *Downloader) Synchronising() bool {

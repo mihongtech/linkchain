@@ -45,15 +45,15 @@ type queue struct {
 	mode SyncMode // Synchronisation mode to decide on the block parts to schedule for fetching
 
 	// Blocks are "special", they download in batches, supported by a skeleton chain
-	blockHead      meta.BlockID                   // [eth/62] Hash of the last queued block to verify order
-	blockTaskPool  map[uint64]block.IBlock        // [eth/62] Pending block retrieval tasks, mapping starting indexes to skeleton headers
-	blockTaskQueue *prque.Prque                   // [eth/62] Priority queue of the skeleton indexes to fetch the filling headers for
-	blockPeerMiss  map[string]map[uint64]struct{} // [eth/62] Set of per-peer block batches known to be unavailable
-	blockPendPool  map[string]*fetchRequest       // [eth/62] Currently pending block retrieval operations
-	blockResults   []block.IBlock                 // [eth/62] Result cache accumulating the completed headers
-	blockProced    int                            // [eth/62] Number of headers already processed from the results
-	blockOffset    uint64                         // [eth/62] Number of the first block in the result cache
-	blockContCh    chan bool                      // [eth/62] Channel to notify when block download finishes
+	blockHead      meta.BlockID                   // [full/01] Hash of the last queued block to verify order
+	blockTaskPool  map[uint64]block.IBlock        // [full/01] Pending block retrieval tasks, mapping starting indexes to skeleton headers
+	blockTaskQueue *prque.Prque                   // [full/01] Priority queue of the skeleton indexes to fetch the filling headers for
+	blockPeerMiss  map[string]map[uint64]struct{} // [full/01] Set of per-peer block batches known to be unavailable
+	blockPendPool  map[string]*fetchRequest       // [full/01] Currently pending block retrieval operations
+	blockResults   []block.IBlock                 // [full/01] Result cache accumulating the completed headers
+	blockProced    int                            // [full/01] Number of headers already processed from the results
+	blockOffset    uint64                         // [full/01] Number of the first block in the result cache
+	blockContCh    chan bool                      // [full/01] Channel to notify when block download finishes
 
 	resultCache  []*fetchResult // Downloaded but not yet delivered fetch results
 	resultOffset uint64         // Offset of the first cached fetch result in the block chain

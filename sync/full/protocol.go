@@ -28,7 +28,7 @@ const ProtocolMaxMsgSize = 10 * 1024 * 1024 // Maximum cap on the size of a prot
 
 // linkchain protocol message codes
 const (
-	// Protocol messages belonging to eth/62
+	// Protocol messages belonging to full/01
 	StatusMsg         = 0x00
 	NewBlockHashesMsg = 0x01
 	TxMsg             = 0x02

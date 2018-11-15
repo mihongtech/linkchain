@@ -171,7 +171,7 @@ func (pm *ProtocolManager) Stop() {
 	log.Info("Linkchain protocol stopped")
 }
 
-// handle is the callback invoked to manage the life cycle of an eth peer. When
+// handle is the callback invoked to manage the life cycle of an full peer. When
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
