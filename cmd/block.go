@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/poa/manage"
+	"github.com/linkchain/node"
 	"github.com/spf13/cobra"
 	"strconv"
 )
@@ -35,11 +35,11 @@ var heightCmd = &cobra.Command{
 			return
 		}
 
-		if uint32(height) > manage.GetManager().ChainManager.GetBestBlock().GetHeight() || height < 0 {
+		if uint32(height) > node.GetBestBlock().GetHeight() || height < 0 {
 			log.Error("getblockbyheight ", "error", "height is out of range", example[0], example[1])
 			return
 		}
-		block, err := manage.GetManager().ChainManager.GetBlockByHeight(uint32(height))
+		block, err := node.GetBlockByHeight(uint32(height))
 		if err != nil {
 			log.Error("getblockbyheight ", "error", err)
 		} else {
@@ -62,7 +62,7 @@ var hashCmd = &cobra.Command{
 		if err != nil {
 			log.Error("getblockbyhash", "error", err, example[0], example[1])
 		}
-		block, err := manage.GetManager().ChainManager.GetBlockByHash(*hash)
+		block, err := node.GetBlockByID(*hash)
 		if err != nil {
 			log.Error("getblockbyhash ", "error", err)
 		} else {

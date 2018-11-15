@@ -17,8 +17,7 @@ type LinkChainConfig struct {
 	// in memory.
 	DataDir          string
 	GenesisPath      string
-	ConsensusService common.IService
-	StorageService   common.IService
+	NodeService 	  common.Service
 	ListenAddress    string
 }
 

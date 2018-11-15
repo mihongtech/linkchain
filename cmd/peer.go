@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/node"
+	"github.com/linkchain/app"
 	p2p_node "github.com/linkchain/p2p/node"
 	"github.com/spf13/cobra"
 )
@@ -27,7 +27,7 @@ var addPeerCmd = &cobra.Command{
 		}
 		println("Add new peer")
 		println("args is %s", args[0])
-		server := node.GetP2pService()
+		server := app.GetP2pService()
 		node, err := p2p_node.ParseNode(args[0])
 		if err != nil {
 			log.Error("parse node failes", "url", args[0])
@@ -42,7 +42,7 @@ var listPeerCmd = &cobra.Command{
 	Short: "list all peers",
 	Run: func(cmd *cobra.Command, args []string) {
 		println("List all peers")
-		server := node.GetP2pService()
+		server := app.GetP2pService()
 		peers := server.Peers()
 
 		if len(peers) == 0 {
@@ -66,7 +66,7 @@ var removePeerCmd = &cobra.Command{
 		}
 		println("Remove  peer")
 		println("args is %s", args[0])
-		server := node.GetP2pService()
+		server := app.GetP2pService()
 		node, err := p2p_node.ParseNode(args[0])
 		if err != nil {
 			log.Error("parse node failes", "url", args[0])

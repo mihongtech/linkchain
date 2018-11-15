@@ -6,10 +6,9 @@ import (
 	"time"
 
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/consensus/manager"
-	"github.com/linkchain/meta"
-	"github.com/linkchain/meta/block"
+	"github.com/linkchain/core/meta"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
+	"github.com/linkchain/node"
 )
 
 const (
@@ -26,16 +25,16 @@ var (
 )
 
 // blockRetrievalFn is a callback type for retrieving a block from the local chain.
-type blockRetrievalFn func(meta.BlockID) (block.IBlock, error)
+type blockRetrievalFn func(meta.BlockID) (*meta.Block, error)
 
 // blockRequesterFn is a callback type for sending a block retrieval request.
 type blockRequesterFn func(meta.BlockID) error
 
 // blockVerifierFn is a callback type to verify a block for fast propagation.
-type blockVerifierFn func(block block.IBlock) bool
+type blockVerifierFn func(block *meta.Block) bool
 
 // blockBroadcasterFn is a callback type for broadcasting a block to connected peers.
-type blockBroadcasterFn func(block block.IBlock, propagate bool)
+type blockBroadcasterFn func(block *meta.Block, propagate bool)
 
 // chainHeightFn is a callback type to retrieve the current chain height.
 type chainHeightFn func() uint64
@@ -48,7 +47,7 @@ type peerDropFn func(id string)
 type announce struct {
 	hash   meta.BlockID // Hash of the block being announced
 	number uint64       // Number of the block being announced (0 = unknown | old protocol)
-	b      block.IBlock // Header of the block partially reassembled (new protocol)
+	b      *meta.Block // Header of the block partially reassembled (new protocol)
 	time   time.Time    // Timestamp of the announcement
 
 	origin string // Identifier of the peer originating the notification
@@ -59,14 +58,14 @@ type announce struct {
 // headerFilterTask represents a batch of headers needing fetcher filtering.
 type blockFilterTask struct {
 	peer   string         // The source peer of block headers
-	blocks []block.IBlock // Collection of headers to filter
+	blocks []*meta.Block // Collection of headers to filter
 	time   time.Time      // Arrival time of the headers
 }
 
 // inject represents a schedules import operation.
 type inject struct {
 	origin string
-	block  block.IBlock
+	block  *meta.Block
 }
 
 // Fetcher is responsible for accumulating block announcements from various peers
@@ -98,12 +97,12 @@ type Fetcher struct {
 	verifyBlock    blockVerifierFn    // Checks if a block's headers have a valid proof of work
 	broadcastBlock blockBroadcasterFn // Broadcasts a block to connected peers
 	chainHeight    chainHeightFn      // Retrieves the current chain's height
-	insertChain    manager.BlockManager
+	node           *node.Node
 	dropPeer       peerDropFn // Drops a peer for misbehaving
 }
 
 // New creates a block fetcher to retrieve blocks based on hash announcements.
-func New(getBlock blockRetrievalFn, verifyBlock blockVerifierFn, broadcastBlock blockBroadcasterFn, chainHeight chainHeightFn, insertChain manager.BlockManager, dropPeer peerDropFn) *Fetcher {
+func New(getBlock blockRetrievalFn, verifyBlock blockVerifierFn, broadcastBlock blockBroadcasterFn, chainHeight chainHeightFn, nodeSvc *node.Node, dropPeer peerDropFn) *Fetcher {
 	return &Fetcher{
 		notify:         make(chan *announce),
 		inject:         make(chan *inject),
@@ -122,7 +121,7 @@ func New(getBlock blockRetrievalFn, verifyBlock blockVerifierFn, broadcastBlock 
 		verifyBlock:    verifyBlock,
 		broadcastBlock: broadcastBlock,
 		chainHeight:    chainHeight,
-		insertChain:    insertChain,
+		node:    		nodeSvc,
 		dropPeer:       dropPeer,
 	}
 }
@@ -159,7 +158,7 @@ func (f *Fetcher) Notify(peer string, hash meta.BlockID, number uint64, time tim
 }
 
 // Enqueue tries to fill gaps the the fetcher's future import queue.
-func (f *Fetcher) Enqueue(peer string, block block.IBlock) error {
+func (f *Fetcher) Enqueue(peer string, block *meta.Block) error {
 	op := &inject{
 		origin: peer,
 		block:  block,
@@ -174,7 +173,7 @@ func (f *Fetcher) Enqueue(peer string, block block.IBlock) error {
 
 // FilterHeaders extracts all the headers that were explicitly requested by the fetcher,
 // returning those that should be handled differently.
-func (f *Fetcher) FilterBlocks(peer string, blocks []block.IBlock, time time.Time) []block.IBlock {
+func (f *Fetcher) FilterBlocks(peer string, blocks []*meta.Block, time time.Time) []*meta.Block {
 	log.Trace("Filtering blocks", "peer", peer, "blocks", len(blocks))
 
 	// Send the filter channel to the fetcher
@@ -345,7 +344,7 @@ func (f *Fetcher) loop() {
 
 			// Split the batch of headers into unknown ones (to return to the caller),
 			// known incomplete ones (requiring body retrievals) and completed blocks.
-			unknown, incomplete, complete := []block.IBlock{}, []*announce{}, []block.IBlock{}
+			unknown, incomplete, complete := []*meta.Block{}, []*announce{}, []*meta.Block{}
 			for _, block := range task.blocks {
 				hash := *block.GetBlockID()
 
@@ -437,7 +436,7 @@ func (f *Fetcher) rescheduleComplete(complete *time.Timer) {
 
 // enqueue schedules a new future import operation, if the block to be imported
 // has not yet been seen.
-func (f *Fetcher) enqueue(peer string, block block.IBlock) {
+func (f *Fetcher) enqueue(peer string, block *meta.Block) {
 	hash := *block.GetBlockID()
 
 	// Ensure the peer isn't DOSing us
@@ -471,7 +470,7 @@ func (f *Fetcher) enqueue(peer string, block block.IBlock) {
 // insert spawns a new goroutine to run a block insertion into the chain. If the
 // block's number is at the same height as the current import phase, it updates
 // the phase states accordingly.
-func (f *Fetcher) insert(peer string, block block.IBlock) {
+func (f *Fetcher) insert(peer string, block *meta.Block) {
 	hash := *block.GetBlockID()
 
 	// Run the import on a new thread
@@ -495,7 +494,7 @@ func (f *Fetcher) insert(peer string, block block.IBlock) {
 			return
 		}
 		log.Debug("insert block to chain", "block", block)
-		if err := f.insertChain.ProcessBlock(block); err != nil {
+		if err := node.ProcessBlock(block); err != nil {
 			log.Debug("Propagated block import failed", "peer", peer, "number", block.GetHeight(), "hash", hash, "err", err)
 			return
 		}

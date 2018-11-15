@@ -12,7 +12,7 @@ import (
 
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/meta"
+	"github.com/linkchain/core/meta"
 )
 
 const (

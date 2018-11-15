@@ -2,7 +2,7 @@ package downloader
 
 import (
 	"fmt"
-	"github.com/linkchain/meta/block"
+	"github.com/linkchain/core/meta"
 )
 
 // peerDropFn is a callback type for dropping a peer detected as malicious.
@@ -18,7 +18,7 @@ type dataPack interface {
 // headerPack is a batch of block headers returned by a peer.
 type blockPack struct {
 	peerId string
-	blocks []block.IBlock
+	blocks []*meta.Block
 }
 
 func (p *blockPack) PeerId() string { return p.peerId }

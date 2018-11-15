@@ -4,10 +4,7 @@ import (
 	"encoding/hex"
 
 	"github.com/linkchain/common/util/log"
-	meta_tx "github.com/linkchain/meta/tx"
-	"github.com/linkchain/node"
-	"github.com/linkchain/poa/manage"
-	"github.com/linkchain/poa/meta"
+	"github.com/linkchain/core/meta"
 	"github.com/linkchain/protobuf"
 
 	"github.com/golang/protobuf/proto"
@@ -70,13 +67,13 @@ var signTxCmd = &cobra.Command{
 		}
 		log.Info("signtx", txData.String())
 
-		var tx meta_tx.ITx = &poameta.Transaction{}
+		var tx *meta.Transaction = &meta.Transaction{}
 		err = tx.Deserialize(&txData)
 		if err != nil {
 			log.Error("signtx Deserialize failed", "Deserialize error", err)
 			return
 		}
-		node.GetWallet().SignTransaction(tx)
+		//app.GetWallet().SignTransaction(tx)
 
 		log.Info("signtx", "data", tx)
 		signbuffer, err := proto.Marshal(tx.Serialize())
@@ -115,7 +112,7 @@ var sendTxCmd = &cobra.Command{
 		}
 		log.Info("sendtx", txData.String())
 
-		var tx meta_tx.ITx = &poameta.Transaction{}
+		var tx *meta.Transaction = &meta.Transaction{}
 		err = tx.Deserialize(&txData)
 		if err != nil {
 			log.Error("sendtx Deserialize failed", "Deserialize error", err)
@@ -134,8 +131,8 @@ var sendTxCmd = &cobra.Command{
 			log.Info("Verify tx", "successed", true)
 		}
 
-		manage.GetManager().TransactionManager.ProcessTx(tx)
-		manage.GetManager().NewTxEvent.Send(meta_tx.TxEvent{tx})
+		//node.ProcessTx(tx)
+		//node.NewTxEvent.Send(meta_tx.TxEvent{tx})
 
 	},
 }
@@ -163,7 +160,7 @@ var decodeTxCmd = &cobra.Command{
 		}
 		log.Info("decode", txData.String())
 
-		var tx meta_tx.ITx = &poameta.Transaction{}
+		var tx *meta.Transaction = &meta.Transaction{}
 		err = tx.Deserialize(&txData)
 		if err != nil {
 			log.Error("decode Deserialize failed", "Deserialize error", err)

@@ -8,27 +8,7 @@ import (
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/config"
-	"github.com/linkchain/meta"
-	"github.com/linkchain/meta/block"
-	"github.com/linkchain/meta/chain"
-	"github.com/linkchain/meta/tx"
 )
-
-type IStroage interface {
-	//block
-	storeBlock(block block.IBlock)
-	loadBlockById(id meta.BlockID) block.IBlock
-	loadBlockByHeight(height int) block.IBlock
-
-	//tx
-	storeTx(iTx tx.ITx)
-	loadTxById(id meta.BlockID) tx.ITx
-
-	//chain info
-	storeChain(chain chain.IChain)
-	storeChainGraph(graph chain.IChainGraph)
-	loadChainGraph() chain.IChainGraph
-}
 
 type Storage struct {
 	Name    string
@@ -89,15 +69,15 @@ func (s *Storage) name() string {
 	return s.Name
 }
 
-func (m *Storage) Start() bool {
+func (s *Storage) Start() bool {
 	log.Info("Stroage start...")
 	return true
 }
 
-func (m *Storage) Stop() {
+func (s *Storage) Stop() {
 	log.Info("Stroage stop...")
 }
 
-func (m *Storage) GetDB() lcdb.Database {
-	return m.db
+func (s *Storage) GetDB() lcdb.Database {
+	return s.db
 }

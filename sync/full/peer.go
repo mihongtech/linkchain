@@ -8,9 +8,7 @@ import (
 
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/meta"
-	"github.com/linkchain/meta/block"
-	"github.com/linkchain/meta/tx"
+	"github.com/linkchain/core/meta"
 	"github.com/linkchain/p2p/message"
 	p2p_peer "github.com/linkchain/p2p/peer"
 	"github.com/linkchain/p2p/peer_error"
@@ -124,7 +122,7 @@ func (p *peer) MarkTransaction(hash meta.TxID) {
 
 // SendTransactions sends transactions to the peer and includes the hashes
 // in its transaction hash set for future reference.
-func (p *peer) SendTransactions(txs []tx.ITx) error {
+func (p *peer) SendTransactions(txs []*meta.Transaction) error {
 	for _, tx := range txs {
 		p.knownTxs.Add(tx.GetTxID())
 		log.Debug("Send TxMsg", "transaction is", tx)
@@ -134,13 +132,13 @@ func (p *peer) SendTransactions(txs []tx.ITx) error {
 }
 
 // SendNewBlock propagates an entire block to a remote peer.
-func (p *peer) SendNewBlock(block block.IBlock) error {
+func (p *peer) SendNewBlock(block *meta.Block) error {
 	p.knownBlocks.Add(block.GetBlockID())
 	log.Debug("Send NewBlockMsg", "block is", block)
 	return message.Send(p.rw, NewBlockMsg, block.Serialize())
 }
 
-func (p *peer) SendBlock(blocks []block.IBlock) error {
+func (p *peer) SendBlock(blocks []*meta.Block) error {
 	var blockArray []*protobuf.Block
 	for _, block := range blocks {
 		outBlock := block.Serialize().(*protobuf.Block)

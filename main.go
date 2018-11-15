@@ -10,7 +10,7 @@ import (
 	"github.com/linkchain/cmd"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/config"
-	"github.com/linkchain/node"
+	"github.com/linkchain/app"
 )
 
 func main() {
@@ -34,11 +34,11 @@ func main() {
 	globalConfig.GenesisPath = *genesispath
 
 	// start node
-	if !node.Init(globalConfig) {
+	if !app.Init(globalConfig) {
 		return
 	}
-	node.Run()
-	defer node.Stop()
+	app.Run()
+	defer app.Stop()
 
 	// start console cmd
 	startCmd()
