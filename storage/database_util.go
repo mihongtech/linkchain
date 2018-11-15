@@ -361,20 +361,6 @@ func WritePreimages(db lcdb.Database, number uint64, preimages map[math.Hash][]b
 	return nil
 }
 
-// GetBlockChainVersion reads the version number from db.
-//func GetBlockChainVersion(db DatabaseReader) int {
-//	var vsn uint
-//	enc, _ := db.Get([]byte("BlockchainVersion"))
-//	rlp.DecodeBytes(enc, &vsn)
-//	return int(vsn)
-//}
-
-// WriteBlockChainVersion writes vsn as the version number to db.
-//func WriteBlockChainVersion(db lcdb.Putter, vsn int) {
-//	enc, _ := rlp.EncodeToBytes(uint(vsn))
-//	db.Put([]byte("BlockchainVersion"), enc)
-//}
-
 // WriteChainConfig writes the chain config settings to the database.
 func WriteChainConfig(db lcdb.Putter, hash *math.Hash, cfg *config.ChainConfig) error {
 	// short circuit and ignore if nil config. GetChainConfig
