@@ -63,8 +63,8 @@ type ProtocolManager struct {
 	wg sync.WaitGroup
 }
 
-// NewProtocolManager returns a new ethereum sub protocol manager. The Linkchain sub protocol manages peers capable
-// with the ethereum network.
+// NewProtocolManager returns a new linkchain sub protocol manager. The Linkchain sub protocol manages peers capable
+// with the linkchain network.
 func NewProtocolManager(config interface{}, consensus *consensus.Service, networkId uint64, mux *event.TypeMux, tx *event.Feed) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{

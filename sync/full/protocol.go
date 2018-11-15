@@ -18,7 +18,7 @@ const (
 // Official short name of the protocol used during capability negotiation.
 var ProtocolName = "full"
 
-// Supported versions of the eth protocol (first is primary).
+// Supported versions of the linkchain protocol (first is primary).
 var ProtocolVersions = []uint64{full01}
 
 // Number of implemented message corresponding to different protocol versions.
@@ -26,7 +26,7 @@ var ProtocolLengths = []uint64{8}
 
 const ProtocolMaxMsgSize = 10 * 1024 * 1024 // Maximum cap on the size of a protocol message
 
-// eth protocol message codes
+// linkchain protocol message codes
 const (
 	// Protocol messages belonging to eth/62
 	StatusMsg         = 0x00

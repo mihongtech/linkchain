@@ -41,8 +41,8 @@ var (
 	lookupPrefix    = []byte("l") // lookupPrefix + hash -> transaction/receipt lookup metadata
 	bloomBitsPrefix = []byte("B") // bloomBitsPrefix + bit (uint16 big endian) + section (uint64 big endian) + hash -> bloom bits
 
-	preimagePrefix = "secure-key-"              // preimagePrefix + hash -> preimage
-	configPrefix   = []byte("ethereum-config-") // config prefix for the db
+	preimagePrefix = "secure-key-"               // preimagePrefix + hash -> preimage
+	configPrefix   = []byte("linkchain-config-") // config prefix for the db
 
 	// Chain index prefixes (use `i` + single byte to avoid mixing data types).
 	BloomBitsIndexPrefix = []byte("iB") // BloomBitsIndexPrefix is the data table of a chain indexer to track its progress

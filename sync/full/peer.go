@@ -174,7 +174,7 @@ func (p *peer) RequestOneBlock(hash meta.BlockID) error {
 	return message.Send(p.rw, GetBlockMsg, data.Serialize().(*protobuf.GetBlockHeadersData))
 }
 
-// Handshake executes the eth protocol handshake, negotiating version number,
+// Handshake executes the linkchain protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
 func (p *peer) Handshake(network uint64, height uint64, head meta.BlockID, genesis meta.BlockID) error {
 	// Send out own handshake in a new thread

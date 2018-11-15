@@ -276,7 +276,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash meta.BlockID) (err err
 		return errTooOld
 	}
 
-	log.Trace("Synchronising with the network", "peer", p.id, "eth", p.version, "head", hash, "mode", d.mode)
+	log.Trace("Synchronising with the network", "peer", p.id, "linkchain", p.version, "head", hash, "mode", d.mode)
 	defer func(start time.Time) {
 		log.Debug("Synchronisation terminated", "elapsed", time.Since(start))
 	}(time.Now())
