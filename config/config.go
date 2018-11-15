@@ -1,6 +1,7 @@
 package config
 
 import (
+	"math/big"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -8,6 +9,11 @@ import (
 
 	"github.com/linkchain/common"
 )
+
+type ChainConfig struct {
+	ChainId *big.Int `json:"chainId"` // Chain id identifies the current chain and is used for replay protection
+	Period  uint64   `json:"period"`  // Number of seconds between blocks to enforce
+}
 
 type LinkChainConfig struct {
 	// DataDir is the file system folder the node should use for any data storage
