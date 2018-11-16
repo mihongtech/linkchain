@@ -129,6 +129,10 @@ type peerDrop struct {
 	requested bool // true if signaled by the peer
 }
 
+func NewP2P() *Service {
+	return &Service{}
+}
+
 func (srv *Service) Setup(i interface{}) bool {
 	log.Info("p2p service init...")
 	// TODO: init config

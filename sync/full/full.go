@@ -10,12 +10,12 @@ import (
 
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/core/meta"
 	"github.com/linkchain/node"
 	"github.com/linkchain/p2p/message"
 	p2p_node "github.com/linkchain/p2p/node"
 	p2p_peer "github.com/linkchain/p2p/peer"
 	"github.com/linkchain/p2p/peer_error"
-	"github.com/linkchain/core/meta"
 	"github.com/linkchain/protobuf"
 	"github.com/linkchain/sync/full/downloader"
 	"github.com/linkchain/sync/full/fetcher"
@@ -45,7 +45,7 @@ type ProtocolManager struct {
 	txSub         event.Subscription
 	minedBlockSub *event.TypeMuxSubscription
 
-	node  *node.Node
+	nodeAPI *node.PublicNodeAPI
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -60,19 +60,19 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Linkchain sub protocol manages peers capable
 // with the ethereum network.
-func NewProtocolManager(config interface{}, nodeSvc *node.Node, networkId uint64, mux *event.TypeMux, tx *event.Feed) (*ProtocolManager, error) {
+func NewProtocolManager(config interface{}, nodeSvc *node.PublicNodeAPI, networkId uint64, mux *event.TypeMux, tx *event.Feed) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		networkId:    networkId,
-		maxPeers:     64,
-		eventTx:      tx,
-		eventMux:     mux,
-		peers:        newPeerSet(),
-		newPeerCh:    make(chan *peer),
-		noMorePeers:  make(chan struct{}),
-		node:  nodeSvc,
-		txsyncCh:     make(chan *txsync),
-		quitSync:     make(chan struct{}),
+		networkId:   networkId,
+		maxPeers:    64,
+		eventTx:     tx,
+		eventMux:    mux,
+		peers:       newPeerSet(),
+		newPeerCh:   make(chan *peer),
+		noMorePeers: make(chan struct{}),
+		nodeAPI:     nodeSvc,
+		txsyncCh:    make(chan *txsync),
+		quitSync:    make(chan struct{}),
 	}
 
 	// Initiate a sub-protocol for every implemented version we can handle
@@ -110,15 +110,15 @@ func NewProtocolManager(config interface{}, nodeSvc *node.Node, networkId uint64
 		return nil, errIncompatibleConfig
 	}
 
-	manager.downloader = downloader.New(manager.eventMux, manager.node, manager.removePeer)
+	manager.downloader = downloader.New(manager.eventMux, manager.nodeAPI, manager.removePeer)
 
 	heighter := func() uint64 {
-		return uint64(node.GetBestBlock().GetHeight())
+		return uint64(manager.nodeAPI.GetBestBlock().GetHeight())
 	}
 	validator := func(block *meta.Block) bool {
-		return node.CheckBlock(block)
+		return manager.nodeAPI.CheckBlock(block)
 	}
-	manager.fetcher = fetcher.New(node.GetBlockByID, validator, manager.BroadcastBlock, heighter, manager.node, manager.removePeer)
+	manager.fetcher = fetcher.New(manager.nodeAPI.GetBlockByID, validator, manager.BroadcastBlock, heighter, manager.nodeAPI, manager.removePeer)
 
 	return manager, nil
 }
@@ -175,8 +175,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 	// Execute the Linkchain handshake
 	var (
-		genesis, _ = node.GetBlockByHeight(0)
-		current    = node.GetBestBlock()
+		genesis, _ = pm.nodeAPI.GetBlockByHeight(0)
+		current    = pm.nodeAPI.GetBestBlock()
 		hash       = *current.GetBlockID()
 		number     = uint64(current.GetHeight())
 	)
@@ -253,10 +253,10 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			var block *meta.Block
 			var err error
 			if data.Hash.IsEmpty() {
-				block, err = node.GetBlockByHeight(uint32(data.Number))
+				block, err = pm.nodeAPI.GetBlockByHeight(uint32(data.Number))
 				log.Debug("get block by height", "number", data.Number, "block", block)
 			} else {
-				block, err = node.GetBlockByID(data.Hash)
+				block, err = pm.nodeAPI.GetBlockByID(data.Hash)
 				log.Debug("get block by id", "Hash", data.Hash, "block", block)
 			}
 			if err != nil || block == nil {
@@ -279,7 +279,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 					p.Log().Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
 					unknown = true
 				} else {
-					if b, e := node.GetBlockByHeight(uint32(next)); (b != nil) && (e == nil) {
+					if b, e := pm.nodeAPI.GetBlockByHeight(uint32(next)); (b != nil) && (e == nil) {
 						log.Debug("get block by height", "number", current, "skip", data.Skip, "next", next)
 						data.Hash.SetBytes(b.GetBlockID().CloneBytes())
 					} else {
@@ -361,8 +361,8 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		transaction.Deserialize(&t)
 		p.MarkTransaction(*transaction.GetTxID())
 		log.Debug("Receive TxMsg", "transaction is", transaction)
-		node.AddTransaction(transaction)
-		//		for _, t := range pm.txmanager.GetAllTransaction() {
+		pm.nodeAPI.AddTransaction(transaction)
+		//		for _, t := range pm.txmanager.getAllTransaction() {
 		//			log.Debug("all txs is", "tx", t)
 		//		}
 
@@ -404,36 +404,36 @@ type NodeInfo struct {
 }
 
 // NodeInfo retrieves some protocol metadata about the running host node.
-func (self *ProtocolManager) NodeInfo() *NodeInfo {
-	genesis, _ := node.GetBlockByHeight(0)
+func (pm *ProtocolManager) NodeInfo() *NodeInfo {
+	genesis, _ := pm.nodeAPI.GetBlockByHeight(0)
 	return &NodeInfo{
-		Network: self.networkId,
+		Network: pm.networkId,
 		Genesis: *genesis.GetBlockID(),
-		Head:    *node.GetBestBlock().GetBlockID(),
+		Head:    *pm.nodeAPI.GetBestBlock().GetBlockID(),
 	}
 }
 
-func (self *ProtocolManager) txBroadcastLoop() {
+func (pm *ProtocolManager) txBroadcastLoop() {
 	for {
 		select {
-		case event := <-self.txCh:
-			self.BroadcastTx(*event.Tx.GetTxID(), event.Tx)
+		case event := <-pm.txCh:
+			pm.BroadcastTx(*event.Tx.GetTxID(), event.Tx)
 
 			// Err() channel will be closed when unsubscribing.
-		case <-self.txSub.Err():
+		case <-pm.txSub.Err():
 			return
 		}
 	}
 }
 
 // Mined broadcast loop
-func (self *ProtocolManager) minedBroadcastLoop() {
+func (pm *ProtocolManager) minedBroadcastLoop() {
 	// automatically stops if unsubscribe
-	for obj := range self.minedBlockSub.Chan() {
+	for obj := range pm.minedBlockSub.Chan() {
 		switch ev := obj.Data.(type) {
 		case node.NewMinedBlockEvent:
-			self.BroadcastBlock(ev.Block, true)  // First propagate block to peers
-			self.BroadcastBlock(ev.Block, false) // Only then announce to the rest
+			pm.BroadcastBlock(ev.Block, true)  // First propagate block to peers
+			pm.BroadcastBlock(ev.Block, false) // Only then announce to the rest
 		}
 	}
 }
@@ -455,7 +455,7 @@ func (pm *ProtocolManager) BroadcastBlock(block *meta.Block, propagate bool) {
 		return
 	}
 	// Otherwise if the block is indeed in out own chain, announce it
-	if node.HasBlock(hash) {
+	if pm.nodeAPI.HasBlock(hash) {
 		for _, peer := range peers {
 			peer.SendNewBlock(block)
 			// peer.SendNewBlockHashes([]meta.DataID{hash}, []uint64{uint64(block.GetHeight())})

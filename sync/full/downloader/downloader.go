@@ -62,7 +62,7 @@ type Downloader struct {
 	rttEstimate   uint64 // Round trip time to target for download requests
 	rttConfidence uint64 // Confidence in the estimated RTT (unit: millionths to allow atomic ops)
 
-	node  *node.Node
+	nodeAPI *node.PublicNodeAPI
 
 	// Callbacks
 	dropPeer peerDropFn // Drops a peer for misbehaving
@@ -73,7 +73,7 @@ type Downloader struct {
 	committed     int32
 
 	// Channels
-	blockCh     chan dataPack       // [eth/62] Channel receiving inbound block headers
+	blockCh     chan dataPack      // [eth/62] Channel receiving inbound block headers
 	blockProcCh chan []*meta.Block // [eth/62] Channel to feed the header processor new tasks
 
 	// Cancellation and termination
@@ -86,7 +86,7 @@ type Downloader struct {
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
-func New(mux *event.TypeMux, nodeSvc *node.Node, dropPeer peerDropFn) *Downloader {
+func New(mux *event.TypeMux, nodeSvc *node.PublicNodeAPI, dropPeer peerDropFn) *Downloader {
 
 	dl := &Downloader{
 		mode:          FullSync,
@@ -95,7 +95,7 @@ func New(mux *event.TypeMux, nodeSvc *node.Node, dropPeer peerDropFn) *Downloade
 		peers:         newPeerSet(),
 		rttEstimate:   uint64(rttMaxEstimate),
 		rttConfidence: uint64(1000000),
-		node:    		nodeSvc,
+		nodeAPI:       nodeSvc,
 		dropPeer:      dropPeer,
 		blockCh:       make(chan dataPack, 1),
 		blockProcCh:   make(chan []*meta.Block, 1),
@@ -120,7 +120,7 @@ func New(mux *event.TypeMux, nodeSvc *node.Node, dropPeer peerDropFn) *Downloade
 //	current := uint64(0)
 //	switch d.mode {
 //	case FullSync:
-//		current = uint64(d.blockchain.GetBestBlock().GetHeight())
+//		current = uint64(d.blockchain.getBestBlock().GetHeight())
 //		//	case FastSync:
 //		//		current = d.blockchain.CurrentFastBlock().NumberU64()
 //		//	case LightSync:
@@ -410,7 +410,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 	var ceil uint64
 	floor := int64(-1)
 	if d.mode == FullSync {
-		ceil = uint64(node.GetBestBlock().GetHeight())
+		ceil = uint64(d.nodeAPI.GetBestBlock().GetHeight())
 	}
 
 	p.log.Debug("Looking for common ancestor", "local", ceil, "remote", height)
@@ -472,7 +472,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 					continue
 				}
 				// Otherwise check if we already know the header or not
-				if d.mode == FullSync && node.HasBlock(*blocks[i].GetBlockID()) {
+				if d.mode == FullSync && d.nodeAPI.HasBlock(*blocks[i].GetBlockID()) {
 					number, hash = uint64(blocks[i].GetHeight()), *blocks[i].GetBlockID()
 
 					// If every header is known, even future ones, the peer straight out lied about its head
@@ -531,7 +531,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 				arrived = true
 
 				// Modify the search interval based on the response
-				if d.mode == FullSync && !node.HasBlock(*blocks[0].GetBlockID()) {
+				if d.mode == FullSync && !d.nodeAPI.HasBlock(*blocks[0].GetBlockID()) {
 					end = check
 					break
 				}
@@ -863,12 +863,12 @@ func (d *Downloader) processBlocks(origin uint64, pivot uint64) error {
 				hashes[i] = *block.GetBlockID()
 			}
 
-			lastBlock := node.GetBestBlock().GetHeight()
+			lastBlock := d.nodeAPI.GetBestBlock().GetHeight()
 
 			// TODO: add rollback code
 			// d.lightchain.Rollback(hashes)
 
-			curBlock := node.GetBestBlock().GetHeight()
+			curBlock := d.nodeAPI.GetBestBlock().GetHeight()
 			log.Warn("Rolled back blocks", "count", len(hashes),
 				"block", fmt.Sprintf("%d->%d", lastBlock, curBlock))
 		}
@@ -965,11 +965,11 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 
 	for _, result := range results {
 		log.Trace("Downloaded item processing block", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "block", result.Block)
-		if node.HasBlock(*result.Block.GetBlockID()) {
+		if d.nodeAPI.HasBlock(*result.Block.GetBlockID()) {
 			continue
 		}
 
-		if err := node.ProcessBlock(result.Block); err != nil {
+		if err := d.nodeAPI.ProcessBlock(result.Block); err != nil {
 			log.Error("Downloaded item processing failed", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "err", err)
 			return errInvalidChain
 		}

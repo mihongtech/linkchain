@@ -3,12 +3,12 @@ package cmd
 import (
 	_ "encoding/hex"
 
+	_ "github.com/linkchain/app"
 	_ "github.com/linkchain/common/btcec"
 	_ "github.com/linkchain/common/util/log"
-	_ "github.com/linkchain/wallet"
 	_ "github.com/linkchain/core/meta"
-	_ "github.com/linkchain/app"
 	_ "github.com/linkchain/node"
+	_ "github.com/linkchain/wallet"
 	"github.com/spf13/cobra"
 	_ "strconv"
 )
@@ -73,7 +73,7 @@ var sendMoneyCmd = &cobra.Command{
 		//}
 		//amount := amount.NewAmount(int64(a))
 		//toID, err := util.CreateAccountIdByPubKey(hex.EncodeToString(pb.SerializeCompressed()))
-		//toCoin := util.CreateToCoin(toID, amount)
+		//toCoin := util.createToCoin(toID, amount)
 		//
 		//from, err := app.GetWallet().ChooseWAccount(amount)
 		//if err != nil {
@@ -85,7 +85,7 @@ var sendMoneyCmd = &cobra.Command{
 		//	log.Error("send ", "error", "input is more than account's amount", "season", err)
 		//	return
 		//}
-		//toFromCoin := util.CreateToCoin(from.GetAccountID(), fromAmount.Subtraction(*amount))
+		//toFromCoin := util.createToCoin(from.GetAccountID(), fromAmount.Subtraction(*amount))
 		//
 		//transaction := util.CreateTransaction(fromCoin, toCoin)
 		//transaction.AddToCoin(toFromCoin)

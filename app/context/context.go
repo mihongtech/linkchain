@@ -1,12 +1,12 @@
 package context
 
 import (
-	"github.com/linkchain/core"
 	"github.com/linkchain/config"
+	"github.com/linkchain/core"
 )
 
-type Context struct{
-	Node core.Service
-	P2P  core.Service
+type Context struct {
+	NodeAPI core.Service
+	P2PAPI  core.Service
 	Config  *config.LinkChainConfig
 }

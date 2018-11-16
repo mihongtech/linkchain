@@ -3,9 +3,7 @@ package wallet
 import (
 	"encoding/hex"
 	"github.com/linkchain/common/btcec"
-	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/core/meta"
-	"github.com/linkchain/node"
 )
 
 var minePriv, _ = hex.DecodeString("7a9c6f2b865c98c9fe174869de5818f4c62bc845441c08269487cdba6688f6b1")
@@ -15,22 +13,22 @@ type WAccount struct {
 	account meta.Account
 }
 
-func NewWSAccount() WAccount {
-	priv, err := btcec.NewPrivateKey(btcec.S256())
-	if err != nil {
-		log.Info("Wallet", "NewAccount - generate private key failed", err)
-	}
-
-	a, err := node.CreateNormalAccount(priv)
-	if err != nil {
-		log.Info("Wallet", "NewAccount - failed", err)
-	}
-	return WAccount{privKey: *priv, account: *a}
-}
+//func NewWSAccount() WAccount {
+//	priv, err := btcec.NewPrivateKey(btcec.S256())
+//	if err != nil {
+//		log.Info("Wallet", "NewAccount - generate private key failed", err)
+//	}
+//
+//	a, err := node.createNormalAccount(priv)
+//	if err != nil {
+//		log.Info("Wallet", "NewAccount - failed", err)
+//	}
+//	return WAccount{privKey: *priv, account: *a}
+//}
 
 //func CreateWAccountFromBytes(privb []byte, amount *meta.Amount) WAccount {
 //	priv, _ := btcec.PrivKeyFromBytes(btcec.S256(), privb)
-//	a, err := node.CreateNormalAccount(priv)
+//	a, err := node.createNormalAccount(priv)
 //	if err != nil {
 //		log.Info("Wallet", "NewAccount - failed", err)
 //	}
@@ -50,7 +48,7 @@ func NewWSAccount() WAccount {
 //	return *id
 //}
 //
-//func (wa *WAccount) GetAccount() *meta.Account {
+//func (wa *WAccount) getAccount() *meta.Account {
 //	return &wa.account
 //}
 //
@@ -58,7 +56,7 @@ func NewWSAccount() WAccount {
 //	if wa.GetAmount() < value.GetInt64() {
 //		return nil, nil, errors.New("WAccount MakeFromCoin() amount is too large")
 //	}
-//	fc := node.CreateFromCoin(wa.GetAccountID())
+//	fc := node.createFromCoin(wa.GetAccountID())
 //	fromAmount := meta.NewAmount(0)
 //	for _, v := range wa.account.UTXOs {
 //		fromAmount.Addition(v.Value)
@@ -144,7 +142,7 @@ func NewWSAccount() WAccount {
 //	newWas := make([]account.IAccount, 0)
 //	for key, _ := range w.accounts {
 //		wa := w.accounts[key]
-//		newWa, err := w.am.GetAccount(wa.GetAccountID())
+//		newWa, err := w.am.getAccount(wa.GetAccountID())
 //		if err != nil {
 //			continue
 //		}

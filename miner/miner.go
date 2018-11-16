@@ -41,7 +41,7 @@ func (w *Miner) Setup(i interface{}) bool {
 //}
 //
 //func (w *Miner) MineBlock() {
-//	best := node.GetBestBlock()
+//	best := node.getBestBlock()
 //	block, err := node.CreateBlock(best.GetHeight(), *best.GetBlockID())
 //	if err != nil {
 //		log.Error("Miner", "New Block error", err)
@@ -53,7 +53,7 @@ func (w *Miner) Setup(i interface{}) bool {
 //	coinbase := node.CreateCoinBaseTx(id, meta.NewAmount(50))
 //	block.SetTx(*coinbase)
 //
-//	txs := node.GetAllTransaction()
+//	txs := node.getAllTransaction()
 //	block.SetTx(txs...)
 //
 //	w.SignBlock(w.signers[mineIndex], block)
@@ -63,7 +63,7 @@ func (w *Miner) Setup(i interface{}) bool {
 //		log.Error("Miner", "Rebuild Block error", err)
 //		return
 //	}
-//	node.ProcessBlock(block)
+//	node.processBlock(block)
 //	//node.GetManager().NewBlockEvent.Post(meta_block.NewMinedBlockEvent{Block: block})
 //}
 //

@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/linkchain/node"
+	"github.com/linkchain/app"
 	"github.com/spf13/cobra"
 )
 
@@ -19,6 +19,6 @@ var chainInfoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "getBlockChainInfo",
 	Run: func(cmd *cobra.Command, args []string) {
-		node.GetBlockChainInfo()
+		app.GetNodeAPI().GetBlockChainInfo()
 	},
 }

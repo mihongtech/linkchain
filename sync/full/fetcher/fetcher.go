@@ -7,8 +7,8 @@ import (
 
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/core/meta"
-	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 	"github.com/linkchain/node"
+	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
 const (
@@ -47,7 +47,7 @@ type peerDropFn func(id string)
 type announce struct {
 	hash   meta.BlockID // Hash of the block being announced
 	number uint64       // Number of the block being announced (0 = unknown | old protocol)
-	b      *meta.Block // Header of the block partially reassembled (new protocol)
+	b      *meta.Block  // Header of the block partially reassembled (new protocol)
 	time   time.Time    // Timestamp of the announcement
 
 	origin string // Identifier of the peer originating the notification
@@ -57,9 +57,9 @@ type announce struct {
 
 // headerFilterTask represents a batch of headers needing fetcher filtering.
 type blockFilterTask struct {
-	peer   string         // The source peer of block headers
+	peer   string        // The source peer of block headers
 	blocks []*meta.Block // Collection of headers to filter
-	time   time.Time      // Arrival time of the headers
+	time   time.Time     // Arrival time of the headers
 }
 
 // inject represents a schedules import operation.
@@ -97,12 +97,12 @@ type Fetcher struct {
 	verifyBlock    blockVerifierFn    // Checks if a block's headers have a valid proof of work
 	broadcastBlock blockBroadcasterFn // Broadcasts a block to connected peers
 	chainHeight    chainHeightFn      // Retrieves the current chain's height
-	node           *node.Node
+	nodeAPI        *node.PublicNodeAPI
 	dropPeer       peerDropFn // Drops a peer for misbehaving
 }
 
 // New creates a block fetcher to retrieve blocks based on hash announcements.
-func New(getBlock blockRetrievalFn, verifyBlock blockVerifierFn, broadcastBlock blockBroadcasterFn, chainHeight chainHeightFn, nodeSvc *node.Node, dropPeer peerDropFn) *Fetcher {
+func New(getBlock blockRetrievalFn, verifyBlock blockVerifierFn, broadcastBlock blockBroadcasterFn, chainHeight chainHeightFn, nodeSvc *node.PublicNodeAPI, dropPeer peerDropFn) *Fetcher {
 	return &Fetcher{
 		notify:         make(chan *announce),
 		inject:         make(chan *inject),
@@ -121,7 +121,7 @@ func New(getBlock blockRetrievalFn, verifyBlock blockVerifierFn, broadcastBlock 
 		verifyBlock:    verifyBlock,
 		broadcastBlock: broadcastBlock,
 		chainHeight:    chainHeight,
-		node:    		nodeSvc,
+		nodeAPI:        nodeSvc,
 		dropPeer:       dropPeer,
 	}
 }
@@ -494,7 +494,7 @@ func (f *Fetcher) insert(peer string, block *meta.Block) {
 			return
 		}
 		log.Debug("insert block to chain", "block", block)
-		if err := node.ProcessBlock(block); err != nil {
+		if err := f.nodeAPI.ProcessBlock(block); err != nil {
 			log.Debug("Propagated block import failed", "peer", peer, "number", block.GetHeight(), "hash", hash, "err", err)
 			return
 		}

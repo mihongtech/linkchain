@@ -56,7 +56,7 @@ func (bc *BlockChain) FillChain() error {
 	//		}
 	//
 	//		if !currentNode.IsGensis() {
-	//			insertBlock, error := blockManager.GetBlockByID(currentNode.GetPrevHash())
+	//			insertBlock, error := blockManager.getBlockByID(currentNode.GetPrevHash())
 	//			if error != nil {
 	//				return error
 	//			}

@@ -8,24 +8,37 @@ import (
 	"github.com/linkchain/p2p"
 )
 
-var appContext context.Context
+var (
+	appContext context.Context
+	nodeSvc    *node.Node
+	p2pSvc     *p2p.Service
+)
 
 func Setup(globalConfig *config.LinkChainConfig) bool {
 	log.Info("Node init...")
 
-	appContext.Node = &node.Node{}
-	appContext.P2P = &p2p.Service{}
+	//prepare config
 	appContext.Config = globalConfig
 
+	//create service
+	nodeSvc = node.NewNode()
+	p2pSvc = p2p.NewP2P()
+
 	//node init
-	if !appContext.Node.Setup(&appContext) {
+	if !nodeSvc.Setup(&appContext) {
 		return false
 	}
 
+	//node api init
+	appContext.NodeAPI = node.NewPublicNodeAPI(nodeSvc)
+
 	//p2p init
-	if !appContext.P2P.Setup(&appContext) {
+	if !p2pSvc.Setup(&appContext) {
 		return false
 	}
+
+	//p2p api init
+	appContext.P2PAPI = p2pSvc
 
 	return true
 }
@@ -34,14 +47,22 @@ func Run() {
 	log.Info("Node is running...")
 
 	//start all service
-	appContext.Node.Start()
-	appContext.P2P.Start()
+	nodeSvc.Start()
+	p2pSvc.Start()
 }
 
 func Stop() {
 	// TODO implement me
 }
 
-func GetP2pService() *p2p.Service {
-	return appContext.P2P.(*p2p.Service)
+func GetAppContext() *context.Context {
+	return &appContext
+}
+
+func GetNodeAPI() *node.PublicNodeAPI {
+	return appContext.NodeAPI.(*node.PublicNodeAPI)
+}
+
+func GetP2PAPI() *p2p.Service {
+	return p2pSvc
 }

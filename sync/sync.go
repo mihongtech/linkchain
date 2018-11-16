@@ -15,9 +15,9 @@ type Service struct {
 
 func (s *Service) Setup(i interface{}) bool {
 	//log.Info("sync service init...");
-	nodeService := i.(*appContext.Context).Node.(*node.Node)
+	nodeAPI := i.(*appContext.Context).NodeAPI.(*node.PublicNodeAPI)
 	engine, err := full.NewProtocolManager(i,
-		nodeService, 0, nodeService.GetBlockEvent(), nodeService.GetTxEvent())
+		nodeAPI, 0, nodeAPI.GetBlockEvent(), nodeAPI.GetTxEvent())
 	if err != nil {
 		return false
 	}

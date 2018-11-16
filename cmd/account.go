@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"encoding/hex"
+	"github.com/linkchain/app"
 	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/node"
 	"github.com/linkchain/core/meta"
 	"github.com/spf13/cobra"
 )
@@ -40,7 +40,7 @@ var getAccountByPubCmd = &cobra.Command{
 
 		id := meta.NewAccountId(pb)
 
-		a, err := node.GetAccount(*id)
+		a, err := app.GetNodeAPI().GetAccount(*id)
 		if err != nil {
 			log.Error("send ", "error", "get account is error", "season", err)
 			return
