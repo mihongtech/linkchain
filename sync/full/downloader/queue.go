@@ -7,8 +7,7 @@ import (
 	"time"
 
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/meta"
-	"github.com/linkchain/meta/block"
+	"github.com/linkchain/core/meta"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -27,7 +26,7 @@ var (
 type fetchRequest struct {
 	Peer   *peerConnection // Peer to which the request was sent
 	From   uint64
-	Blocks []block.IBlock
+	Blocks []*meta.Block
 	Time   time.Time // Time when the request was made
 }
 
@@ -36,7 +35,7 @@ type fetchRequest struct {
 type fetchResult struct {
 	Pending int          // Number of data fetches still pending
 	Hash    meta.BlockID // Hash of the block to prevent recalculating
-	Block   block.IBlock
+	Block   *meta.Block
 }
 type StorageSize float64
 
@@ -45,15 +44,15 @@ type queue struct {
 	mode SyncMode // Synchronisation mode to decide on the block parts to schedule for fetching
 
 	// Blocks are "special", they download in batches, supported by a skeleton chain
-	blockHead      meta.BlockID                   // [full/01] Hash of the last queued block to verify order
-	blockTaskPool  map[uint64]block.IBlock        // [full/01] Pending block retrieval tasks, mapping starting indexes to skeleton headers
-	blockTaskQueue *prque.Prque                   // [full/01] Priority queue of the skeleton indexes to fetch the filling headers for
-	blockPeerMiss  map[string]map[uint64]struct{} // [full/01] Set of per-peer block batches known to be unavailable
-	blockPendPool  map[string]*fetchRequest       // [full/01] Currently pending block retrieval operations
-	blockResults   []block.IBlock                 // [full/01] Result cache accumulating the completed headers
-	blockProced    int                            // [full/01] Number of headers already processed from the results
-	blockOffset    uint64                         // [full/01] Number of the first block in the result cache
-	blockContCh    chan bool                      // [full/01] Channel to notify when block download finishes
+	blockHead      meta.BlockID                   // [full/62] Hash of the last queued block to verify order
+	blockTaskPool  map[uint64]*meta.Block      // [full/62] Pending block retrieval tasks, mapping starting indexes to skeleton headers
+	blockTaskQueue *prque.Prque                   // [full/62] Priority queue of the skeleton indexes to fetch the filling headers for
+	blockPeerMiss  map[string]map[uint64]struct{} // [full/62] Set of per-peer block batches known to be unavailable
+	blockPendPool  map[string]*fetchRequest       // [full/62] Currently pending block retrieval operations
+	blockResults   []*meta.Block               // [full/62] Result cache accumulating the completed headers
+	blockProced    int                            // [full/62] Number of headers already processed from the results
+	blockOffset    uint64                         // [full/62] Number of the first block in the result cache
+	blockContCh    chan bool                      // [full/62] Channel to notify when block download finishes
 
 	resultCache  []*fetchResult // Downloaded but not yet delivered fetch results
 	resultOffset uint64         // Offset of the first cached fetch result in the block chain
@@ -160,7 +159,7 @@ func (q *queue) resultSlots(pendPool map[string]*fetchRequest, donePool map[meta
 
 // ScheduleSkeleton adds a batch of block retrieval tasks to the queue to fill
 // up an already retrieved block skeleton.
-func (q *queue) ScheduleSkeleton(from uint64, skeleton []block.IBlock) {
+func (q *queue) ScheduleSkeleton(from uint64, skeleton []*meta.Block) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -169,10 +168,10 @@ func (q *queue) ScheduleSkeleton(from uint64, skeleton []block.IBlock) {
 		panic("skeleton assembly already in progress")
 	}
 	// Shedule all the block retrieval tasks for the skeleton assembly
-	q.blockTaskPool = make(map[uint64]block.IBlock)
+	q.blockTaskPool = make(map[uint64]*meta.Block)
 	q.blockTaskQueue = prque.New()
 	q.blockPeerMiss = make(map[string]map[uint64]struct{}) // Reset availability to correct invalid chains
-	q.blockResults = make([]block.IBlock, len(skeleton)*MaxBlockFetch)
+	q.blockResults = make([]*meta.Block, len(skeleton)*MaxBlockFetch)
 	q.blockProced = 0
 	q.blockOffset = from
 	q.blockContCh = make(chan bool, 1)
@@ -187,7 +186,7 @@ func (q *queue) ScheduleSkeleton(from uint64, skeleton []block.IBlock) {
 
 // RetrieveBlocks retrieves the block chain assemble based on the scheduled
 // skeleton.
-func (q *queue) RetrieveBlocks() ([]block.IBlock, int) {
+func (q *queue) RetrieveBlocks() ([]*meta.Block, int) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -199,12 +198,12 @@ func (q *queue) RetrieveBlocks() ([]block.IBlock, int) {
 
 // Schedule adds a set of headers for the download queue for scheduling, returning
 // the new headers encountered.
-func (q *queue) Schedule(blocks []block.IBlock, from uint64) []block.IBlock {
+func (q *queue) Schedule(blocks []*meta.Block, from uint64) []*meta.Block {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
 	// Insert all the headers prioritised by the contained block number
-	inserts := make([]block.IBlock, 0, len(blocks))
+	inserts := make([]*meta.Block, 0, len(blocks))
 	for _, block := range blocks {
 		// Make sure chain order is honoured and preserved throughout
 		hash := *block.GetBlockID()
@@ -321,8 +320,8 @@ func (q *queue) ReserveBlocks(p *peerConnection, count int) *fetchRequest {
 // Note, this method expects the queue lock to be already held for writing. The
 // reason the lock is not obtained in here is because the parameters already need
 // to access the queue, so they already need a lock anyway.
-func (q *queue) reserveBlocks(p *peerConnection, count int, taskPool map[meta.BlockID]block.IBlock, taskQueue *prque.Prque,
-	pendPool map[string]*fetchRequest, donePool map[meta.BlockID]struct{}, isNoop func(block.IBlock) bool) (*fetchRequest, bool, error) {
+func (q *queue) reserveBlocks(p *peerConnection, count int, taskPool map[meta.BlockID]*meta.Block, taskQueue *prque.Prque,
+	pendPool map[string]*fetchRequest, donePool map[meta.BlockID]struct{}, isNoop func(*meta.Block) bool) (*fetchRequest, bool, error) {
 	// Short circuit if the pool has been depleted, or if the peer's already
 	// downloading something (sanity check not to corrupt state)
 	if taskQueue.Empty() {
@@ -335,12 +334,12 @@ func (q *queue) reserveBlocks(p *peerConnection, count int, taskPool map[meta.Bl
 	space := q.resultSlots(pendPool, donePool)
 
 	// Retrieve a batch of tasks, skipping previously failed ones
-	send := make([]block.IBlock, 0, count)
-	skip := make([]block.IBlock, 0)
+	send := make([]*meta.Block, 0, count)
+	skip := make([]*meta.Block, 0)
 
 	progress := false
 	for proc := 0; proc < space && len(send) < count && !taskQueue.Empty(); proc++ {
-		block := taskQueue.PopItem().(block.IBlock)
+		block := taskQueue.PopItem().(*meta.Block)
 		hash := *block.GetBlockID()
 
 		// If we're the first to request this task, initialise the result container
@@ -479,7 +478,7 @@ func (q *queue) expire(timeout time.Duration, pendPool map[string]*fetchRequest,
 // If the headers are accepted, the method makes an attempt to deliver the set
 // of ready headers to the processor to keep the pipeline full. However it will
 // not block to prevent stalling other pending deliveries.
-func (q *queue) DeliverBlocks(id string, blocks []block.IBlock, blockProcCh chan []block.IBlock) (int, error) {
+func (q *queue) DeliverBlocks(id string, blocks []*meta.Block, blockProcCh chan []*meta.Block) (int, error) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -544,7 +543,7 @@ func (q *queue) DeliverBlocks(id string, blocks []block.IBlock, blockProcCh chan
 	}
 	if ready > 0 {
 		// Blocks are ready for delivery, gather them and push forward (non blocking)
-		process := make([]block.IBlock, ready)
+		process := make([]*meta.Block, ready)
 		copy(process, q.blockResults[q.blockProced:q.blockProced+ready])
 
 		select {
@@ -566,9 +565,9 @@ func (q *queue) DeliverBlocks(id string, blocks []block.IBlock, blockProcCh chan
 // Note, this method expects the queue lock to be already held for writing. The
 // reason the lock is not obtained in here is because the parameters already need
 // to access the queue, so they already need a lock anyway.
-func (q *queue) deliver(id string, taskPool map[meta.BlockID]block.IBlock, taskQueue *prque.Prque,
+func (q *queue) deliver(id string, taskPool map[meta.BlockID]*meta.Block, taskQueue *prque.Prque,
 	pendPool map[string]*fetchRequest, donePool map[meta.BlockID]struct{},
-	results int, reconstruct func(block block.IBlock, index int, result *fetchResult) error) (int, error) {
+	results int, reconstruct func(block *meta.Block, index int, result *fetchResult) error) (int, error) {
 
 	// Short circuit if the data was never requested
 	log.Info("start to deliver", "id", id)

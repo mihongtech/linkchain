@@ -144,6 +144,12 @@
 			"revisionTime": "2018-05-14T10:14:17Z"
 		},
 		{
+			"checksumSHA1": "UYDU8nJJ/RXSTrR+dgQodj78uQI=",
+			"path": "github.com/inconshreveable/mousetrap",
+			"revision": "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75",
+			"revisionTime": "2014-10-17T20:07:13Z"
+		},
+		{
 			"checksumSHA1": "kH45ZS6tfxl5R6xer2oJIqEp6kQ=",
 			"path": "github.com/shengdoushi/base58",
 			"revision": "c5f44ca1af76fb63925d5fba8fa7b85870199839",

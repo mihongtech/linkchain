@@ -1,97 +1,82 @@
 package node
 
 import (
-	"github.com/linkchain/common"
+	appContext "github.com/linkchain/app/context"
+	"github.com/linkchain/common/lcdb"
+	"github.com/linkchain/common/math"
+	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/config"
-	"github.com/linkchain/consensus"
-	"github.com/linkchain/function/miner"
-	"github.com/linkchain/function/wallet"
-	"github.com/linkchain/p2p"
+	"github.com/linkchain/core/meta"
 	"github.com/linkchain/storage"
+	"sync"
 )
 
 var (
-	//service collection
-	svcList = []common.IService{
-		&storage.Storage{},
-		&consensus.Service{},
-		&wallet.Wallet{},
-		&p2p.Service{},
-		&miner.Miner{},
-	}
+	globalConfig config.LinkChainConfig
 )
 
-func Init(globalConfig *config.LinkChainConfig) bool {
-	log.Info("Node init...")
+type Node struct {
+	//transaction
+	txPool  []meta.Transaction
+	stateDB *storage.StateDB
 
-	//storage init
-	if !svcList[0].Init(globalConfig) {
-		return false
-	} else {
-		globalConfig.StorageService = svcList[0]
-	}
+	//block
+	blockMtx            sync.RWMutex
+	mapBlockIndexByHash map[math.Hash]meta.Block
 
-	//consensus init
-	if !svcList[1].Init(globalConfig) {
-		return false
-	}
+	//chain
+	chainMtx       sync.RWMutex
+	chains         []meta.Chain     //the chain tree for storing all chains
+	mainChainIndex []meta.ChainNode //the mainChain is slice for search block
+	mainChain      meta.BlockChain  //the mainChain is linked list for converting chain
+	db             lcdb.Database
 
-	globalConfig.ConsensusService = svcList[1]
+	//event
+	newBlockEvent   *event.TypeMux
+	newAccountEvent *event.TypeMux
+	newTxEvent      *event.Feed
+}
 
-	//wallet init
-	if !svcList[2].Init(globalConfig) {
-		return false
-	}
+func NewNode() *Node {
+	return &Node{}
+}
 
-	//p2p init
-	if !svcList[3].Init(globalConfig) {
-		return false
-	}
+func (n *Node) Setup(i interface{}) bool {
+	globalConfig := i.(*appContext.Context).Config
 
-	//miner init
-	if !svcList[4].Init(nil) {
-		return false
-	}
+	log.Info("Manage init...")
+
+	n.newBlockEvent = new(event.TypeMux)
+	n.newAccountEvent = new(event.TypeMux)
+	n.newTxEvent = new(event.Feed)
+	n.txPool = make([]meta.Transaction, 0)
+	n.stateDB = &storage.StateDB{}
+	n.mapBlockIndexByHash = make(map[math.Hash]meta.Block)
+
+	n.initAccountManager()
+
+	s := storage.NewStrorage(globalConfig.DataDir)
+
+	initChainManager(n, s.GetDB(), globalConfig.GenesisPath)
+
 	return true
 }
 
-func Run() {
-	log.Info("Node is running...")
+func (n *Node) Start() bool {
+	log.Info("Manage start...")
 
-	//start all service
-	for _, v := range svcList {
-		if !v.Start() {
-			return
-		}
-	}
-
-	/*block :=svcList[1].(*consensus.Service).GetBlockManager().CreateBlock()
-	svcList[1].(*consensus.Service).GetBlockManager().ProcessBlock(block)*/
+	return true
 }
 
-func Stop() {
-	// TODO implement me
+func (n *Node) Stop() {
+	log.Info("Manage stop...")
 }
 
-//get service
-
-func GetStorage() *storage.Storage {
-	return svcList[0].(*storage.Storage)
-}
-
-func GetConsensusService() *consensus.Service {
-	return svcList[1].(*consensus.Service)
-}
-
-func GetWallet() *wallet.Wallet {
-	return svcList[2].(*wallet.Wallet)
-}
-
-func GetP2pService() *p2p.Service {
-	return svcList[3].(*p2p.Service)
-}
-
-func GetMiner() *miner.Miner {
-	return svcList[4].(*miner.Miner)
-}
+//func (n *Node) getBlockEvent() *event.TypeMux {
+//	return n.newBlockEvent
+//}
+//
+//func (n *Node) getTxEvent() *event.Feed {
+//	return n.newTxEvent
+//}

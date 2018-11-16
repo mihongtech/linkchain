@@ -13,8 +13,7 @@ import (
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/config"
-	"github.com/linkchain/meta/block"
-	poa_meta "github.com/linkchain/poa/meta"
+	"github.com/linkchain/core/meta"
 	"github.com/linkchain/protobuf"
 )
 
@@ -144,7 +143,7 @@ func blockKey(hash math.Hash, number uint64) []byte {
 //
 // Note, due to concurrent download of header and block body the header and thus
 // canonical hash can be stored in the database but the body data not (yet).
-func GetBlock(db DatabaseReader, hash math.Hash, number uint64) *poa_meta.Block {
+func GetBlock(db DatabaseReader, hash math.Hash, number uint64) *meta.Block {
 	data := GetBlockBytes(db, hash, number)
 	if len(data) == 0 {
 		return nil
@@ -154,7 +153,7 @@ func GetBlock(db DatabaseReader, hash math.Hash, number uint64) *poa_meta.Block 
 		log.Error("decode block failed")
 		return nil
 	}
-	block := &poa_meta.Block{}
+	block := &meta.Block{}
 	block.Deserialize(&b)
 	return block
 }
@@ -257,7 +256,7 @@ func WriteTrieSyncProgress(db lcdb.Putter, count uint64) error {
 }
 
 // WriteBlock serializes a block into the database, header and body separately.
-func WriteBlock(db lcdb.Putter, block block.IBlock) error {
+func WriteBlock(db lcdb.Putter, block *meta.Block) error {
 
 	data := block.Serialize()
 	bytesData, err := proto.Marshal(data)

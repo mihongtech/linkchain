@@ -10,9 +10,8 @@ import (
 
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/consensus/manager"
-	"github.com/linkchain/meta"
-	"github.com/linkchain/meta/block"
+	"github.com/linkchain/core/meta"
+	"github.com/linkchain/node"
 )
 
 var (
@@ -63,8 +62,7 @@ type Downloader struct {
 	rttEstimate   uint64 // Round trip time to target for download requests
 	rttConfidence uint64 // Confidence in the estimated RTT (unit: millionths to allow atomic ops)
 
-	blockchain   manager.ChainManager
-	blockmanager manager.BlockManager
+	nodeAPI *node.PublicNodeAPI
 
 	// Callbacks
 	dropPeer peerDropFn // Drops a peer for misbehaving
@@ -75,8 +73,8 @@ type Downloader struct {
 	committed     int32
 
 	// Channels
-	blockCh     chan dataPack       // [full/01] Channel receiving inbound block headers
-	blockProcCh chan []block.IBlock // [full/01] Channel to feed the header processor new tasks
+	blockCh     chan dataPack      // [full/62] Channel receiving inbound block headers
+	blockProcCh chan []*meta.Block // [full/62] Channel to feed the header processor new tasks
 
 	// Cancellation and termination
 	cancelPeer string        // Identifier of the peer currently being used as the master (cancel on drop)
@@ -88,7 +86,7 @@ type Downloader struct {
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
-func New(mux *event.TypeMux, chain manager.ChainManager, blockManager manager.BlockManager, dropPeer peerDropFn) *Downloader {
+func New(mux *event.TypeMux, nodeSvc *node.PublicNodeAPI, dropPeer peerDropFn) *Downloader {
 
 	dl := &Downloader{
 		mode:          FullSync,
@@ -97,11 +95,10 @@ func New(mux *event.TypeMux, chain manager.ChainManager, blockManager manager.Bl
 		peers:         newPeerSet(),
 		rttEstimate:   uint64(rttMaxEstimate),
 		rttConfidence: uint64(1000000),
-		blockchain:    chain,
-		blockmanager:  blockManager,
+		nodeAPI:       nodeSvc,
 		dropPeer:      dropPeer,
 		blockCh:       make(chan dataPack, 1),
-		blockProcCh:   make(chan []block.IBlock, 1),
+		blockProcCh:   make(chan []*meta.Block, 1),
 		quitCh:        make(chan struct{}),
 	}
 	go dl.qosTuner()
@@ -339,7 +336,7 @@ func (d *Downloader) Terminate() {
 
 // fetchHeight retrieves the head header of the remote peer to aid in estimating
 // the total time a pending synchronisation would take.
-func (d *Downloader) fetchHeight(p *peerConnection) (block.IBlock, error) {
+func (d *Downloader) fetchHeight(p *peerConnection) (*meta.Block, error) {
 	p.log.Trace("Retrieving remote chain height")
 
 	// Request the advertised remote head block and wait for the response
@@ -385,7 +382,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 	var ceil uint64
 	floor := int64(-1)
 	if d.mode == FullSync {
-		ceil = uint64(d.blockchain.GetBestBlock().GetHeight())
+		ceil = uint64(d.nodeAPI.GetBestBlock().GetHeight())
 	}
 
 	p.log.Debug("Looking for common ancestor", "local", ceil, "remote", height)
@@ -447,7 +444,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 					continue
 				}
 				// Otherwise check if we already know the header or not
-				if d.mode == FullSync && d.blockmanager.HasBlock(*blocks[i].GetBlockID()) {
+				if d.mode == FullSync && d.nodeAPI.HasBlock(*blocks[i].GetBlockID()) {
 					number, hash = uint64(blocks[i].GetHeight()), *blocks[i].GetBlockID()
 
 					// If every header is known, even future ones, the peer straight out lied about its head
@@ -506,7 +503,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 				arrived = true
 
 				// Modify the search interval based on the response
-				if d.mode == FullSync && !d.blockmanager.HasBlock(*blocks[0].GetBlockID()) {
+				if d.mode == FullSync && !d.nodeAPI.HasBlock(*blocks[0].GetBlockID()) {
 					end = check
 					break
 				}
@@ -639,7 +636,7 @@ func (d *Downloader) fetchBlocks(p *peerConnection, from uint64, pivot uint64) e
 	}
 }
 
-func (d *Downloader) fillBlockSkeleton(from uint64, skeleton []block.IBlock) ([]block.IBlock, int, error) {
+func (d *Downloader) fillBlockSkeleton(from uint64, skeleton []*meta.Block) ([]*meta.Block, int, error) {
 	log.Trace("Filling up skeleton", "from", from)
 	d.queue.ScheduleSkeleton(from, skeleton)
 
@@ -669,7 +666,7 @@ func (d *Downloader) fillBlockSkeleton(from uint64, skeleton []block.IBlock) ([]
 
 func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliver func(dataPack) (int, error), wakeCh chan bool,
 	expire func() map[string]int, pending func() int, inFlight func() bool, throttle func() bool, reserve func(*peerConnection, int) (*fetchRequest, bool, error),
-	fetchHook func([]block.IBlock), fetch func(*peerConnection, *fetchRequest) error, cancel func(*fetchRequest), capacity func(*peerConnection) int,
+	fetchHook func([]*meta.Block), fetch func(*peerConnection, *fetchRequest) error, cancel func(*fetchRequest), capacity func(*peerConnection) int,
 	idle func() ([]*peerConnection, int), setIdle func(*peerConnection, int), kind string) error {
 
 	// Create a ticker to detect expired retrieval tasks
@@ -829,7 +826,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 
 func (d *Downloader) processBlocks(origin uint64, pivot uint64) error {
 	// Keep a count of uncertain headers to roll back
-	rollback := []block.IBlock{}
+	rollback := []*meta.Block{}
 	defer func() {
 		if len(rollback) > 0 {
 			// Flatten the headers and roll them back
@@ -838,12 +835,12 @@ func (d *Downloader) processBlocks(origin uint64, pivot uint64) error {
 				hashes[i] = *block.GetBlockID()
 			}
 
-			lastBlock := d.blockchain.GetBestBlock().GetHeight()
+			lastBlock := d.nodeAPI.GetBestBlock().GetHeight()
 
 			// TODO: add rollback code
 			// d.lightchain.Rollback(hashes)
 
-			curBlock := d.blockchain.GetBestBlock().GetHeight()
+			curBlock := d.nodeAPI.GetBestBlock().GetHeight()
 			log.Warn("Rolled back blocks", "count", len(hashes),
 				"block", fmt.Sprintf("%d->%d", lastBlock, curBlock))
 		}
@@ -912,7 +909,7 @@ func (d *Downloader) processFullSyncContent() error {
 	}
 }
 
-func (d *Downloader) ImportBlocks(id string, blocks []block.IBlock) error {
+func (d *Downloader) ImportBlocks(id string, blocks []*meta.Block) error {
 	var results []*fetchResult
 	for _, block := range blocks {
 		results = append(results, &fetchResult{Hash: *block.GetBlockID(), Block: block})
@@ -940,11 +937,11 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 
 	for _, result := range results {
 		log.Trace("Downloaded item processing block", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "block", result.Block)
-		if d.blockmanager.HasBlock(*result.Block.GetBlockID()) {
+		if d.nodeAPI.HasBlock(*result.Block.GetBlockID()) {
 			continue
 		}
 
-		if err := d.blockmanager.ProcessBlock(result.Block); err != nil {
+		if err := d.nodeAPI.ProcessBlock(result.Block); err != nil {
 			log.Error("Downloaded item processing failed", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "err", err)
 			return errInvalidChain
 		}
@@ -969,7 +966,7 @@ func splitAroundPivot(pivot uint64, results []*fetchResult) (p *fetchResult, bef
 
 // DeliverHeaders injects a new batch of block headers received from a remote
 // node into the download schedule.
-func (d *Downloader) DeliverBlocks(id string, blocks []block.IBlock) (err error) {
+func (d *Downloader) DeliverBlocks(id string, blocks []*meta.Block) (err error) {
 	return d.deliver(id, d.blockCh, &blockPack{id, blocks})
 }
 

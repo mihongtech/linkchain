@@ -7,28 +7,7 @@ import (
 
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/config"
-	"github.com/linkchain/meta"
-	"github.com/linkchain/meta/block"
-	"github.com/linkchain/meta/chain"
-	"github.com/linkchain/meta/tx"
 )
-
-type IStroage interface {
-	//block
-	storeBlock(block block.IBlock)
-	loadBlockById(id meta.BlockID) block.IBlock
-	loadBlockByHeight(height int) block.IBlock
-
-	//tx
-	storeTx(iTx tx.ITx)
-	loadTxById(id meta.BlockID) tx.ITx
-
-	//chain info
-	storeChain(chain chain.IChain)
-	storeChainGraph(graph chain.IChainGraph)
-	loadChainGraph() chain.IChainGraph
-}
 
 type Storage struct {
 	Name    string
@@ -36,19 +15,21 @@ type Storage struct {
 	dataDir string
 }
 
-func (s *Storage) Init(i interface{}) bool {
+func NewStrorage(dataDir string) *Storage {
 	log.Info("Stroage init...")
+
+	s := &Storage{}
 
 	//load genesis from storage
 	var err error
-	name := "chaindata"
-	s.dataDir = i.(*config.LinkChainConfig).DataDir
-	s.db, err = s.OpenDatabase(name, 1024, 256)
+	s.Name = "chaindata"
+	s.dataDir = dataDir
+	s.db, err = s.OpenDatabase(s.Name, 1024, 256)
 	if err != nil {
-		return false
+		return nil
 	}
 
-	return true
+	return s
 }
 
 func (s *Storage) OpenDatabase(name string, cache, handles int) (lcdb.Database, error) {
@@ -89,15 +70,15 @@ func (s *Storage) name() string {
 	return s.Name
 }
 
-func (m *Storage) Start() bool {
+func (s *Storage) Start() bool {
 	log.Info("Stroage start...")
 	return true
 }
 
-func (m *Storage) Stop() {
+func (s *Storage) Stop() {
 	log.Info("Stroage stop...")
 }
 
-func (m *Storage) GetDB() lcdb.Database {
-	return m.db
+func (s *Storage) GetDB() lcdb.Database {
+	return s.db
 }

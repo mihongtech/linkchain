@@ -6,7 +6,7 @@ import (
 	_ "math/big"
 
 	"github.com/linkchain/common/serialize"
-	"github.com/linkchain/meta"
+	"github.com/linkchain/core/meta"
 	"github.com/linkchain/protobuf"
 )
 

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	_ "github.com/linkchain/common/util/log"
-	"github.com/linkchain/meta/tx"
+	"github.com/linkchain/core/meta"
 	"github.com/linkchain/p2p/node"
 )
 
@@ -22,7 +22,7 @@ const (
 
 type txsync struct {
 	p   *peer
-	txs []tx.ITx
+	txs []*meta.Transaction
 }
 
 type StorageSize float64
@@ -148,7 +148,7 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 		return
 	}
 
-	if block := pm.blockchain.GetBestBlock(); block.GetHeight() > 0 {
+	if block := pm.nodeAPI.GetBestBlock(); block.GetHeight() > 0 {
 		// We've completed a sync cycle, notify all peers of new state. This path is
 		// essential in star-topology networks where a gateway node needs to notify
 		// all its out-of-date peers of the availability of a new block. This failure
