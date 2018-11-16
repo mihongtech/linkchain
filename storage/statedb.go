@@ -10,6 +10,7 @@ import (
 	poameta "github.com/linkchain/core/meta"
 	//"github.com/linkchain/node"
 	"github.com/linkchain/config"
+	"github.com/linkchain/helper"
 )
 
 type StateDB struct {
@@ -109,15 +110,16 @@ func (s *StateDB) UpdateAccountsByBlock(block *meta.Block) error {
 		}
 
 	}
+
 	coinBase := meta.NewAmount(0)
 	txFee := meta.NewAmount(0)
-	for _, tx := range txs {
-		fcs := tx.GetFromCoins()
-		tcs := tx.GetToCoins()
+	for index, _ := range txs {
+		fcs := txs[index].GetFromCoins()
+		tcs := txs[index].GetToCoins()
 
-		if tx.GetType() != config.CoinBaseTx {
+		if txs[index].GetType() != config.CoinBaseTx {
 			fcValue := meta.NewAmount(0)
-			tcValue := tx.GetToValue()
+			tcValue := txs[index].GetToValue()
 			for _, fc := range fcs {
 				cacheA, _ := processCache[fc.GetId().String()]
 
@@ -142,15 +144,17 @@ func (s *StateDB) UpdateAccountsByBlock(block *meta.Block) error {
 
 			txFee.Addition(*fcValue.Subtraction(*tcValue))
 		} else {
-			coinBase.Addition(*tx.GetToValue())
+			coinBase.Addition(*txs[index].GetToValue())
 		}
 
+		txId := (&txs[index]).GetTxID()
 		for index := range tcs {
 			cacheA, err := processCache[tcs[index].GetId().String()]
 			if !err {
-				//cacheA = *node.CreateTempleteAccount(tcs[index].GetId())
+				cacheA = *helper.CreateTempleteAccount(tcs[index].GetId())
 			}
-			nTicket := poameta.NewTicket(*tx.GetTxID(), uint32(index))
+
+			nTicket := poameta.NewTicket(*txId, uint32(index))
 			nUTXO := poameta.NewUTXO(nTicket, block.GetHeight(), block.GetHeight(), *tcs[index].GetValue())
 			cacheA.UTXOs = append(cacheA.UTXOs, *nUTXO)
 			processCache[cacheA.GetAccountID().String()] = cacheA

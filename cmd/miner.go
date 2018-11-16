@@ -37,6 +37,6 @@ var stopMineCmd = &cobra.Command{
 	Use:   "stop",
 	Short: "get Miner info",
 	Run: func(cmd *cobra.Command, args []string) {
-		go app.GetMinerAPI().Stop()
+		go app.GetMinerAPI().StopMine()
 	},
 }

@@ -6,12 +6,11 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/protobuf"
-
-	"github.com/golang/protobuf/proto"
 )
 
 type AccountID struct {
@@ -60,9 +59,9 @@ func NewAccountId(id *btcec.PublicKey) *AccountID {
 
 type UTXO struct {
 	Ticket
-	LocatedHeight uint32        `json:"locatedHeight"`
-	EffectHeight  uint32        `json:"effectHeight"`
-	Value         Amount 		`json:"value"`
+	LocatedHeight uint32 `json:"locatedHeight"`
+	EffectHeight  uint32 `json:"effectHeight"`
+	Value         Amount `json:"value"`
 }
 
 func NewUTXO(tickets *Ticket, locatedHeight uint32, effectHeight uint32, value Amount) *UTXO {

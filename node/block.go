@@ -124,20 +124,22 @@ func (n *Node) processBlock(block *meta.Block) error {
 	}
 
 	//2.acceptBlock
+	n.addBlock(block)
 	n.addBlockCache(block)
-	log.Info("POA Add a Blocks", "block", block.GetBlockID(), "prev", block.GetPrevBlockID())
-	//log.Info("POA Add a Blocks", "block hash", block.GetBlockID().String())
-	//log.Info("POA Add a Blocks", "prev hash", block.GetPrevBlockID().String())
+	/*log.Info("POA Add a Blocks", "block", block.GetBlockID(), "prev", block.GetPrevBlockID())
+	log.Info("POA Add a Blocks", "block hash", block.GetBlockID().String())
+	log.Info("POA Add a Blocks", "prev hash", block.GetPrevBlockID().String())
+	log.Info("POA Add a Blocks", "block", block)*/
 
 	//3.updateChain
-	if !n.updateChain() {
+	if !n.updateChainAndIndex() {
 		log.Info("POA Update chain failed")
-		n.updateChain()
+		n.updateChainAndIndex()
 		return errors.New("Update chain failed")
 	}
 
 	//log.Info("POA processBlock successed")
-	//GetManager().ChainManager.getBlockChainInfo()
+	n.getBlockChainInfo()
 
 	//4.updateStorage
 

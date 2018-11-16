@@ -460,7 +460,7 @@ func (n *Node) updateChain() bool {
 	log.Info("ChainManage UpdateChain", "bestheight", bestBlock.GetHeight(), "bestblock", bestBlock.GetBlockID(), "prev", bestBlock.GetPrevBlockID())
 	n.mainChain.AddNode(meta.NewPOAChainNode(bestBlock))
 
-	err := n.mainChain.FillChain()
+	err := n.fillBlockChain()
 	if err != nil {
 		log.Error("ChainManage", "updateChain failed", err)
 		return false
@@ -468,9 +468,41 @@ func (n *Node) updateChain() bool {
 	return true
 }
 
+func (n *Node) fillBlockChain() error {
+	currentE := n.mainChain.GetLastElement()
+	prevE := currentE.Prev()
+
+	for !n.mainChain.IsFillChain() && currentE != nil && prevE != nil {
+		currentNode := currentE.Value.(meta.ChainNode)
+		prevNode := currentE.Prev().Value.(meta.ChainNode)
+		if !n.mainChain.CheckPrevElement(currentE) {
+			if currentNode.GetNodeHeight() <= prevNode.GetNodeHeight() {
+				prevE = currentE.Prev().Prev()
+				n.mainChain.RemoveElement(currentE.Prev())
+				continue
+			}
+
+			if !currentNode.IsGensis() {
+				insertBlock, err := n.getBlockByID(currentNode.GetPrevHash())
+				if err != nil {
+					return err
+				}
+				n.mainChain.InsertBeforeElement(insertBlock, currentE)
+			}
+		}
+
+		currentE = prevE
+		if currentE == nil {
+			break
+		}
+		prevE = currentE.Prev()
+	}
+	return nil
+}
+
 func (n *Node) updateStatus(block *meta.Block, isAdd bool) error {
-	//GetManager().AccountManager.GetAllAccounts()
 	//update mine account status
+	txs := block.GetTxs()
 
 	if isAdd {
 		//add block account status
@@ -486,11 +518,12 @@ func (n *Node) updateStatus(block *meta.Block, isAdd bool) error {
 
 	//update tx pool
 	//update normal account status
-	for _, tx := range block.GetTxs() {
+
+	for index, _ := range txs {
 		if isAdd {
-			n.removeTransaction(*tx.GetTxID())
+			n.removeTransaction(*txs[index].GetTxID())
 		} else {
-			n.addTransaction(&tx)
+			n.addTransaction(&txs[index])
 		}
 	}
 	return nil

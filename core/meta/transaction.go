@@ -15,8 +15,8 @@ import (
 )
 
 type Ticket struct {
-	Txid  TxID `json:"txid"`
-	Index uint32    `json:"index"`
+	Txid  TxID   `json:"txid"`
+	Index uint32 `json:"index"`
 }
 
 func NewTicket(txid TxID, index uint32) *Ticket {
@@ -189,8 +189,8 @@ func (tf *TransactionFrom) String() string {
 }
 
 type ToCoin struct {
-	Id    AccountID     `json:"id"`
-	Value Amount `json:"value"`
+	Id    AccountID `json:"id"`
+	Value Amount    `json:"value"`
 }
 
 func NewToCoin(id AccountID, value *Amount) *ToCoin {
@@ -403,19 +403,11 @@ func (tx *Transaction) AddSignature(signature math.ISignature) {
 }
 
 func (tx *Transaction) GetFromCoins() []FromCoin {
-	fcs := make([]FromCoin, 0)
-	for index:= range tx.From.Coins {
-		fcs = append(fcs, tx.From.Coins[index])
-	}
-	return fcs
+	return tx.From.Coins
 }
 
 func (tx *Transaction) GetToCoins() []ToCoin {
-	tcs := make([]ToCoin, 0)
-	for index := range tx.To.Coins {
-		tcs = append(tcs, tx.To.Coins[index])
-	}
-	return tcs
+	return tx.To.Coins
 }
 
 func (tx *Transaction) GetToValue() *Amount {

@@ -31,8 +31,8 @@ func (bc *BlockChain) GetLastNode() *ChainNode {
 func (bc *BlockChain) IsOnChain(checkNode ChainNode) bool {
 	index := bc.chain.Len() - 1
 	for element := bc.chain.Back(); element != nil && uint32(index) >= checkNode.height; element = element.Prev() {
-		node := element.Value.(ChainNode)
-		if node.IsEuqal(checkNode) {
+		chainNode := element.Value.(ChainNode)
+		if chainNode.IsEuqal(checkNode) {
 			return true
 		}
 		index--
@@ -41,47 +41,16 @@ func (bc *BlockChain) IsOnChain(checkNode ChainNode) bool {
 }
 
 //func (bc *BlockChain) FillChain(blockManager manager.BlockManager) error {
-func (bc *BlockChain) FillChain() error {
-	//currentE := bc.GetLastElement()
-	//prevE := currentE.Prev()
-	//
-	//for !bc.IsFillChain() && currentE != nil && prevE != nil {
-	//	currentNode := currentE.Value.(ChainNode)
-	//	prevNode := currentE.Prev().Value.(ChainNode)
-	//	if !bc.CheckPrevElement(currentE) {
-	//		if currentNode.GetNodeHeight() <= prevNode.GetNodeHeight() {
-	//			prevE = currentE.Prev().Prev()
-	//			bc.chain.Remove(currentE.Prev())
-	//			continue
-	//		}
-	//
-	//		if !currentNode.IsGensis() {
-	//			insertBlock, error := blockManager.getBlockByID(currentNode.GetPrevHash())
-	//			if error != nil {
-	//				return error
-	//			}
-	//			bc.chain.InsertBefore(NewPOAChainNode(insertBlock), currentE)
-	//		}
-	//	}
-	//
-	//	currentE = prevE
-	//	if currentE == nil {
-	//		break
-	//	}
-	//	prevE = currentE.Prev()
-	//}
-	return nil
-}
 
 func (bc *BlockChain) CloneChainIndex(index []ChainNode) []ChainNode {
 	forkNode := bc.chain.Back()
 	forkPosition := len(index) - 1
 	for ; forkNode != nil && forkPosition >= 0; forkNode = forkNode.Prev() {
-		node := forkNode.Value.(ChainNode)
-		nodeHash := node.GetNodeHash()
-		if node.GetNodeHeight() > uint32(forkPosition) {
+		chainNode := forkNode.Value.(ChainNode)
+		nodeHash := chainNode.GetNodeHash()
+		if chainNode.GetNodeHeight() > uint32(forkPosition) {
 			continue
-		} else if int(node.GetNodeHeight()) < forkPosition {
+		} else if int(chainNode.GetNodeHeight()) < forkPosition {
 			forkPosition--
 			continue
 		}
@@ -95,8 +64,8 @@ func (bc *BlockChain) CloneChainIndex(index []ChainNode) []ChainNode {
 	index = index[:forkPosition+1]
 	//push index from the behind of forkNode which from mainChain
 	for forkNode = forkNode.Next(); forkNode != nil; forkNode = forkNode.Next() {
-		node := forkNode.Value.(ChainNode)
-		index = append(index, node)
+		chainNode := forkNode.Value.(ChainNode)
+		index = append(index, chainNode)
 	}
 	return index
 }

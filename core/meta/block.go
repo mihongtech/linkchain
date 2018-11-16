@@ -15,9 +15,8 @@ import (
 	"github.com/linkchain/common/math"
 )
 
-
 type Block struct {
-	Header BlockHeader        `json:"header"`
+	Header BlockHeader   `json:"header"`
 	TXs    []Transaction `json:"txs"`
 }
 
@@ -111,11 +110,7 @@ func (b *Block) String() string {
 }
 
 func (b *Block) GetTxs() []Transaction {
-	txs := make([]Transaction, 0)
-	for index := range b.TXs {
-		txs = append(txs, b.TXs[index])
-	}
-	return txs
+	return b.TXs
 }
 
 func (b *Block) CalculateTxTreeRoot() TreeID {
