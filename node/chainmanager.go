@@ -119,7 +119,7 @@ func LoadBlocks() error {
 		hash = *block.GetPrevBlockID()
 	}
 
-	updateChain()
+	updateChainAndIndex()
 
 	if _, err := getBestNode(); err != nil {
 		return err
@@ -128,7 +128,7 @@ func LoadBlocks() error {
 	for i := len(blocks) - 1; i >= 0; i-- {
 		log.Debug("sort block is", "block", blocks[i], "hash", blocks[i].GetBlockID())
 		sortChains(&blocks[i])
-		updateChain()
+		updateChainAndIndex()
 	}
 
 	return nil
@@ -171,17 +171,17 @@ func getBestBlockHash() meta.BlockID {
 	return hash
 }
 
-func  getBestHeight() (uint32, error) {
+func getBestHeight() (uint32, error) {
 	chainMtx.RLock()
 	defer chainMtx.RUnlock()
 	bestHeight := len(mainChainIndex) - 1
 	if bestHeight < 0 {
-		return uint32(0), errors.New("thechain is not Init")
+		return uint32(0), errors.New("the chain is not Init")
 	}
 	return uint32(bestHeight), nil
 }
 
-func  getBlockByHash(hash math.Hash) (*meta.Block, error) {
+func getBlockByHash(hash math.Hash) (*meta.Block, error) {
 	//TODO need to lock chain
 	b, err := GetBlockByID(hash)
 	if err != nil {
@@ -206,7 +206,7 @@ func GetBlockByHeight(height uint32) (*meta.Block, error) {
 	return b, nil
 }
 
-func  getBlockNodeByHeight(height uint32) (meta.ChainNode, error) {
+func getBlockNodeByHeight(height uint32) (meta.ChainNode, error) {
 	if height > uint32(len(mainChainIndex)-1) {
 		return meta.ChainNode{}, errors.New("the height is too large")
 	}
@@ -260,7 +260,7 @@ func addBlock(block *meta.Block) {
 	//log.Info("AddBlock", "Longest Chain height", len(longest.Blocks), "Longest Chain bestHash", longest.GetLastBlock().GetBlockID().String())
 }
 
-func  getLongestChain() (*meta.Chain, int) {
+func getLongestChain() (*meta.Chain, int) {
 	var lc meta.Chain
 	bestHeight := uint32(0)
 	position := 0
@@ -278,7 +278,7 @@ func updateChainAndIndex() bool {
 	return updateChain() && updateChainIndex()
 }
 
-func  sortChains(block *meta.Block) bool {
+func sortChains(block *meta.Block) bool {
 	chainMtx.Lock()
 	defer chainMtx.Unlock()
 
@@ -373,7 +373,7 @@ updateChainIndex
 aim:update mainChainIndex from mainChain
 TODO need to test
 */
-func  updateChainIndex() bool {
+func updateChainIndex() bool {
 	chainMtx.Lock()
 	defer chainMtx.Unlock()
 
@@ -486,7 +486,7 @@ func updateChain() bool {
 	return true
 }
 
-func  updateStatus(block *meta.Block, isAdd bool) error {
+func updateStatus(block *meta.Block, isAdd bool) error {
 	//GetManager().AccountManager.GetAllAccounts()
 	//update mine account status
 
@@ -514,7 +514,7 @@ func  updateStatus(block *meta.Block, isAdd bool) error {
 	return nil
 }
 
-func  removeErrorNode(node meta.ChainNode) {
+func removeErrorNode(node meta.ChainNode) {
 	deleteChain := -1
 	deleteNode := -1
 	for chainId, chain := range chains {
