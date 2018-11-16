@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 
+	"github.com/linkchain/app/context"
 	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/event"
@@ -108,19 +109,21 @@ type Wallet struct {
 	updateAccountSub *event.TypeMuxSubscription
 }
 
+func NewWallet() *Wallet {
+	gensisWA := CreateWAccountFromBytes(minePriv)
+	gensisKey := hex.EncodeToString(gensisWA.privKey.PubKey().SerializeCompressed())
+
+	accounts := make(map[string]WAccount)
+	accounts[gensisKey] = gensisWA
+	return &Wallet{accounts: accounts}
+}
 func (w *Wallet) Setup(i interface{}) bool {
-	log.Info("Wallet init...")
-	w.accounts = make(map[string]WAccount)
-	//w.nodeAPI = app.GetNodeAPI()
+	w.nodeAPI = i.(*context.Context).NodeAPI.(*node.PublicNodeAPI)
 	return true
 }
 
 func (w *Wallet) Start() bool {
 	log.Info("Wallet start...")
-	gensisWA := CreateWAccountFromBytes(minePriv)
-	gensisKey := hex.EncodeToString(gensisWA.privKey.PubKey().SerializeCompressed())
-
-	w.accounts[gensisKey] = gensisWA
 	w.updateAccountSub = w.nodeAPI.GetAccountEvent().Subscribe(node.AccountEvent{})
 	w.ReScanAllAccount()
 	go w.updateWalletLoop()
@@ -146,7 +149,7 @@ func (w *Wallet) updateWalletLoop() {
 
 func (w *Wallet) ReScanAllAccount() {
 	newWas := make([]meta.Account, 0)
-	for key, _ := range w.accounts {
+	for key := range w.accounts {
 		wa := w.accounts[key]
 		newWa, err := w.nodeAPI.GetAccount(wa.GetAccountID())
 		if err != nil {
@@ -188,10 +191,11 @@ func (w *Wallet) ChooseWAccount(amount *meta.Amount) (WAccount, error) {
 			}
 		}
 	}
-	return NewWSAccount(), errors.New("Wallet can not find legal account")
+	return NewWSAccount(), errors.New("wallet can not find legal account")
 }
 
 func (w *Wallet) GetAllWAccount() []WAccount {
+	w.ReScanAllAccount()
 	var WAs []WAccount
 	for a := range w.accounts {
 		WAs = append(WAs, w.accounts[a])

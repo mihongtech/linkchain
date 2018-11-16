@@ -7,6 +7,7 @@ import (
 	"github.com/linkchain/miner"
 	"github.com/linkchain/node"
 	"github.com/linkchain/p2p"
+	"github.com/linkchain/wallet"
 )
 
 var (
@@ -14,6 +15,7 @@ var (
 	nodeSvc    *node.Node
 	p2pSvc     *p2p.Service
 	minerSvc   *miner.Miner
+	walletSvc  *wallet.Wallet
 )
 
 func Setup(globalConfig *config.LinkChainConfig) bool {
@@ -26,6 +28,7 @@ func Setup(globalConfig *config.LinkChainConfig) bool {
 	nodeSvc = node.NewNode()
 	p2pSvc = p2p.NewP2P()
 	minerSvc = miner.NewMiner()
+	walletSvc = wallet.NewWallet()
 
 	//node init
 	if !nodeSvc.Setup(&appContext) {
@@ -49,6 +52,13 @@ func Setup(globalConfig *config.LinkChainConfig) bool {
 	}
 	//miner api init
 	appContext.MinerAPI = minerSvc
+
+	//wallet init
+	if !walletSvc.Setup(&appContext) {
+		return false
+	}
+	//wallet api init
+	appContext.WalletAPI = walletSvc
 	return true
 }
 
@@ -78,4 +88,8 @@ func GetP2PAPI() *p2p.Service {
 
 func GetMinerAPI() *miner.Miner {
 	return minerSvc
+}
+
+func GetWalletAPI() *wallet.Wallet {
+	return walletSvc
 }

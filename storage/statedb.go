@@ -64,9 +64,9 @@ func (s *StateDB) RemoveAccount(id meta.AccountID) {
 func (s *StateDB) GetAllAccount() {
 	s.accountMtx.Lock()
 	defer s.accountMtx.Unlock()
-	for _, v := range s.accounts {
-		log.Info("AccountManage", "account", v.GetAccountID().String(), "amount", v.GetAmount().GetInt64())
-		for _, u := range v.UTXOs {
+	for index, _ := range s.accounts {
+		log.Info("AccountManage", "account", s.accounts[index].GetAccountID().String(), "amount", s.accounts[index].GetAmount().GetInt64())
+		for _, u := range s.accounts[index].UTXOs {
 			log.Info("AccountManage", "Tickets", u.String())
 		}
 	}
@@ -76,7 +76,6 @@ func (s *StateDB) GetAllAccount() {
 func (s *StateDB) UpdateAccountsByBlock(block *meta.Block) error {
 	s.accountMtx.Lock()
 	defer s.accountMtx.Unlock()
-
 	txs := block.GetTxs()
 	processCache := make(map[string]poameta.Account, 0)
 
@@ -113,6 +112,7 @@ func (s *StateDB) UpdateAccountsByBlock(block *meta.Block) error {
 
 	coinBase := meta.NewAmount(0)
 	txFee := meta.NewAmount(0)
+
 	for index, _ := range txs {
 		fcs := txs[index].GetFromCoins()
 		tcs := txs[index].GetToCoins()
@@ -146,7 +146,6 @@ func (s *StateDB) UpdateAccountsByBlock(block *meta.Block) error {
 		} else {
 			coinBase.Addition(*txs[index].GetToValue())
 		}
-
 		txId := (&txs[index]).GetTxID()
 		for index := range tcs {
 			cacheA, err := processCache[tcs[index].GetId().String()]

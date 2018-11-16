@@ -227,9 +227,11 @@ func (tc *ToCoin) Serialize() serialize.SerializeStream {
 
 func (tc *ToCoin) Deserialize(s serialize.SerializeStream) error {
 	data := *s.(*protobuf.ToCoin)
+	tc.Id = AccountID{}
 	if err := tc.Id.Deserialize(data.Id); err != nil {
 		return err
 	}
+
 	tc.Value = *NewAmount(0)
 	tc.Value.SetBytes(data.Value)
 	return nil
@@ -381,7 +383,8 @@ func NewEmptyTransaction(version uint32, txtype uint32) *Transaction {
 
 func (tx *Transaction) GetTxID() *TxID {
 	if tx.txid.IsEmpty() {
-		err := tx.Deserialize(tx.Serialize())
+		s := tx.Serialize()
+		err := tx.Deserialize(s)
 		if err != nil {
 			log.Error("Transaction", "GetTxID() error", err)
 			return nil

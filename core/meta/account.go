@@ -26,21 +26,23 @@ func (a AccountID) IsEqual(other AccountID) bool {
 }
 
 //Serialize/Deserialize
-func (a AccountID) Serialize() serialize.SerializeStream {
+func (a *AccountID) Serialize() serialize.SerializeStream {
 	accountId := protobuf.AccountID{
 		Id: proto.NewBuffer(a.ID).Bytes(),
 	}
 	return &accountId
 }
 
-func (a AccountID) Deserialize(s serialize.SerializeStream) error {
+func (a *AccountID) Deserialize(s serialize.SerializeStream) error {
 	data := s.(*protobuf.AccountID)
 	pk, err := btcec.ParsePubKey(data.Id, btcec.S256())
 	if err != nil {
 		log.Error("Id", "Deserialize failed", err)
 		return err
 	}
-	a.ID = pk.SerializeCompressed()
+	a.ID = make([]byte, 0)
+	pkBytes := pk.SerializeCompressed()
+	a.ID = append(a.ID, pkBytes...)
 	return nil
 }
 
@@ -88,11 +90,11 @@ func NewAccount(id AccountID, accountType uint32, utxos []UTXO, clearTime int64,
 	return &Account{Id: id, AccountType: accountType, UTXOs: utxos, ClearTime: clearTime, SecurityId: securityId}
 }
 
-func (a *Account) GetAccountID() *AccountID {
+func (a Account) GetAccountID() *AccountID {
 	return &a.Id
 }
 
-func (a *Account) GetAmount() *Amount {
+func (a Account) GetAmount() *Amount {
 	sum := NewAmount(0)
 	for _, u := range a.UTXOs {
 		sum.Addition(u.Value)

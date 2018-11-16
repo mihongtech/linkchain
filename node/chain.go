@@ -206,14 +206,14 @@ func (n *Node) getBlockChainInfo() string {
 		n.mainChain.GetLastNode().GetNodeHash())
 
 	//log.Info("ChainManage chains", "chains", len(chains))
-	for i, chain := range n.chains {
+	/*for i, chain := range n.chains {
 		log.Info("ChainManage chains", "chainId", i, "chainHeight", chain.GetHeight(), "bestHash", chain.GetLastBlock().GetBlockID().GetString())
 	}
 
 	for e := n.mainChain.GetLastElement(); e != nil; e = e.Prev() {
 		currentNode := e.Value.(meta.ChainNode)
 		log.Info("ChainManage mainchain", "Height", currentNode.GetNodeHeight(), "current hash", currentNode.GetNodeHash(), "prev hash", currentNode.GetPrevHash())
-	}
+	}*/
 
 	for _, b := range n.mainChainIndex {
 		log.Info("ChainManage mainchainIndex", "chainHeight", b.GetNodeHeight(), "bestHash", b.GetNodeHash())
