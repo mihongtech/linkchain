@@ -3,13 +3,8 @@ package miner
 import (
 	"encoding/hex"
 	"sync"
-	"time"
-
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/config"
 	"github.com/linkchain/wallet"
-	"github.com/linkchain/node"
 )
 
 var fristPrivMiner, _ = hex.DecodeString("55b55e136cc6671014029dcbefc42a7db8ad9b9d11f62677a47fd2ed77eeef7b")
@@ -29,78 +24,78 @@ func (w *Miner) Init(i interface{}) bool {
 	return true
 }
 
-func (w *Miner) Start() bool {
-	log.Info("Miner start...")
-	fristWA := wallet.CreateWAccountFromBytes(fristPrivMiner, meta.NewAmount(0))
-	secondWA := wallet.CreateWAccountFromBytes(secondPrivMiner, meta.NewAmount(0))
-	thirdWA := wallet.CreateWAccountFromBytes(thirdPrivMiner, meta.NewAmount(0))
-	w.signers = append(w.signers, fristWA)
-	w.signers = append(w.signers, secondWA)
-	w.signers = append(w.signers, thirdWA)
-	return true
-}
-
-func (w *Miner) Stop() {
-	log.Info("Miner stop...")
-
-}
-
-func (w *Miner) MineBlock() {
-	best := node.GetBestBlock()
-	block, err := node.CreateBlock(best.GetHeight(), *best.GetBlockID())
-	if err != nil {
-		log.Error("Miner", "New Block error", err)
-		return
-	}
-	mineIndex := block.GetHeight() % 3
-
-	id := w.signers[mineIndex].GetAccountID()
-	coinbase := node.CreateCoinBaseTx(id, meta.NewAmount(50))
-	block.SetTx(*coinbase)
-
-	txs := node.GetAllTransaction()
-	block.SetTx(txs...)
-
-	w.SignBlock(w.signers[mineIndex], block)
-
-	block, err = node.RebuildBlock(block)
-	if err != nil {
-		log.Error("Miner", "Rebuild Block error", err)
-		return
-	}
-	node.ProcessBlock(block)
-	//node.GetManager().NewBlockEvent.Post(meta_block.NewMinedBlockEvent{Block: block})
-}
-
-func (w *Miner) SignBlock(signer wallet.WAccount, block *meta.Block) {
-	sign := signer.Sign(block.GetBlockID().CloneBytes())
-	block.SetSign(sign)
-}
-
-func (w *Miner) StartMine() {
-	w.minerMtx.Lock()
-	w.isMining = true
-	w.minerMtx.Unlock()
-	for true {
-		w.minerMtx.Lock()
-		tempMing := w.isMining
-		w.minerMtx.Unlock()
-		if !tempMing {
-			break
-		}
-		w.MineBlock()
-		time.Sleep(time.Duration(config.DefaultPeriod) * time.Second)
-	}
-}
-
-func (w *Miner) StopMine() {
-	w.minerMtx.Lock()
-	defer w.minerMtx.Unlock()
-	w.isMining = false
-}
-
-func (w *Miner) GetInfo() {
-	w.minerMtx.Lock()
-	defer w.minerMtx.Unlock()
-	log.Info("Miner", "isMing", w.isMining)
-}
+//func (w *Miner) Start() bool {
+//	log.Info("Miner start...")
+//	fristWA := wallet.CreateWAccountFromBytes(fristPrivMiner, meta.NewAmount(0))
+//	secondWA := wallet.CreateWAccountFromBytes(secondPrivMiner, meta.NewAmount(0))
+//	thirdWA := wallet.CreateWAccountFromBytes(thirdPrivMiner, meta.NewAmount(0))
+//	w.signers = append(w.signers, fristWA)
+//	w.signers = append(w.signers, secondWA)
+//	w.signers = append(w.signers, thirdWA)
+//	return true
+//}
+//
+//func (w *Miner) Stop() {
+//	log.Info("Miner stop...")
+//
+//}
+//
+//func (w *Miner) MineBlock() {
+//	best := node.GetBestBlock()
+//	block, err := node.CreateBlock(best.GetHeight(), *best.GetBlockID())
+//	if err != nil {
+//		log.Error("Miner", "New Block error", err)
+//		return
+//	}
+//	mineIndex := block.GetHeight() % 3
+//
+//	id := w.signers[mineIndex].GetAccountID()
+//	coinbase := node.CreateCoinBaseTx(id, meta.NewAmount(50))
+//	block.SetTx(*coinbase)
+//
+//	txs := node.GetAllTransaction()
+//	block.SetTx(txs...)
+//
+//	w.SignBlock(w.signers[mineIndex], block)
+//
+//	block, err = node.RebuildBlock(block)
+//	if err != nil {
+//		log.Error("Miner", "Rebuild Block error", err)
+//		return
+//	}
+//	node.ProcessBlock(block)
+//	//node.GetManager().NewBlockEvent.Post(meta_block.NewMinedBlockEvent{Block: block})
+//}
+//
+//func (w *Miner) SignBlock(signer wallet.WAccount, block *meta.Block) {
+//	sign := signer.Sign(block.GetBlockID().CloneBytes())
+//	block.SetSign(sign)
+//}
+//
+//func (w *Miner) StartMine() {
+//	w.minerMtx.Lock()
+//	w.isMining = true
+//	w.minerMtx.Unlock()
+//	for true {
+//		w.minerMtx.Lock()
+//		tempMing := w.isMining
+//		w.minerMtx.Unlock()
+//		if !tempMing {
+//			break
+//		}
+//		w.MineBlock()
+//		time.Sleep(time.Duration(config.DefaultPeriod) * time.Second)
+//	}
+//}
+//
+//func (w *Miner) StopMine() {
+//	w.minerMtx.Lock()
+//	defer w.minerMtx.Unlock()
+//	w.isMining = false
+//}
+//
+//func (w *Miner) GetInfo() {
+//	w.minerMtx.Lock()
+//	defer w.minerMtx.Unlock()
+//	log.Info("Miner", "isMing", w.isMining)
+//}
