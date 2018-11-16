@@ -30,7 +30,7 @@ func initChainManager(n *Node, database lcdb.Database, path string) bool {
 	n.addBlockCache(gensisBlock)
 	gensisChain := meta.NewPOAChain(gensisBlock, nil)
 
-	n.chains = make([]meta.Chain, 0)
+	n.chains = make([]meta.ChainSketch, 0)
 	n.chains = append(n.chains, *gensisChain)
 
 	gensisChainNode := meta.NewPOAChainNode(gensisBlock)
@@ -239,11 +239,11 @@ func (n *Node) addBlock(block *meta.Block) {
 	}
 	n.sortChains(newblock)
 	//longest, _ := GetLongestChain()
-	//log.Info("AddBlock", "Longest Chain height", len(longest.Blocks), "Longest Chain bestHash", longest.GetLastBlock().GetBlockID().String())
+	//log.Info("AddBlock", "Longest ChainSketch height", len(longest.Blocks), "Longest ChainSketch bestHash", longest.GetLastBlock().GetBlockID().String())
 }
 
-func (n *Node) getLongestChain() (*meta.Chain, int) {
-	var lc meta.Chain
+func (n *Node) getLongestChain() (*meta.ChainSketch, int) {
+	var lc meta.ChainSketch
 	bestHeight := uint32(0)
 	position := 0
 	for i, chain := range n.chains {

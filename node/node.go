@@ -27,9 +27,9 @@ type Node struct {
 
 	//chain
 	chainMtx       sync.RWMutex
-	chains         []meta.Chain     //the chain tree for storing all chains
-	mainChainIndex []meta.ChainNode //the mainChain is slice for search block
-	mainChain      meta.BlockChain  //the mainChain is linked list for converting chain
+	chains         []meta.ChainSketch //the chain tree for storing all chains
+	mainChainIndex []meta.ChainNode   //the mainChain is slice for search block
+	mainChain      meta.BlockChain    //the mainChain is linked list for converting chain
 	db             lcdb.Database
 
 	//event

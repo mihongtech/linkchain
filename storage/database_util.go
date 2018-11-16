@@ -43,7 +43,7 @@ var (
 	preimagePrefix = "secure-key-"               // preimagePrefix + hash -> preimage
 	configPrefix   = []byte("linkchain-config-") // config prefix for the db
 
-	// Chain index prefixes (use `i` + single byte to avoid mixing data types).
+	// ChainSketch index prefixes (use `i` + single byte to avoid mixing data types).
 	BloomBitsIndexPrefix = []byte("iB") // BloomBitsIndexPrefix is the data table of a chain indexer to track its progress
 
 	// used by old db, now only used for conversion
