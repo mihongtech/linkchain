@@ -2,6 +2,7 @@ package node
 
 import (
 	"errors"
+	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/core/meta"
 )
 
@@ -39,4 +40,9 @@ func (n *Node) revertAccountsByBlock(block *meta.Block) error {
 	//Notice wallet
 	//NewWalletEvent.Post(events.WAccountEvent{IsUpdate: true})
 	return err
+}
+
+func (n *Node) getAccountInfo() {
+	log.Info("getAccountInfo")
+	n.stateDB.GetAllAccount()
 }

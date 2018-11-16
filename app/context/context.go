@@ -6,7 +6,8 @@ import (
 )
 
 type Context struct {
-	NodeAPI core.Service
-	P2PAPI  core.Service
-	Config  *config.LinkChainConfig
+	NodeAPI  core.Service
+	P2PAPI   core.Service
+	MinerAPI core.Service
+	Config   *config.LinkChainConfig
 }

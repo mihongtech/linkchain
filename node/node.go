@@ -33,8 +33,9 @@ type Node struct {
 	db             lcdb.Database
 
 	//event
-	newBlockEvent *event.TypeMux
-	newTxEvent    *event.Feed
+	newBlockEvent   *event.TypeMux
+	newAccountEvent *event.TypeMux
+	newTxEvent      *event.Feed
 }
 
 func NewNode() *Node {
@@ -47,6 +48,7 @@ func (n *Node) Setup(i interface{}) bool {
 	log.Info("Manage init...")
 
 	n.newBlockEvent = new(event.TypeMux)
+	n.newAccountEvent = new(event.TypeMux)
 	n.newTxEvent = new(event.Feed)
 	n.txPool = make([]meta.Transaction, 0)
 	n.stateDB = &storage.StateDB{}

@@ -4,6 +4,7 @@ import (
 	"github.com/linkchain/app/context"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/config"
+	"github.com/linkchain/miner"
 	"github.com/linkchain/node"
 	"github.com/linkchain/p2p"
 )
@@ -12,6 +13,7 @@ var (
 	appContext context.Context
 	nodeSvc    *node.Node
 	p2pSvc     *p2p.Service
+	minerSvc   *miner.Miner
 )
 
 func Setup(globalConfig *config.LinkChainConfig) bool {
@@ -23,6 +25,7 @@ func Setup(globalConfig *config.LinkChainConfig) bool {
 	//create service
 	nodeSvc = node.NewNode()
 	p2pSvc = p2p.NewP2P()
+	minerSvc = miner.NewMiner()
 
 	//node init
 	if !nodeSvc.Setup(&appContext) {
@@ -40,6 +43,12 @@ func Setup(globalConfig *config.LinkChainConfig) bool {
 	//p2p api init
 	appContext.P2PAPI = p2pSvc
 
+	//miner init
+	if !minerSvc.Setup(&appContext) {
+		return false
+	}
+	//miner api init
+	appContext.MinerAPI = minerSvc
 	return true
 }
 
@@ -65,4 +74,8 @@ func GetNodeAPI() *node.PublicNodeAPI {
 
 func GetP2PAPI() *p2p.Service {
 	return p2pSvc
+}
+
+func GetMinerAPI() *miner.Miner {
+	return minerSvc
 }

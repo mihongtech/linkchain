@@ -53,7 +53,8 @@ var allCmd = &cobra.Command{
 	Use:   "all",
 	Short: "get all account",
 	Run: func(cmd *cobra.Command, args []string) {
+		log.Info("get all account")
 		//TODO need to give up ,because get all accountmessage is too waste
-		//node.GetAllAccounts()
+		app.GetNodeAPI().GetAccountInfo()
 	},
 }

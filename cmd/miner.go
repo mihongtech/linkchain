@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/linkchain/app"
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +21,7 @@ var minerInfoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "get Miner info",
 	Run: func(cmd *cobra.Command, args []string) {
-		//app.GetMiner().GetInfo()
+		go app.GetMinerAPI().GetInfo()
 	},
 }
 
@@ -28,7 +29,7 @@ var startMineCmd = &cobra.Command{
 	Use:   "start",
 	Short: "get Miner info",
 	Run: func(cmd *cobra.Command, args []string) {
-		//go app.GetMiner().StartMine()
+		go app.GetMinerAPI().StartMine()
 	},
 }
 
@@ -36,6 +37,6 @@ var stopMineCmd = &cobra.Command{
 	Use:   "stop",
 	Short: "get Miner info",
 	Run: func(cmd *cobra.Command, args []string) {
-		//go app.GetMiner().StopMine()
+		go app.GetMinerAPI().Stop()
 	},
 }
