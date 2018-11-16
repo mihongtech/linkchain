@@ -30,7 +30,7 @@ func initChainManager(database lcdb.Database, path string) bool {
 	genesisPath := path
 	hash, err := InitGenesis(genesisPath)
 	if err != nil {
-		log.Error("Init genesis failed , exit", "err", err)
+		log.Error("init genesis failed , exit", "err", err)
 		return false
 	}
 
@@ -49,7 +49,7 @@ func initChainManager(database lcdb.Database, path string) bool {
 
 	err = LoadBlocks()
 	if err != nil {
-		log.Error("Load blocks from db failed , exit", "err", err)
+		log.Error("load blocks from db failed , exit", "err", err)
 		return false
 	}
 
@@ -176,7 +176,7 @@ func getBestHeight() (uint32, error) {
 	defer chainMtx.RUnlock()
 	bestHeight := len(mainChainIndex) - 1
 	if bestHeight < 0 {
-		return uint32(0), errors.New("the chain is not Init")
+		return uint32(0), errors.New("the chain is not init")
 	}
 	return uint32(bestHeight), nil
 }

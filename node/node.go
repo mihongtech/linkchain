@@ -1,24 +1,23 @@
 package node
 
 import (
+	appContext "github.com/linkchain/app/context"
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/config"
 	"github.com/linkchain/storage"
-	appContext "github.com/linkchain/app/context"
 )
 
 var (
-	 globalConfig config.LinkChainConfig
+	globalConfig config.LinkChainConfig
 )
 
 type Node struct {
-	NewBlockEvent      *event.TypeMux
-	NewTxEvent         *event.Feed
+	NewBlockEvent *event.TypeMux
+	NewTxEvent    *event.Feed
 }
 
-
-func (m *Node) Init(i interface{}) bool {
+func (m *Node) Setup(i interface{}) bool {
 	globalConfig := i.(*appContext.Context).Config
 
 	log.Info("Manage init...")

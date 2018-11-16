@@ -1,10 +1,10 @@
 package sync
 
 import (
-	p2p_peer "github.com/linkchain/p2p/peer"
-	"github.com/linkchain/sync/full"
 	appContext "github.com/linkchain/app/context"
 	"github.com/linkchain/node"
+	p2p_peer "github.com/linkchain/p2p/peer"
+	"github.com/linkchain/sync/full"
 )
 
 var ()
@@ -13,7 +13,7 @@ type Service struct {
 	Engine *full.ProtocolManager
 }
 
-func (s *Service) Init(i interface{}) bool {
+func (s *Service) Setup(i interface{}) bool {
 	//log.Info("sync service init...");
 	nodeService := i.(*appContext.Context).Node.(*node.Node)
 	engine, err := full.NewProtocolManager(i,

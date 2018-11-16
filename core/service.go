@@ -1,7 +1,7 @@
 package core
 
-type Service interface{
-	Init(i interface{}) bool
+type Service interface {
+	Setup(i interface{}) bool
 	Start() bool
 	Stop()
 }

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	appContext "github.com/linkchain/app/context"
 	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
@@ -17,7 +18,6 @@ import (
 	"github.com/linkchain/p2p/peer_error"
 	"github.com/linkchain/p2p/transport"
 	data_sync "github.com/linkchain/sync"
-	appContext "github.com/linkchain/app/context"
 )
 
 var errServerStopped = errors.New("server stopped")
@@ -129,13 +129,13 @@ type peerDrop struct {
 	requested bool // true if signaled by the peer
 }
 
-func (srv *Service) Init(i interface{}) bool {
+func (srv *Service) Setup(i interface{}) bool {
 	log.Info("p2p service init...")
 	// TODO: init config
 	srv.ListenAddr = i.(*appContext.Context).Config.ListenAddress
 	srv.PrivateKey, _ = btcec.NewPrivateKey(btcec.S256())
 	srv.sync = &data_sync.Service{}
-	srv.sync.Init(i)
+	srv.sync.Setup(i)
 	return true
 }
 

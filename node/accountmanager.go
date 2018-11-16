@@ -1,25 +1,20 @@
 package node
 
 import (
+	"encoding/hex"
 	"errors"
-	"github.com/linkchain/storage"
-	"github.com/linkchain/core/meta"
 	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/config"
-	"encoding/hex"
+	"github.com/linkchain/core/meta"
+	"github.com/linkchain/storage"
 )
-
 
 var (
-	stateDB  = &storage.StateDB{}
+	stateDB = &storage.StateDB{}
 )
 
-func Init() {
-
-}
-
-func initAccountManager(){
-	stateDB.Init(nil)
+func initAccountManager() {
+	stateDB.Setup(nil)
 	stateDB.Start()
 }
 

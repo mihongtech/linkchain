@@ -2,9 +2,9 @@ package miner
 
 import (
 	"encoding/hex"
-	"sync"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/wallet"
+	"sync"
 )
 
 var fristPrivMiner, _ = hex.DecodeString("55b55e136cc6671014029dcbefc42a7db8ad9b9d11f62677a47fd2ed77eeef7b")
@@ -17,7 +17,7 @@ type Miner struct {
 	minerMtx sync.Mutex
 }
 
-func (w *Miner) Init(i interface{}) bool {
+func (w *Miner) Setup(i interface{}) bool {
 	log.Info("Miner init...")
 	w.signers = make([]wallet.WAccount, 0)
 	w.isMining = false

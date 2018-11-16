@@ -7,10 +7,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/linkchain/app"
 	"github.com/linkchain/cmd"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/config"
-	"github.com/linkchain/app"
 )
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 	globalConfig.GenesisPath = *genesispath
 
 	// start node
-	if !app.Init(globalConfig) {
+	if !app.Setup(globalConfig) {
 		return
 	}
 	app.Run()

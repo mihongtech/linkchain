@@ -1,17 +1,16 @@
 package app
 
 import (
+	"github.com/linkchain/app/context"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/config"
-	"github.com/linkchain/p2p"
 	"github.com/linkchain/node"
-	"github.com/linkchain/app/context"
+	"github.com/linkchain/p2p"
 )
-
 
 var appContext context.Context
 
-func Init(globalConfig *config.LinkChainConfig) bool {
+func Setup(globalConfig *config.LinkChainConfig) bool {
 	log.Info("Node init...")
 
 	appContext.Node = &node.Node{}
@@ -19,12 +18,12 @@ func Init(globalConfig *config.LinkChainConfig) bool {
 	appContext.Config = globalConfig
 
 	//node init
-	if !appContext.Node.Init(&appContext) {
+	if !appContext.Node.Setup(&appContext) {
 		return false
 	}
 
 	//p2p init
-	if !appContext.P2P.Init(&appContext) {
+	if !appContext.P2P.Setup(&appContext) {
 		return false
 	}
 

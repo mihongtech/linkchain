@@ -18,8 +18,7 @@ type StateDB struct {
 	blockCache map[string]map[string]poameta.Account
 }
 
-/** interface: common.IService **/
-func (s *StateDB) Init(i interface{}) bool {
+func (s *StateDB) Setup(i interface{}) bool {
 	log.Info("StateDB init...")
 	s.accounts = make(map[string]poameta.Account)
 	s.blockCache = make(map[string]map[string]poameta.Account)
