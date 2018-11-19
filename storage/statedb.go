@@ -150,7 +150,7 @@ func (s *StateDB) UpdateAccountsByBlock(block *meta.Block) error {
 		for index := range tcs {
 			cacheA, err := processCache[tcs[index].GetId().String()]
 			if !err {
-				cacheA = *helper.CreateTempleteAccount(tcs[index].GetId())
+				cacheA = *helper.CreateTemplateAccount(tcs[index].GetId())
 			}
 
 			nTicket := poameta.NewTicket(*txId, uint32(index))

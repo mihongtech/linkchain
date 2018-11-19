@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"github.com/linkchain/common/btcec"
+	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/merkle"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/protobuf"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/linkchain/common/math"
 )
 
 type Block struct {

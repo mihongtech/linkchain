@@ -3,8 +3,12 @@ package cmd
 import (
 	"encoding/hex"
 
+	"github.com/linkchain/app"
 	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/config"
 	"github.com/linkchain/core/meta"
+	"github.com/linkchain/helper"
+	"github.com/linkchain/node"
 	"github.com/linkchain/protobuf"
 
 	"github.com/golang/protobuf/proto"
@@ -67,12 +71,13 @@ var signTxCmd = &cobra.Command{
 		}
 		log.Info("signtx", txData.String())
 
-		var tx *meta.Transaction = &meta.Transaction{}
+		tx := helper.CreateTempleteTx(config.DefaultTransactionVersion, config.NormalTx)
 		err = tx.Deserialize(&txData)
 		if err != nil {
 			log.Error("signtx Deserialize failed", "Deserialize error", err)
 			return
 		}
+		app.GetWalletAPI().SignTransaction(*tx)
 		//app.GetWallet().SignTransaction(tx)
 
 		log.Info("signtx", "data", tx)
@@ -112,7 +117,7 @@ var sendTxCmd = &cobra.Command{
 		}
 		log.Info("sendtx", txData.String())
 
-		var tx *meta.Transaction = &meta.Transaction{}
+		var tx = &meta.Transaction{}
 		err = tx.Deserialize(&txData)
 		if err != nil {
 			log.Error("sendtx Deserialize failed", "Deserialize error", err)
@@ -131,9 +136,8 @@ var sendTxCmd = &cobra.Command{
 			log.Info("Verify tx", "successed", true)
 		}
 
-		//node.ProcessTx(tx)
-		//node.NewTxEvent.Send(meta_tx.TxEvent{tx})
-
+		app.GetNodeAPI().ProcessTx(tx)
+		app.GetNodeAPI().GetTxEvent().Send(node.TxEvent{Tx: tx})
 	},
 }
 
@@ -160,7 +164,7 @@ var decodeTxCmd = &cobra.Command{
 		}
 		log.Info("decode", txData.String())
 
-		var tx *meta.Transaction = &meta.Transaction{}
+		var tx = &meta.Transaction{}
 		err = tx.Deserialize(&txData)
 		if err != nil {
 			log.Error("decode Deserialize failed", "Deserialize error", err)

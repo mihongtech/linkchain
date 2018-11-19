@@ -1,11 +1,11 @@
 package math
 
 import (
+	"encoding/json"
 	"errors"
 	"math/big"
 
-	"encoding/json"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/linkchain/common"
 )
 
 // A BigInt represents a signed multi-precision integer.

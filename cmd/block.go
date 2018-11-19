@@ -1,11 +1,13 @@
 package cmd
 
 import (
+	"strconv"
+
 	"github.com/linkchain/app"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/log"
+
 	"github.com/spf13/cobra"
-	"strconv"
 )
 
 func init() {
@@ -29,9 +31,9 @@ var heightCmd = &cobra.Command{
 			return
 		}
 
-		height, error := strconv.Atoi(args[0])
-		if error != nil {
-			log.Error("getblockbyheight ", "error", error, example[0], example[1])
+		height, err := strconv.Atoi(args[0])
+		if err != nil {
+			log.Error("getblockbyheight ", "error", err, example[0], example[1])
 			return
 		}
 

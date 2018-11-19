@@ -36,7 +36,6 @@ func (n *Node) removeTransaction(txID meta.TxID) error {
 }
 
 func (n *Node) checkTx(tx *meta.Transaction) bool {
-	log.Info("POA CheckTx ...")
 	err := tx.Verify()
 	if err != nil {
 		log.Error("POA CheckTx", "failed", err)

@@ -6,7 +6,6 @@ import (
 
 	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/math"
-	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/config"
 	"github.com/linkchain/core/meta"
 )
@@ -38,20 +37,20 @@ func CreateAccountIdByPrivKey(privKey string) (*meta.AccountID, error) {
 	return meta.NewAccountId(pk), nil
 }
 
-func CreateTempleteAccount(id meta.AccountID) *meta.Account {
-	utxo := make([]meta.UTXO, 0)
-	a := meta.NewAccount(id, config.NormalAccount, utxo, config.DafaultClearTime, meta.AccountID{})
+func CreateTemplateAccount(id meta.AccountID) *meta.Account {
+	u := make([]meta.UTXO, 0)
+	a := meta.NewAccount(id, config.NormalAccount, u, config.DafaultClearTime, meta.AccountID{})
 	return a
 }
 
 func CreateNormalAccount(key *btcec.PrivateKey) (*meta.Account, error) {
-	privStr := hex.EncodeToString(key.Serialize())
-	id, err := CreateAccountIdByPrivKey(privStr)
+	privateStr := hex.EncodeToString(key.Serialize())
+	id, err := CreateAccountIdByPrivKey(privateStr)
 	if err != nil {
 		return nil, err
 	}
 
-	a := CreateTempleteAccount(*id)
+	a := CreateTemplateAccount(*id)
 	return a, nil
 }
 
@@ -94,7 +93,7 @@ func CreateCoinBaseTx(to meta.AccountID, amount *meta.Amount) *meta.Transaction 
 /*
 	Block
 */
-var fristPrivMiner, _ = hex.DecodeString("55b55e136cc6671014029dcbefc42a7db8ad9b9d11f62677a47fd2ed77eeef7b")
+/*var fristPrivMiner, _ = hex.DecodeString("55b55e136cc6671014029dcbefc42a7db8ad9b9d11f62677a47fd2ed77eeef7b")
 
 func GetGensisBlock() *meta.Block {
 	txs := []meta.Transaction{}
@@ -123,6 +122,7 @@ func SignGensisBlock(block *meta.Block) error {
 	block.SetSign(sign)
 	return nil
 }
+*/
 
 func CreateBlock(prevHeight uint32, prevHash meta.BlockID) (*meta.Block, error) {
 	var txs []meta.Transaction

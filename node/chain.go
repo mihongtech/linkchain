@@ -13,7 +13,7 @@ import (
 	"github.com/linkchain/storage"
 )
 
-func initChainManager(n *Node, database lcdb.Database, path string) bool {
+func (n *Node) initChainManager(database lcdb.Database, path string) bool {
 	log.Info("ChainManage init...")
 
 	//load genesis from storage
@@ -69,8 +69,8 @@ func (n *Node) initGenesis(genesisPath string) (math.Hash, error) {
 
 	_, hash, err := genesis.SetupGenesisBlock(n.db, genesisBlock)
 	if err != nil {
-		log.Error("Setup genesis failed", "err", err)
-		return math.Hash{}, errors.New("Setup genesis failed")
+		log.Error("setup genesis failed", "err", err)
+		return math.Hash{}, errors.New("setup genesis failed")
 	}
 
 	return hash, nil
@@ -519,7 +519,7 @@ func (n *Node) updateStatus(block *meta.Block, isAdd bool) error {
 	//update tx pool
 	//update normal account status
 
-	for index, _ := range txs {
+	for index := range txs {
 		if isAdd {
 			n.removeTransaction(*txs[index].GetTxID())
 		} else {

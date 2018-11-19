@@ -115,12 +115,11 @@ func (n *Node) checkBlock(block *meta.Block) bool {
 }
 
 func (n *Node) processBlock(block *meta.Block) error {
-
-	//log.Info("POA processBlock ...")
+	log.Info("processBlock ...")
 	//1.checkBlock
 	if !n.checkBlock(block) {
-		log.Error("POA checkBlock failed")
-		return errors.New("POA checkBlock failed")
+		log.Error("checkBlock failed")
+		return errors.New("checkBlock failed")
 	}
 
 	//2.acceptBlock
@@ -128,18 +127,18 @@ func (n *Node) processBlock(block *meta.Block) error {
 	n.addBlockCache(block)
 	/*log.Info("POA Add a Blocks", "block", block.GetBlockID(), "prev", block.GetPrevBlockID())
 	log.Info("POA Add a Blocks", "block hash", block.GetBlockID().String())
-	log.Info("POA Add a Blocks", "prev hash", block.GetPrevBlockID().String())
-	log.Info("POA Add a Blocks", "block", block)*/
+	log.Info("POA Add a Blocks", "prev hash", block.GetPrevBlockID().String())*/
+	log.Info("Add a Blocks", "block", block.String())
 
 	//3.updateChain
 	if !n.updateChainAndIndex() {
-		log.Info("POA Update chain failed")
+		log.Info("Update chain failed")
 		n.updateChainAndIndex()
-		return errors.New("Update chain failed")
+		return errors.New("update chain failed")
 	}
 
 	//log.Info("POA processBlock successed")
-	n.getBlockChainInfo()
+	//n.getBlockChainInfo()
 
 	//4.updateStorage
 

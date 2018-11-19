@@ -58,7 +58,7 @@ func (n *Node) Setup(i interface{}) bool {
 
 	s := storage.NewStrorage(globalConfig.DataDir)
 
-	initChainManager(n, s.GetDB(), globalConfig.GenesisPath)
+	n.initChainManager(s.GetDB(), globalConfig.GenesisPath)
 
 	return true
 }
