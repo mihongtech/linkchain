@@ -1,31 +1,3 @@
-// Copyright 2017 The go-ethereum Authors
-// This file is part of the go-ethereum library.
-//
-// The go-ethereum library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// The go-ethereum library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
-
-/*
-Package protocols is an extension to p2p. It offers a user friendly simple way to define
-devp2p subprotocols by abstracting away code standardly shared by protocols.
-
-* automate assigments of code indexes to messages
-* automate RLP decoding/encoding based on reflecting
-* provide the forever loop to read incoming messages
-* standardise error handling related to communication
-* standardised	handshake negotiation
-* TODO: automatic generation of wire protocol specification for peers
-
-*/
 package protocols
 
 import (

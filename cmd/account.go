@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"encoding/hex"
+	"github.com/linkchain/app"
 	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/poa/manage"
-	"github.com/linkchain/poa/meta"
+	"github.com/linkchain/core/meta"
 	"github.com/spf13/cobra"
 )
 
@@ -40,12 +40,12 @@ var getAccountByPubCmd = &cobra.Command{
 
 		id := meta.NewAccountId(pb)
 
-		a, err := manage.GetManager().AccountManager.GetAccount(id)
+		a, err := app.GetNodeAPI().GetAccount(*id)
 		if err != nil {
 			log.Error("send ", "error", "get account is error", "season", err)
 			return
 		}
-		log.Info("send", "account", a.GetAccountID().GetString(), "amount", a.GetAmount().GetInt(), "nounce", a.GetNounce())
+		log.Info("send", "account", a.GetAccountID(), "amount", a.GetAmount().GetInt64(), "nounce", a.GetAmount().GetInt64())
 	},
 }
 
@@ -53,7 +53,8 @@ var allCmd = &cobra.Command{
 	Use:   "all",
 	Short: "get all account",
 	Run: func(cmd *cobra.Command, args []string) {
+		log.Info("get all account")
 		//TODO need to give up ,because get all accountmessage is too waste
-		manage.GetManager().AccountManager.GetAllAccounts()
+		app.GetNodeAPI().GetAccountInfo()
 	},
 }

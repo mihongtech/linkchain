@@ -5,9 +5,8 @@ import (
 	_ "io"
 	_ "math/big"
 
-	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/serialize"
-	"github.com/linkchain/meta"
+	"github.com/linkchain/core/meta"
 	"github.com/linkchain/protobuf"
 )
 
@@ -19,7 +18,7 @@ const (
 // Official short name of the protocol used during capability negotiation.
 var ProtocolName = "full"
 
-// Supported versions of the eth protocol (first is primary).
+// Supported versions of the linkchain protocol (first is primary).
 var ProtocolVersions = []uint64{full01}
 
 // Number of implemented message corresponding to different protocol versions.
@@ -27,9 +26,9 @@ var ProtocolLengths = []uint64{8}
 
 const ProtocolMaxMsgSize = 10 * 1024 * 1024 // Maximum cap on the size of a protocol message
 
-// eth protocol message codes
+// linkchain protocol message codes
 const (
-	// Protocol messages belonging to eth/62
+	// Protocol messages belonging to full/01
 	StatusMsg         = 0x00
 	NewBlockHashesMsg = 0x01
 	TxMsg             = 0x02
@@ -73,8 +72,8 @@ type statusData struct {
 	ProtocolVersion uint32
 	NetworkId       uint64
 	Height          uint64
-	CurrentBlock    meta.DataID
-	GenesisBlock    meta.DataID
+	CurrentBlock    meta.BlockID
+	GenesisBlock    meta.BlockID
 }
 
 func (s *statusData) Serialize() serialize.SerializeStream {
@@ -96,10 +95,10 @@ func (s *statusData) Deserialize(data serialize.SerializeStream) {
 	s.ProtocolVersion = *d.ProtocolVersion
 	s.NetworkId = *d.NetworkId
 	s.Height = *d.Height
-	genesis := &math.Hash{}
+	genesis := meta.BlockID{}
 	genesis.Deserialize(d.GenesisBlock)
 	s.GenesisBlock = genesis
-	current := &math.Hash{}
+	current := meta.BlockID{}
 	current.Deserialize(d.CurrentBlock)
 	s.CurrentBlock = current
 }
@@ -108,8 +107,8 @@ func (s *statusData) Deserialize(data serialize.SerializeStream) {
 type newBlockHashesData []newBlockHashData
 
 type newBlockHashData struct {
-	Hash   meta.DataID // Hash of one particular block being announced
-	Number uint64      // Number of one particular block being announced
+	Hash   meta.BlockID // Hash of one particular block being announced
+	Number uint64       // Number of one particular block being announced
 }
 
 func (n *newBlockHashData) Serialize() serialize.SerializeStream {
@@ -122,24 +121,24 @@ func (n *newBlockHashData) Serialize() serialize.SerializeStream {
 
 func (n *newBlockHashData) Deserialize(data serialize.SerializeStream) {
 	d := data.(*protobuf.NewBlockHashData)
-	n.Hash = &math.Hash{}
+	n.Hash = meta.BlockID{}
 	n.Hash.Deserialize(d.Hash)
 	n.Number = *(d.Number)
 }
 
 type getBlockHeadersData struct {
-	Hash   meta.DataID // Hash of one particular block being announced
-	Number uint64      // Number of one particular block being announced
-	Amount uint64      // Maximum number of headers to retrieve
-	Skip   uint64      // Blocks to skip between consecutive headers
+	Hash   meta.BlockID // Hash of one particular block being announced
+	Number uint64       // Number of one particular block being announced
+	Amount uint64       // Maximum number of headers to retrieve
+	Skip   uint64       // Blocks to skip between consecutive headers
 }
 
 func (n *getBlockHeadersData) Serialize() serialize.SerializeStream {
 	var hashdata *protobuf.Hash
-	if n.Hash != nil {
+	if n.Hash.IsEmpty() {
 		hashdata = n.Hash.Serialize().(*protobuf.Hash)
 	} else {
-		empty := &math.Hash{}
+		empty := meta.BlockID{}
 		hashdata = empty.Serialize().(*protobuf.Hash)
 	}
 	data := &protobuf.GetBlockHeadersData{
@@ -153,7 +152,7 @@ func (n *getBlockHeadersData) Serialize() serialize.SerializeStream {
 
 func (n *getBlockHeadersData) Deserialize(data serialize.SerializeStream) {
 	d := data.(*protobuf.GetBlockHeadersData)
-	n.Hash = &math.Hash{}
+	n.Hash = meta.BlockID{}
 	n.Hash.Deserialize(d.Hash)
 	n.Number = *(d.Number)
 	n.Amount = *(d.Amount)

@@ -2,52 +2,49 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
-	"github.com/linkchain/cmd"
-	"github.com/linkchain/common/util/log"
 	"os"
 	"strings"
+
+	"github.com/linkchain/app"
+	"github.com/linkchain/cmd"
+	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/config"
 )
 
 func main() {
+	var (
+		logLevel    = flag.Int("loglevel", 3, "log level")
+		listenPort  = flag.Int("port", 40000, "linkchain listen port")
+		dataDir     = flag.String("datadir", config.DefaultDataDir(), "linkchain data dir")
+		genesispath = flag.String("genesis", "genesis.json", "linkchain genesis config file path")
+	)
+	flag.Parse()
+
 	//init log
 	log.Root().SetHandler(
-		log.LvlFilterHandler(log.Lvl(log.LvlInfo),
+		log.LvlFilterHandler(log.Lvl(*logLevel),
 			log.StreamHandler(os.Stdout, log.TerminalFormat(true))))
 
-	start := strings.Fields("start")
+	// init config
+	globalConfig := &config.LinkChainConfig{}
+	globalConfig.ListenAddress = fmt.Sprintf(":%d", *listenPort)
+	globalConfig.DataDir = *dataDir
+	globalConfig.GenesisPath = *genesispath
 
-	cmd.RootCmd.SetArgs(start)
-	cmd.RootCmd.Execute()
+	// start node
+	if !app.Setup(globalConfig) {
+		return
+	}
+	app.Run()
+	defer app.Stop()
 
-	/*time.Sleep(time.Duration(1) * time.Second)
+	// start console cmd
+	startCmd()
+}
 
-	send := strings.Fields("tx test")
-
-	cmd.RootCmd.SetArgs(send)
-	cmd.RootCmd.Execute()
-
-	time.Sleep(time.Duration(1) * time.Second)
-
-	cmd.RootCmd.SetArgs(send)
-	cmd.RootCmd.Execute()
-
-	time.Sleep(time.Duration(1) * time.Second)
-
-	mine := strings.Fields("mine")
-
-	cmd.RootCmd.SetArgs(mine)
-	cmd.RootCmd.Execute()
-
-	time.Sleep(time.Duration(1) * time.Second)
-
-	cmd.RootCmd.SetArgs(mine)
-	cmd.RootCmd.Execute()*/
-	/*mine := strings.Fields("mine")
-
-	cmd.RootCmd.SetArgs(mine)
-	cmd.RootCmd.Execute()*/
-
+func startCmd() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print(">")

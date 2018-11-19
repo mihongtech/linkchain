@@ -2,13 +2,16 @@ package cmd
 
 import (
 	"encoding/hex"
-	"github.com/golang/protobuf/proto"
+
+	"github.com/linkchain/app"
 	"github.com/linkchain/common/util/log"
-	meta_tx "github.com/linkchain/meta/tx"
+	"github.com/linkchain/config"
+	"github.com/linkchain/core/meta"
+	"github.com/linkchain/helper"
 	"github.com/linkchain/node"
-	"github.com/linkchain/poa/manage"
-	"github.com/linkchain/poa/meta"
 	"github.com/linkchain/protobuf"
+
+	"github.com/golang/protobuf/proto"
 	"github.com/spf13/cobra"
 )
 
@@ -26,21 +29,22 @@ var createTxCmd = &cobra.Command{
 	Use:   "create",
 	Short: "create a new tx",
 	Run: func(cmd *cobra.Command, args []string) {
-		amount := &meta.Amount{Value: 10}
-		from, err := node.GetWallet().ChooseWAccount(amount)
+		/*amount := amount2.NewAmount(10)
+		from, err := node.GetWallet().ChooseWAccount(*amount)
 		if err != nil {
 			println("cmd :can not find from")
 			return
 		}
-		fromAccount := from.ConvertAccount()
+		fromAccount := from.GetAccountID()
 		toAccount := node.GetConsensusService().GetAccountManager().NewAccount()
+
 		tx := manage.GetManager().TransactionManager.CreateTransaction(fromAccount, toAccount, amount)
 		buffer, err := proto.Marshal(tx.Serialize())
 		if err != nil {
 			log.Error("tx Serialize failed", "Marshaling error", err)
 		}
 		log.Info("createtx", "data", tx)
-		log.Info("createtx", "hex", hex.EncodeToString(buffer))
+		log.Info("createtx", "hex", hex.EncodeToString(buffer))*/
 	},
 }
 
@@ -67,10 +71,14 @@ var signTxCmd = &cobra.Command{
 		}
 		log.Info("signtx", txData.String())
 
-		var tx meta_tx.ITx = &meta.Transaction{}
-		tx.Deserialize(&txData)
-
-		node.GetWallet().SignTransaction(tx)
+		tx := helper.CreateTempleteTx(config.DefaultTransactionVersion, config.NormalTx)
+		err = tx.Deserialize(&txData)
+		if err != nil {
+			log.Error("signtx Deserialize failed", "Deserialize error", err)
+			return
+		}
+		app.GetWalletAPI().SignTransaction(*tx)
+		//app.GetWallet().SignTransaction(tx)
 
 		log.Info("signtx", "data", tx)
 		signbuffer, err := proto.Marshal(tx.Serialize())
@@ -109,8 +117,12 @@ var sendTxCmd = &cobra.Command{
 		}
 		log.Info("sendtx", txData.String())
 
-		var tx meta_tx.ITx = &meta.Transaction{}
-		tx.Deserialize(&txData)
+		var tx = &meta.Transaction{}
+		err = tx.Deserialize(&txData)
+		if err != nil {
+			log.Error("sendtx Deserialize failed", "Deserialize error", err)
+			return
+		}
 
 		log.Info("sendtx", "data", tx)
 		signbuffer, err := proto.Marshal(tx.Serialize())
@@ -124,9 +136,8 @@ var sendTxCmd = &cobra.Command{
 			log.Info("Verify tx", "successed", true)
 		}
 
-		manage.GetManager().TransactionManager.ProcessTx(tx)
-		manage.GetManager().NewTxEvent.Send(meta_tx.TxEvent{tx})
-
+		app.GetNodeAPI().ProcessTx(tx)
+		app.GetNodeAPI().GetTxEvent().Send(node.TxEvent{Tx: tx})
 	},
 }
 
@@ -153,8 +164,12 @@ var decodeTxCmd = &cobra.Command{
 		}
 		log.Info("decode", txData.String())
 
-		var tx meta_tx.ITx = &meta.Transaction{}
-		tx.Deserialize(&txData)
+		var tx = &meta.Transaction{}
+		err = tx.Deserialize(&txData)
+		if err != nil {
+			log.Error("decode Deserialize failed", "Deserialize error", err)
+			return
+		}
 
 		log.Info("decode", "data", tx)
 	},

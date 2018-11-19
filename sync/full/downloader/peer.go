@@ -12,7 +12,7 @@ import (
 
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/meta"
+	"github.com/linkchain/core/meta"
 )
 
 const (
@@ -38,7 +38,7 @@ type peerConnection struct {
 
 	blockStarted time.Time // Time instance when the last header fetch was started
 
-	lacking map[meta.DataID]struct{} // Set of hashes not to request (didn't have previously)
+	lacking map[meta.BlockID]struct{} // Set of hashes not to request (didn't have previously)
 
 	peer Peer
 
@@ -49,8 +49,8 @@ type peerConnection struct {
 
 // LightPeer encapsulates the methods required to synchronise with a remote light peer.
 type LightPeer interface {
-	Head() (meta.DataID, uint64)
-	RequestBlocksByHash(meta.DataID, int, int) error
+	Head() (meta.BlockID, uint64)
+	RequestBlocksByHash(meta.BlockID, int, int) error
 	RequestBlocksByNumber(uint64, int, int) error
 }
 
@@ -64,8 +64,8 @@ type lightPeerWrapper struct {
 	peer LightPeer
 }
 
-func (w *lightPeerWrapper) Head() (meta.DataID, uint64) { return w.peer.Head() }
-func (w *lightPeerWrapper) RequestBlocksByHash(h meta.DataID, amount int, skip int) error {
+func (w *lightPeerWrapper) Head() (meta.BlockID, uint64) { return w.peer.Head() }
+func (w *lightPeerWrapper) RequestBlocksByHash(h meta.BlockID, amount int, skip int) error {
 	return w.peer.RequestBlocksByHash(h, amount, skip)
 }
 func (w *lightPeerWrapper) RequestBlocksByNumber(i uint64, amount int, skip int) error {
@@ -76,7 +76,7 @@ func (w *lightPeerWrapper) RequestBlocksByNumber(i uint64, amount int, skip int)
 func newPeerConnection(id string, version int, peer Peer, logger log.Logger) *peerConnection {
 	return &peerConnection{
 		id:      id,
-		lacking: make(map[meta.DataID]struct{}),
+		lacking: make(map[meta.BlockID]struct{}),
 
 		peer: peer,
 
@@ -94,7 +94,7 @@ func (p *peerConnection) Reset() {
 
 	p.blockThroughput = 0
 
-	p.lacking = make(map[meta.DataID]struct{})
+	p.lacking = make(map[meta.BlockID]struct{})
 }
 
 // FetchHeaders sends a header retrieval request to the remote peer.
@@ -160,7 +160,7 @@ func (p *peerConnection) BlockCapacity(targetRTT time.Duration) int {
 // MarkLacking appends a new entity to the set of items (blocks, receipts, states)
 // that a peer is known not to have (i.e. have been requested before). If the
 // set reaches its maximum allowed capacity, items are randomly dropped off.
-func (p *peerConnection) MarkLacking(hash meta.DataID) {
+func (p *peerConnection) MarkLacking(hash meta.BlockID) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -175,7 +175,7 @@ func (p *peerConnection) MarkLacking(hash meta.DataID) {
 
 // Lacks retrieves whether the hash of a blockchain item is on the peers lacking
 // list (i.e. whether we know that the peer does not have it).
-func (p *peerConnection) Lacks(hash meta.DataID) bool {
+func (p *peerConnection) Lacks(hash meta.BlockID) bool {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 

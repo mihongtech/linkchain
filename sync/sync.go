@@ -1,7 +1,8 @@
 package sync
 
 import (
-	"github.com/linkchain/consensus"
+	appContext "github.com/linkchain/app/context"
+	"github.com/linkchain/node"
 	p2p_peer "github.com/linkchain/p2p/peer"
 	"github.com/linkchain/sync/full"
 )
@@ -12,9 +13,11 @@ type Service struct {
 	Engine *full.ProtocolManager
 }
 
-func (s *Service) Init(i interface{}) bool {
+func (s *Service) Setup(i interface{}) bool {
 	//log.Info("sync service init...");
-	engine, err := full.NewProtocolManager(i, i.(*consensus.Service), 0, i.(*consensus.Service).GetBlockEvent(), i.(*consensus.Service).GetTxEvent())
+	nodeAPI := i.(*appContext.Context).NodeAPI.(*node.PublicNodeAPI)
+	engine, err := full.NewProtocolManager(i,
+		nodeAPI, 0, nodeAPI.GetBlockEvent(), nodeAPI.GetTxEvent())
 	if err != nil {
 		return false
 	}

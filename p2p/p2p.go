@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	appContext "github.com/linkchain/app/context"
 	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
@@ -128,13 +129,17 @@ type peerDrop struct {
 	requested bool // true if signaled by the peer
 }
 
-func (srv *Service) Init(i interface{}) bool {
+func NewP2P() *Service {
+	return &Service{}
+}
+
+func (srv *Service) Setup(i interface{}) bool {
 	log.Info("p2p service init...")
 	// TODO: init config
-	srv.ListenAddr = "0.0.0.0:40000"
+	srv.ListenAddr = i.(*appContext.Context).Config.ListenAddress
 	srv.PrivateKey, _ = btcec.NewPrivateKey(btcec.S256())
 	srv.sync = &data_sync.Service{}
-	srv.sync.Init(i)
+	srv.sync.Setup(i)
 	return true
 }
 

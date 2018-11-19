@@ -43,7 +43,7 @@ const (
 // the allowed 24 bits (i.e. length >= 16MB).
 var errPlainMessageTooLarge = errors.New("message length >= 16MB")
 
-// rlpx is the transport protocol used by actual (non-test) connections.
+// the transport protocol used by actual (non-test) connections.
 // It wraps the frame encoder with locks and read/write deadlines.
 type pbfmsg struct {
 	fd net.Conn
@@ -77,7 +77,7 @@ func (p *pbfmsg) Close(err error) {
 	// Tell the remote end why we're disconnecting if possible.
 	if p.rw != nil {
 		if r, ok := err.(peer_error.DiscReason); ok && r != peer_error.DiscNetworkError {
-			// rlpx tries to send DiscReason to disconnected peer
+			// send DiscReason to disconnected peer
 			// if the connection is net.Pipe (in-memory simulation)
 			// it hangs forever, since net.Pipe does not implement
 			// a write deadline. Because of this only try to send
@@ -132,7 +132,6 @@ func readProtocolHandshake(rw message.MsgReader, our *message.ProtoHandshake) (*
 		// We can't return the reason directly, though, because it is echoed
 		// back otherwise. Wrap it in a string instead.
 		var reason [1]peer_error.DiscReason
-		// rlp.Decode(msg.Payload, &reason)
 		return nil, reason[0]
 	}
 	if msg.Code != message.HandshakeMsg {
@@ -173,11 +172,11 @@ var (
 	zero16 = make([]byte, 16)
 )
 
-// rlpxFrameRW implements a simplified version of RLPx framing.
+// pbfFrameRW implements a simplified version of probuf framing.
 // chunked messages are not supported and all headers are equal to
 // zeroHeader.
 //
-// rlpxFrameRW is not safe for concurrent use from multiple goroutines.
+// pbfFrameRW is not safe for concurrent use from multiple goroutines.
 type pbfFrameRW struct {
 	conn io.ReadWriter
 }

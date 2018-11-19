@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+package protobuf;
+
+message HashNode {
+  required bytes data = 1;
+}
+
+message ValueNode {
+  required bytes data = 1;
+}
+
+message FullNode {
+  repeated bytes      children  = 1;
+}
+
+message ShortNode {
+  required bytes      key  = 1;
+  required bytes      val  = 2;
+}
