@@ -2,8 +2,10 @@ package helper
 
 import (
 	"encoding/hex"
+	"sort"
 	"time"
 
+	"github.com/linkchain/common"
 	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/config"
@@ -13,6 +15,17 @@ import (
 /*
 	Account
 */
+
+func CreateAccountIdByAddress(addr string) (*meta.AccountID, error) {
+	buffer, err := hex.DecodeString(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	id := meta.BytesToAccountID(buffer)
+	return &id, nil
+}
+
 func CreateAccountIdByPubKey(pubKey string) (*meta.AccountID, error) {
 	pkBytes, err := hex.DecodeString(pubKey)
 	if err != nil {
@@ -39,7 +52,8 @@ func CreateAccountIdByPrivKey(privKey string) (*meta.AccountID, error) {
 
 func CreateTemplateAccount(id meta.AccountID) *meta.Account {
 	u := make([]meta.UTXO, 0)
-	a := meta.NewAccount(id, config.NormalAccount, u, config.DafaultClearTime, meta.AccountID{})
+	c := meta.NewClearTime(0, 0)
+	a := meta.NewAccount(id, config.NormalAccount, u, c, meta.AccountID{})
 	return a
 }
 
@@ -83,47 +97,55 @@ func CreateTransaction(fromCoin meta.FromCoin, toCoin meta.ToCoin) *meta.Transac
 	return transaction
 }
 
-func CreateCoinBaseTx(to meta.AccountID, amount *meta.Amount) *meta.Transaction {
+func CreateCoinBaseTx(to meta.AccountID, amount *meta.Amount, height uint32) *meta.Transaction {
 	toCoin := meta.NewToCoin(to, amount)
 	transaction := meta.NewEmptyTransaction(config.DefaultDifficulty, config.CoinBaseTx)
 	transaction.AddToCoin(*toCoin)
+	transaction.Data = common.UInt32ToBytes(height)
 	return transaction
 }
 
+func SortTransaction(tx *meta.Transaction) {
+	//sort from
+	sort.Slice(tx.From.Coins, func(i, j int) bool {
+		if tx.From.Coins[i].Id.Big().Cmp(tx.From.Coins[j].Id.Big()) == 0 {
+			return false
+		} else if tx.From.Coins[i].Id.Big().Cmp(tx.From.Coins[j].Id.Big()) < 0 {
+			return true
+		} else {
+			return false
+		}
+	})
+
+	//sort from ticket
+	for k := range tx.From.Coins {
+		sort.Slice(tx.From.Coins[k].Ticket, func(i, j int) bool {
+			if tx.From.Coins[k].Ticket[i].Txid.Big().Cmp(tx.From.Coins[k].Ticket[j].Txid.Big()) == 0 {
+				return tx.From.Coins[k].Ticket[i].Index > tx.From.Coins[k].Ticket[j].Index
+			} else if tx.From.Coins[k].Ticket[i].Txid.Big().Cmp(tx.From.Coins[k].Ticket[j].Txid.Big()) < 0 {
+				return true
+			} else {
+				return false
+			}
+		})
+	}
+
+	//sort to
+	sort.Slice(tx.To.Coins, func(i, j int) bool {
+		if tx.To.Coins[i].Id.Big().Cmp(tx.To.Coins[j].Id.Big()) == 0 {
+			return tx.To.Coins[i].Value.GetInt64() < tx.To.Coins[j].Value.GetInt64()
+		} else if tx.To.Coins[i].Id.Big().Cmp(tx.To.Coins[j].Id.Big()) < 0 {
+			return true
+		} else {
+			return false
+		}
+	})
+}
+
 /*
+
 	Block
 */
-/*var fristPrivMiner, _ = hex.DecodeString("55b55e136cc6671014029dcbefc42a7db8ad9b9d11f62677a47fd2ed77eeef7b")
-
-func GetGensisBlock() *meta.Block {
-	txs := []meta.Transaction{}
-
-	header := meta.NewBlockHeader(config.DefaultBlockVersion, 0, time.Unix(1487780010, 0), config.DefaultNounce, config.DefaultDifficulty, math.Hash{}, math.Hash{}, math.Hash{}, meta.Signature{Code: make([]byte, 0)}, nil)
-	b := meta.NewBlock(*header, txs)
-	id, _ := CreateAccountIdByPrivKey(hex.EncodeToString(fristPrivMiner))
-	coinbase := CreateCoinBaseTx(*id, meta.NewAmount(50))
-	b.SetTx(*coinbase)
-	root := b.CalculateTxTreeRoot()
-	b.Header.SetMerkleRoot(root)
-
-	SignGensisBlock(b)
-	return b
-}
-
-func SignGensisBlock(block *meta.Block) error {
-	priv, _ := btcec.PrivKeyFromBytes(btcec.S256(), fristPrivMiner)
-	log.Info("signGensisBlock", "block hash", block.GetBlockID().String())
-	signature, err := priv.Sign(block.GetBlockID().CloneBytes())
-	if err != nil {
-		log.Error("signGensisBlock", "Sign", err)
-		return nil
-	}
-	sign := meta.NewSignatrue(signature.Serialize())
-	block.SetSign(sign)
-	return nil
-}
-*/
-
 func CreateBlock(prevHeight uint32, prevHash meta.BlockID) (*meta.Block, error) {
 	var txs []meta.Transaction
 	header := meta.NewBlockHeader(config.DefaultBlockVersion, prevHeight+1, time.Now(),

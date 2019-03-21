@@ -8,7 +8,7 @@ import (
 
 	_ "github.com/linkchain/common/util/log"
 	"github.com/linkchain/core/meta"
-	"github.com/linkchain/p2p/node"
+	"github.com/linkchain/p2p/discover"
 )
 
 const (
@@ -33,7 +33,7 @@ type StorageSize float64
 // the transactions in small packs to one peer at a time.
 func (pm *ProtocolManager) txsyncLoop() {
 	var (
-		pending = make(map[node.NodeID]*txsync)
+		pending = make(map[discover.NodeID]*txsync)
 		sending = false               // whether a send is active
 		pack    = new(txsync)         // the pack that is being sent
 		done    = make(chan error, 1) // result of the send

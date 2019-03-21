@@ -72,7 +72,7 @@ func TestCiphering(t *testing.T) {
 	if err != nil {
 		t.Fatal("failed to decrypt:", err)
 	}
-
+	t.Log(string(dec))
 	if !bytes.Equal(in, dec) {
 		t.Error("decrypted data doesn't match original")
 	}

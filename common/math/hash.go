@@ -68,13 +68,11 @@ func (hash *Hash) CloneBytes() []byte {
 // SetBytes sets the bytes which represent the hash.  An error is returned if
 // the number of bytes passed in is not HashSize.
 func (hash *Hash) SetBytes(newHash []byte) error {
-	nhlen := len(newHash)
-	if nhlen != HashSize {
-		return fmt.Errorf("invalid hash length of %v, want %v", nhlen,
-			HashSize)
+	if len(newHash) > len(hash) {
+		newHash = newHash[len(newHash)-HashSize:]
 	}
-	copy(hash[:], newHash)
 
+	copy(hash[HashSize-len(newHash):], newHash)
 	return nil
 }
 
@@ -173,6 +171,9 @@ func (hash *Hash) ToString() string {
 	return hash.String()
 }
 
+// Big converts a hash to a big integer.
+func (h Hash) Big() *big.Int { return new(big.Int).SetBytes(h[:]) }
+
 func StringToHash(s string) Hash { return BytesToHash([]byte(s)) }
 func BigToHash(b *big.Int) Hash  { return BytesToHash(b.Bytes()) }
 func HexToHash(s string) Hash    { return BytesToHash(common.FromHex(s)) }
@@ -185,5 +186,13 @@ func (h Hash) MarshalJSON() ([]byte, error) {
 }
 
 func (h *Hash) UnmarshalJSON(data []byte) error {
-	return nil
+	str := ""
+	if err := json.Unmarshal(data, &str); err != nil {
+		return err
+	}
+	hash, err := NewHashFromStr(str)
+	if err != nil {
+		return err
+	}
+	return h.SetBytes(hash.CloneBytes())
 }

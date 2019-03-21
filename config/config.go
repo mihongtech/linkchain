@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/linkchain/contract/vm/params"
 	"math/big"
 	"os"
 	"os/user"
@@ -9,8 +10,15 @@ import (
 )
 
 type ChainConfig struct {
-	ChainId *big.Int `json:"chainId"` // Chain id identifies the current chain and is used for replay protection
+	ChainId *big.Int `json:"chainId"` // chain id identifies the current chain and is used for replay protection
 	Period  uint64   `json:"period"`  // Number of seconds between blocks to enforce
+}
+
+// GasTable returns the gas table corresponding to the current phase (homestead or homestead reprice).
+//
+// The returned GasTable's fields shouldn't, under any circumstances, be changed.
+func (c *ChainConfig) GasTable(num *big.Int) params.GasTable {
+	return params.GasTableEIP158
 }
 
 type LinkChainConfig struct {
@@ -19,10 +27,13 @@ type LinkChainConfig struct {
 	// registered services, instead those can use utility methods to create/access
 	// databases or flat files. This enables ephemeral nodes which can fully reside
 	// in memory.
-	DataDir          string
-	GenesisPath      string
+	DataDir     string
+	GenesisPath string
 	//NodeService 	  common.Service
-	ListenAddress    string
+	ListenAddress  string
+	NoDiscovery    bool
+	BootstrapNodes string
+	InterpreterAPI string
 }
 
 // DefaultDataDir is the default data directory to use for the databases and other

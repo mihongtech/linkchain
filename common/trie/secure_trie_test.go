@@ -75,7 +75,7 @@ func TestSecureDelete(t *testing.T) {
 	exp := math.HexToHash("76b89834b90a496855ecf945d042cd995f977800cbf00375ecffaec2ee834e4c")
 
 	if hash != exp {
-		t.Errorf("expected %v got %v, tree %v", common.ToHex(exp[:]), common.ToHex(hash[:]))
+		t.Errorf("expected %v got %v", common.ToHex(exp[:]), common.ToHex(hash[:]))
 	}
 
 }

@@ -3,71 +3,52 @@ package node
 import (
 	"errors"
 
+	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/core/meta"
+	"github.com/linkchain/storage"
 )
 
 func (n *Node) addTransaction(tx *meta.Transaction) error {
-	newTx := *tx
-	n.txPool = append(n.txPool, newTx)
-	return nil
+	return n.txPool.addTransaction(tx)
 }
 
 func (n *Node) getAllTransaction() []meta.Transaction {
-	txs := make([]meta.Transaction, 0)
-	for _, tx := range n.txPool {
-		txs = append(txs, tx)
-	}
-	return txs
+	return n.txPool.getAllTransaction()
 }
 
 func (n *Node) removeTransaction(txID meta.TxID) error {
-	deleteIndex := make([]int, 0)
-	for index, tx := range n.txPool {
-		txHash := tx.GetTxID()
-		if txHash.IsEqual(&txID) {
-			deleteIndex = append(deleteIndex, index)
-		}
-	}
-	for _, index := range deleteIndex {
-		n.txPool = append(n.txPool[:index], n.txPool[index+1:]...)
-	}
-	return nil
+	return n.txPool.removeTransaction(txID)
 }
 
-func (n *Node) checkTx(tx *meta.Transaction) bool {
-	err := tx.Verify()
+func (n *Node) checkTx(tx *meta.Transaction) error {
+	err := n.validatorAPI.CheckTx(tx)
 	if err != nil {
-		log.Error("POA CheckTx", "failed", err)
-		return false
+		return errors.New("CheckTx" + "\ttx:" + tx.GetTxID().String() + "\nerror:" + err.Error())
 	}
-
-	//Check Tx Amount > 0
-	for _, coin := range tx.GetToCoins() {
-		if !coin.CheckValue() {
-			log.Error("POA CheckTx", "failed", "Transaction toCoin-Value need plus 0")
-			return false
-		}
-	}
-
-	if err != nil {
-		log.Error("POA CheckTx", "failed", err)
-		return false
-	}
-
-	return true
+	return err
 }
 
 func (n *Node) processTx(tx *meta.Transaction) error {
-	log.Info("POA ProcessTx ...")
+	log.Info("ProcessTx ...")
 	//1.checkTx
-	if !n.checkTx(tx) {
-		log.Error("POA checkTransaction failed")
-		return errors.New("POA checkTransaction failed")
+	if err := n.checkTx(tx); err != nil {
+		return err
 	}
 	//2.push Tx into storage
-	n.addTransaction(tx)
-	log.Info("POA Add Tranasaction Pool  ...", "txid", tx.GetTxID())
-	log.Info("POA Add Tranasaction Pool  ...", "tx", tx)
+	err := n.addTransaction(tx)
+	if err != nil {
+		return err
+	}
+	log.Info("Add Tranasaction Pool  ...", "txid", tx.GetTxID(), "tx", tx)
 	return nil
+}
+
+func (n *Node) getTxByID(hash meta.TxID) (*meta.Transaction, math.Hash, uint64, uint64) {
+	tx, hash, number, index := storage.GetTransaction(n.db, hash)
+	if tx == nil {
+		return nil, math.Hash{}, 0, 0
+	} else {
+		return tx, hash, number, index
+	}
 }

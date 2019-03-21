@@ -3,8 +3,8 @@ package peer
 import (
 	_ "fmt"
 
+	"github.com/linkchain/p2p/discover"
 	"github.com/linkchain/p2p/message"
-	"github.com/linkchain/p2p/node"
 )
 
 // Protocol represents a P2P subprotocol implementation.
@@ -30,13 +30,13 @@ type Protocol struct {
 	Run func(peer *Peer, rw message.MsgReadWriter) error
 
 	// NodeInfo is an optional helper method to retrieve protocol specific metadata
-	// about the host node.
+	// about the host discover.
 	NodeInfo func() interface{}
 
 	// PeerInfo is an optional helper method to retrieve protocol specific metadata
 	// about a certain peer in the network. If an info retrieval function is set,
 	// but returns nil, it is assumed that the protocol handshake is still running.
-	PeerInfo func(id node.NodeID) interface{}
+	PeerInfo func(id discover.NodeID) interface{}
 }
 
 func (p Protocol) Cap() message.Cap {

@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/golang/protobuf/proto"
-	"github.com/linkchain/p2p/proto/example"
 	"io"
 	"runtime"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/linkchain/p2p/proto/example"
+
+	"github.com/golang/protobuf/proto"
 )
 
 func ExampleMsgPipe() {

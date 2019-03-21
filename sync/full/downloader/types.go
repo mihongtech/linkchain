@@ -2,6 +2,7 @@ package downloader
 
 import (
 	"fmt"
+
 	"github.com/linkchain/core/meta"
 )
 

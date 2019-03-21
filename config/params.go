@@ -5,27 +5,29 @@ import (
 )
 
 const (
-	FirstPubMiner  = "025aa040dddd8f873ac5d02dfd249adc4d2c9d6def472a4405252fa6f6650ee1f0"
-	SecondPubMiner = "02ed6749d314c2e725f1d23d250b4a041ea9c6369594b4f55500d7db41746cdf50"
-	ThirdPubMiner  = "03de3b38a7f61312003c61ab8bee55ba6c6aa94464dc7e5a91f4ff11bf1c60dc59"
+	FirstPubMiner  = "07411e1beff277bf1dd9d810c07a4db0e1e45f5a"
+	SecondPubMiner = "0a35c1bd74497c851265774e7e98027b46c27c41"
+	ThirdPubMiner  = "56c5636befbe7cc23f5157c9278fca4e09109ffc"
 
 	DefaultBlockVersion       = 0x00000001 //the version of block.
 	DefaultDifficulty         = 0xffffffff //the default difficult.
 	DefaultNounce             = 0x00000000 //the default nounce of  block.
 	DefaultTransactionVersion = 0x00000001 //the version of transaction
-	DefaultBlockReward        = 50         //the reward of mining a block
-	CoinBaseTx                = 0x00000000 //the coinbase tx for reward to miner
-	NormalTx                  = 0x00000001 //the normal tx
+	DefaultBlockReward        = 5000000000 //the reward of mining a block
 
-	NormalAccount = 0x00000001 // the normal account
+	DefaultNodeDatabaseDir = "nodes"   // Path within the datadir to store the node infos
+	DefaultPrivateKeyDir   = "nodekey" // Path within the datadir to the node's private key
+	DefaultMaxPeers        = 25
 
-	DafaultClearTime = 0x00000000 // the default clearTime
+	TxTypeCount = 2
+	CoinBaseTx  = 0x00000000 //the coinbase tx for reward to miner
+	NormalTx    = 0x00000001 //the normal tx
+
+	NormalAccount = 0x00000000 // the normal account
 )
 
 var (
 	SignMiners         = []string{FirstPubMiner, SecondPubMiner, ThirdPubMiner}
-	varA               = 12
-	VarB               = 33
 	DefaultPeriod      = 15
 	DefaultChainConfig = &ChainConfig{big.NewInt(1337), uint64(DefaultPeriod)}
 )

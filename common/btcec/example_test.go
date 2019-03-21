@@ -8,8 +8,8 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/linkchain/common/btcec"
+	"github.com/linkchain/common/math"
 )
 
 // This example demonstrates signing a message with a secp256k1 private key that
@@ -26,7 +26,7 @@ func Example_signMessage() {
 
 	// Sign a message using the private key.
 	message := "test message"
-	messageHash := chainhash.DoubleHashB([]byte(message))
+	messageHash := math.DoubleHashB([]byte(message))
 	signature, err := privKey.Sign(messageHash)
 	if err != nil {
 		fmt.Println(err)
@@ -79,7 +79,7 @@ func Example_verifySignature() {
 
 	// Verify the signature for the message using the public key.
 	message := "test message"
-	messageHash := chainhash.DoubleHashB([]byte(message))
+	messageHash := math.DoubleHashB([]byte(message))
 	verified := signature.Verify(messageHash, pubKey)
 	fmt.Println("Signature Verified?", verified)
 

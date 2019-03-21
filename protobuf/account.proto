@@ -1,0 +1,29 @@
+syntax = "proto2";
+
+import "protobuf/transaction.proto";
+
+package protobuf;
+
+message Account {
+    required AccountID id = 1;
+    required uint32 type = 2;
+    repeated UTXO   utxos = 3;
+    optional ClearTime  clear = 4;
+    optional AccountID securityId = 5;
+    optional Hash storageRoot = 6;
+    optional Hash codeHash = 7;
+}
+
+message UTXO {
+    required Ticket id = 1;
+    required uint32 locatedHeight = 2;
+    required uint32 effectHeight = 3;
+    required bytes  value = 4;
+}
+
+message ClearTime {
+    required int64  lastClearTime = 1;
+    required uint32 lastEffectHeight=2;
+    required int64  nextClearTime = 3;
+    required uint32  nextEffectHeight = 4;
+}

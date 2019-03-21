@@ -11,8 +11,8 @@ import (
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/common/util/mclock"
+	"github.com/linkchain/p2p/discover"
 	"github.com/linkchain/p2p/message"
-	"github.com/linkchain/p2p/node"
 	"github.com/linkchain/p2p/peer_error"
 )
 
@@ -30,7 +30,7 @@ func (cs capsByNameAndVersion) Less(i, j int) bool {
 	return cs[i].Name < cs[j].Name || (cs[i].Name == cs[j].Name && cs[i].Version < cs[j].Version)
 }
 
-// Peer represents a connected remote node.
+// Peer represents a connected remote discover.
 type Peer struct {
 	RW      *Conn
 	running map[string]*protoRW
@@ -47,7 +47,7 @@ type Peer struct {
 }
 
 // NewPeer returns a peer for testing purposes.
-func NewTestPeer(id node.NodeID, name string, caps []message.Cap) *Peer {
+func NewTestPeer(id discover.NodeID, name string, caps []message.Cap) *Peer {
 	pipe, _ := net.Pipe()
 	conn := &Conn{FD: pipe, Transport: nil, ID: id, Caps: caps, Name: name}
 	peer := NewPeer(conn, nil)
@@ -56,7 +56,7 @@ func NewTestPeer(id node.NodeID, name string, caps []message.Cap) *Peer {
 }
 
 // ID returns the node's public key.
-func (p *Peer) ID() node.NodeID {
+func (p *Peer) ID() discover.NodeID {
 	return p.RW.ID
 }
 
@@ -219,6 +219,7 @@ func (p *Peer) handle(msg message.Msg) error {
 		msg.Discard()
 		go message.SendItems(p.RW, message.PongMsg, nil)
 	case msg.Code == message.DiscMsg:
+
 		var reason [1]peer_error.DiscReason
 		// This is the last message. We don't need to discard or
 		// check errors because, the connection will be closed after it.

@@ -438,3 +438,7 @@ func (t *Trie) hashRoot(db *Database, onleaf LeafCallback) (node, node, error) {
 	defer returnHasherToPool(h)
 	return h.hash(t.root, db, true)
 }
+
+func (t *Trie) CommitDisk(node math.Hash) error {
+	return t.db.Commit(node, false)
+}

@@ -21,8 +21,8 @@ import (
 type SecureTrie struct {
 	trie             Trie
 	hashKeyBuf       [math.HashSize]byte
-	secKeyCache      map[string][]byte
-	secKeyCacheOwner *SecureTrie // Pointer to self, replace the key cache on mismatch
+	secKeyCache      map[string][]byte //Cache the hash of key
+	secKeyCacheOwner *SecureTrie       // Pointer to self, replace the key cache on mismatch
 }
 
 // NewSecure creates a trie with an existing root node from a backing database
@@ -137,7 +137,13 @@ func (t *SecureTrie) Commit(onleaf LeafCallback) (root math.Hash, err error) {
 		t.secKeyCache = make(map[string][]byte)
 	}
 	// Commit the trie to its intermediate node database
-	return t.trie.Commit(onleaf)
+	r, err := t.trie.Commit(onleaf)
+	if err != nil {
+		return r, err
+	}
+
+	// Commit the trie to Disk
+	return r, t.trie.CommitDisk(r)
 }
 
 func (t *SecureTrie) Hash() math.Hash {

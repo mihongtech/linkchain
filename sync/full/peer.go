@@ -13,6 +13,7 @@ import (
 	p2p_peer "github.com/linkchain/p2p/peer"
 	"github.com/linkchain/p2p/peer_error"
 	"github.com/linkchain/protobuf"
+
 	"gopkg.in/fatih/set.v0"
 )
 

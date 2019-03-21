@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/linkchain/common/util/log"
+
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/filter"
@@ -24,7 +25,7 @@ type LDBDatabase struct {
 	log log.Logger // Contextual logger tracking the database path
 }
 
-// NewLDBDatabase returns a LevelDB wrapped object.
+// NewLDBDatabase returns a LevelDB wrapped rpcobject.
 func NewLDBDatabase(file string, cache int, handles int) (*LDBDatabase, error) {
 	logger := log.New("database", file)
 
@@ -159,7 +160,7 @@ type table struct {
 	prefix string
 }
 
-// NewTable returns a Database object that prefixes all keys with a given
+// NewTable returns a Database rpcobject that prefixes all keys with a given
 // string.
 func NewTable(db Database, prefix string) Database {
 	return &table{
@@ -193,7 +194,7 @@ type tableBatch struct {
 	prefix string
 }
 
-// NewTableBatch returns a Batch object which prefixes all keys with a given string.
+// NewTableBatch returns a Batch rpcobject which prefixes all keys with a given string.
 func NewTableBatch(db Database, prefix string) Batch {
 	return &tableBatch{db.NewBatch(), prefix}
 }

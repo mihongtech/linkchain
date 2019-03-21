@@ -13,10 +13,11 @@ import (
 	"testing"
 	"testing/quick"
 
-	"github.com/davecgh/go-spew/spew"
 	_ "github.com/linkchain/common"
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/math"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 func init() {

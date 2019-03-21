@@ -462,7 +462,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 		}
 	}
 	// If the head fetch already found an ancestor, return
-	if hash.IsEmpty() && hash.IsEmpty() {
+	if hash.IsEmpty() {
 		if int64(number) <= floor {
 			p.log.Warn("Ancestor below allowance", "number", number, "hash", hash, "allowance", floor)
 			return 0, errInvalidAncestor
@@ -622,8 +622,8 @@ func (d *Downloader) fetchBlocks(p *peerConnection, from uint64, pivot uint64) e
 				p.log.Warn("Downloader wants to drop peer, but peerdrop-function is not set", "peer", p.id)
 				break
 			}
-			// Header retrieval timed out, consider the peer bad and drop
-			p.log.Trace("Header request timed out", "elapsed", ttl)
+			// header retrieval timed out, consider the peer bad and drop
+			p.log.Trace("header request timed out", "elapsed", ttl)
 
 			d.dropPeer(p.id)
 
@@ -937,6 +937,10 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 
 	for _, result := range results {
 		log.Trace("Downloaded item processing block", "number", result.Block.GetHeight(), "hash", result.Block.GetBlockID(), "block", result.Block)
+		if !d.nodeAPI.HasBlock(*result.Block.GetPrevBlockID()) && !result.Block.GetPrevBlockID().IsEmpty() {
+			continue
+		}
+
 		if d.nodeAPI.HasBlock(*result.Block.GetBlockID()) {
 			continue
 		}

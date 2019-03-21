@@ -24,8 +24,9 @@ func NewStrorage(dataDir string) *Storage {
 	var err error
 	s.Name = "chaindata"
 	s.dataDir = dataDir
-	s.db, err = s.OpenDatabase(s.Name, 1024, 256)
+	s.db, err = s.OpenDatabase("fullchain", 1024, 256)
 	if err != nil {
+		log.Error("init storage failed", "err", err)
 		return nil
 	}
 

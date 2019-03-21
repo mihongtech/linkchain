@@ -6,11 +6,12 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/p2p/message"
 	"github.com/linkchain/p2p/peer"
 	"github.com/linkchain/p2p/peer_error"
 	"github.com/linkchain/protobuf"
+
+	"github.com/golang/protobuf/proto"
 )
 
 // error codes used by this  protocol scheme
@@ -151,7 +152,7 @@ func (s *Spec) NewMsg(code uint64) (proto.Message, bool) {
 // Peer represents a remote peer or protocol instance that is running on a peer connection with
 // a remote peer
 type Peer struct {
-	*peer.Peer                       // the p2p.Peer object representing the remote
+	*peer.Peer                       // the p2p.Peer rpcobject representing the remote
 	rw         message.MsgReadWriter // p2p.MsgReadWriter to send messages to and read messages from
 	spec       *Spec
 }

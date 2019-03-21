@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/log"
+
+	"github.com/golang/protobuf/proto"
 )
 
 // Prove constructs a merkle proof for key. The result contains all encoded nodes
@@ -63,7 +64,7 @@ func (t *Trie) Prove(key []byte, fromLevel uint, proofDb lcdb.Putter) error {
 				enc := n.Serialize()
 				buffer, err := proto.Marshal(enc)
 				if err != nil {
-					log.Error("header marshaling error: ", err)
+					log.Error("header marshaling error: ", "trie", err)
 				}
 				if !ok {
 					hash = math.HashB(buffer)

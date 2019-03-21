@@ -33,3 +33,21 @@ func NotEqual(t *testing.T, act, exp interface{}) {
 		t.FailNow()
 	}
 }
+
+func NotError(t *testing.T, err error) {
+	if !reflect.DeepEqual(err, nil) {
+		_, file, line, _ := runtime.Caller(1)
+		t.Logf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n",
+			filepath.Base(file), line, err, nil)
+		t.FailNow()
+	}
+}
+
+func Error(t *testing.T, err error) {
+	if reflect.DeepEqual(err, nil) {
+		_, file, line, _ := runtime.Caller(1)
+		t.Logf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n",
+			filepath.Base(file), line, err, nil)
+		t.FailNow()
+	}
+}

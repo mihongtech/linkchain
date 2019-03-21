@@ -6,11 +6,12 @@ import (
 	"io"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/protobuf"
+
+	"github.com/golang/protobuf/proto"
 )
 
 var indices = []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "[17]"}
@@ -101,9 +102,14 @@ func (n *fullNode) Serialize() serialize.SerializeStream {
 		}
 
 		enc := child.Serialize()
+		if nil == enc {
+			children = append(children, nil)
+			continue
+		}
+
 		buffer, err := proto.Marshal(enc)
 		if err != nil {
-			log.Error("header marshaling error: ", err)
+			log.Error("node marshaling error: ", "full node", err, "child is", child, "enc", enc)
 		}
 		switch child.(type) {
 		case valueNode:
@@ -132,7 +138,7 @@ func (n *shortNode) Serialize() serialize.SerializeStream {
 	enc := n.Val.Serialize()
 	buffer, err := proto.Marshal(enc)
 	if err != nil {
-		log.Error("header marshaling error: ", err)
+		log.Error("node marshaling error: ", "short node", err, "n.Val", n.Val)
 	}
 
 	switch nt := n.Val.(type) {
@@ -161,6 +167,10 @@ func (n *shortNode) Serialize() serialize.SerializeStream {
 }
 
 func (n hashNode) Serialize() serialize.SerializeStream {
+	if len(n) == 0 {
+		return nil
+	}
+
 	node := protobuf.HashNode{
 		Data: n,
 	}
@@ -169,6 +179,10 @@ func (n hashNode) Serialize() serialize.SerializeStream {
 }
 
 func (n valueNode) Serialize() serialize.SerializeStream {
+	if len(n) == 0 {
+		return nil
+	}
+
 	node := protobuf.ValueNode{
 		Data: n,
 	}
@@ -180,7 +194,7 @@ func (n *fullNode) Deserialize(s serialize.SerializeStream) error {
 	data := *s.(*protobuf.FullNode)
 
 	if len(data.Children) != 17 {
-		return fmt.Errorf("parse childern error", data.Children, "len(data.Children)", len(data.Children))
+		return fmt.Errorf("parse childern error, children: %v,  len(data.Children) :%v", data.Children, len(data.Children))
 	}
 	for i := 0; i < 17; i++ {
 		if len(data.Children[i]) == 0 || data.Children[i] == nil {
@@ -309,7 +323,7 @@ func decodeRef(buf []byte, cachegen uint16) (node, error) {
 
 	var n protobuf.HashNode
 	if err := proto.Unmarshal(buf, &n); err != nil {
-		return nil, fmt.Errorf("decodeRef data", buf, "err", err)
+		return nil, fmt.Errorf("decodeRef data, buf:%v, err: %v", buf, err)
 	}
 
 	switch {

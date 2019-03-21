@@ -5,21 +5,25 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"fmt"
+
 	"math/big"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/config"
+	"github.com/linkchain/core"
 	"github.com/linkchain/core/meta"
 	"github.com/linkchain/protobuf"
+
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/golang/protobuf/proto"
 )
 
 // DatabaseReader wraps the Get method of a backing data store.
 type DatabaseReader interface {
 	Get(key []byte) (value []byte, err error)
+	Has(key []byte) (bool, error)
 }
 
 // DatabaseDeleter wraps the Delete method of a backing data store.
@@ -33,15 +37,16 @@ var (
 	trieSyncKey  = []byte("TrieSync")
 
 	// Data item prefixes (use single byte to avoid mixing data types, avoid `i`).
-	blockPrefix     = []byte("h") // blockPrefix + num (uint64 big endian) + hash -> block
-	tdSuffix        = []byte("t") // blockPrefix + num (uint64 big endian) + hash + tdSuffix -> td
-	numSuffix       = []byte("n") // blockPrefix + num (uint64 big endian) + numSuffix -> hash
-	blockHashPrefix = []byte("H") // blockHashPrefix + hash -> num (uint64 big endian)
-	lookupPrefix    = []byte("l") // lookupPrefix + hash -> transaction/receipt lookup metadata
-	bloomBitsPrefix = []byte("B") // bloomBitsPrefix + bit (uint16 big endian) + section (uint64 big endian) + hash -> bloom bits
+	blockPrefix         = []byte("h")    // blockPrefix + num (uint64 big endian) + hash -> block
+	tdSuffix            = []byte("t")    // blockPrefix + num (uint64 big endian) + hash + tdSuffix -> td
+	numSuffix           = []byte("n")    // blockPrefix + num (uint64 big endian) + numSuffix -> hash
+	blockHashPrefix     = []byte("H")    // blockHashPrefix + hash -> num (uint64 big endian)
+	lookupPrefix        = []byte("l")    // lookupPrefix + hash -> transaction/receipt lookup metadata
+	bloomBitsPrefix     = []byte("B")    // bloomBitsPrefix + bit (uint16 big endian) + section (uint64 big endian) + hash -> bloom bits
+	codePrefix          = []byte("code") // codePrefix  hash -> code bits
+	blockReceiptsPrefix = []byte("r")    // blockReceiptsPrefix + num (uint64 big endian) + hash -> block receipts
 
-	preimagePrefix = "secure-key-"               // preimagePrefix + hash -> preimage
-	configPrefix   = []byte("linkchain-config-") // config prefix for the db
+	configPrefix = []byte("linkchain-config-") // config prefix for the db
 
 	// ChainSketch index prefixes (use `i` + single byte to avoid mixing data types).
 	BloomBitsIndexPrefix = []byte("iB") // BloomBitsIndexPrefix is the data table of a chain indexer to track its progress
@@ -56,9 +61,9 @@ var (
 // TxLookupEntry is a positional metadata to help looking up the data content of
 // a transaction or receipt given only its hash.
 type TxLookupEntry struct {
-	BlockHash  math.Hash
-	BlockIndex uint64
-	Index      uint64
+	BlockHash  string `json:"blockHash"`
+	BlockIndex uint64 `json:"blockIndex"`
+	Index      uint64 `json:"index"`
 }
 
 // encodeBlockNumber encodes a block number as big endian uint64
@@ -133,6 +138,11 @@ func GetBlockBytes(db DatabaseReader, hash math.Hash, number uint64) []byte {
 	return data
 }
 
+func HasBlock(db DatabaseReader, hash math.Hash, number uint64) bool {
+	ok, _ := db.Has(blockKey(hash, number))
+	return ok
+}
+
 func blockKey(hash math.Hash, number uint64) []byte {
 	return append(append(blockPrefix, encodeBlockNumber(number)...), hash.Bytes()...)
 }
@@ -160,55 +170,43 @@ func GetBlock(db DatabaseReader, hash math.Hash, number uint64) *meta.Block {
 
 // GetTxLookupEntry retrieves the positional metadata associated with a transaction
 // hash to allow retrieving the transaction or receipt by hash.
-//func GetTxLookupEntry(db DatabaseReader, hash math.Hash) (math.Hash, uint64, uint64) {
-//	// Load the positional metadata from disk and bail if it fails
-//	data, _ := db.Get(append(lookupPrefix, hash.Bytes()...))
-//	if len(data) == 0 {
-//		return math.Hash{}, 0, 0
-//	}
-//	// Parse and return the contents of the lookup entry
-//	var entry TxLookupEntry
-//	if err := rlp.DecodeBytes(data, &entry); err != nil {
-//		log.Error("Invalid lookup entry RLP", "hash", hash, "err", err)
-//		return math.Hash{}, 0, 0
-//	}
-//	return entry.BlockHash, entry.BlockIndex, entry.Index
-//}
+func GetTxLookupEntry(db DatabaseReader, hash math.Hash) (math.Hash, uint64, uint64) {
+	// Load the positional metadata from disk and bail if it fails
+	data, _ := db.Get(append(lookupPrefix, hash.CloneBytes()...))
+	if len(data) == 0 {
+		return math.Hash{}, 0, 0
+	}
+
+	// Parse and return the contents of the lookup entry
+	var entry TxLookupEntry
+	if err := json.Unmarshal(data, &entry); err != nil {
+		log.Error("Invalid lookup entry json data", "hash", hash, "err", err)
+		return math.Hash{}, 0, 0
+	}
+
+	blockHash, _ := math.NewHashFromStr(entry.BlockHash)
+	return *blockHash, entry.BlockIndex, entry.Index
+}
 
 // GetTransaction retrieves a specific transaction from the database, along with
 // its added positional metadata.
-//func GetTransaction(db DatabaseReader, hash math.Hash) (*types.Transaction, math.Hash, uint64, uint64) {
-//	// Retrieve the lookup metadata and resolve the transaction from the body
-//	blockHash, blockNumber, txIndex := GetTxLookupEntry(db, hash)
-//
-//	if blockHash != (math.Hash{}) {
-//		body := GetBody(db, blockHash, blockNumber)
-//		if body == nil || len(body.Transactions) <= int(txIndex) {
-//			log.Error("Transaction referenced missing", "number", blockNumber, "hash", blockHash, "index", txIndex)
-//			return nil, math.Hash{}, 0, 0
-//		}
-//		return body.Transactions[txIndex], blockHash, blockNumber, txIndex
-//	}
-//	// Old transaction representation, load the transaction and it's metadata separately
-//	data, _ := db.Get(hash.Bytes())
-//	if len(data) == 0 {
-//		return nil, math.Hash{}, 0, 0
-//	}
-//	var tx types.Transaction
-//	if err := rlp.DecodeBytes(data, &tx); err != nil {
-//		return nil, math.Hash{}, 0, 0
-//	}
-//	// Retrieve the blockchain positional metadata
-//	data, _ = db.Get(append(hash.Bytes(), oldTxMetaSuffix...))
-//	if len(data) == 0 {
-//		return nil, math.Hash{}, 0, 0
-//	}
-//	var entry TxLookupEntry
-//	if err := rlp.DecodeBytes(data, &entry); err != nil {
-//		return nil, math.Hash{}, 0, 0
-//	}
-//	return &tx, entry.BlockHash, entry.BlockIndex, entry.Index
-//}
+func GetTransaction(db DatabaseReader, hash math.Hash) (*meta.Transaction, math.Hash, uint64, uint64) {
+	// Retrieve the lookup metadata and resolve the transaction from the body
+	blockHash, blockNumber, txIndex := GetTxLookupEntry(db, hash)
+	// log.Info("get tx id", "blockHash", blockHash)
+	if !blockHash.IsEmpty() {
+		block := GetBlock(db, blockHash, blockNumber)
+		if block == nil || len(block.TXs) <= int(txIndex) {
+			log.Error("Transaction referenced missing", "number", blockNumber, "hash", blockHash, "index", txIndex)
+			return nil, math.Hash{}, 0, 0
+		}
+		return &block.TXs[txIndex], blockHash, blockNumber, txIndex
+	} else {
+		log.Error("Transaction not found", "hash", hash)
+		return nil, math.Hash{}, 0, 0
+	}
+
+}
 
 // GetBloomBits retrieves the compressed bloom bit vector belonging to the given
 // section and bit index from the.
@@ -281,24 +279,27 @@ func WriteBlock(db lcdb.Putter, block *meta.Block) error {
 
 // WriteTxLookupEntries stores a positional metadata for every transaction from
 // a block, enabling hash based transaction and receipt lookups.
-//func WriteTxLookupEntries(db lcdb.Putter, block *types.Block) error {
-//	// Iterate over each transaction and encode its metadata
-//	for i, tx := range block.Transactions() {
-//		entry := TxLookupEntry{
-//			BlockHash:  block.Hash(),
-//			BlockIndex: block.NumberU64(),
-//			Index:      uint64(i),
-//		}
-//		data, err := rlp.EncodeToBytes(entry)
-//		if err != nil {
-//			return err
-//		}
-//		if err := db.Put(append(lookupPrefix, tx.Hash().Bytes()...), data); err != nil {
-//			return err
-//		}
-//	}
-//	return nil
-//}
+func WriteTxLookupEntries(db lcdb.Putter, block *meta.Block) error {
+
+	// Iterate over each transaction and encode its metadata
+	for i, tx := range block.TXs {
+		entry := TxLookupEntry{
+			BlockHash:  block.GetBlockID().String(),
+			BlockIndex: uint64(block.GetHeight()),
+			Index:      uint64(i),
+		}
+		data, err := json.Marshal(entry)
+
+		if err != nil {
+			return err
+		}
+		// log.Info("write tx id", "id", tx.GetTxID(), "entry", entry, "data", data)
+		if err := db.Put(append(lookupPrefix, tx.GetTxID().CloneBytes()...), data); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 // WriteBloomBits writes the compressed bloom bits vector belonging to the given
 // section and bit index.
@@ -319,45 +320,19 @@ func DeleteCanonicalHash(db DatabaseDeleter, number uint64) {
 }
 
 // DeleteHeader removes all block header data associated with a hash.
-func DeleteHeader(db DatabaseDeleter, hash math.Hash, number uint64) {
+func DeleteBlockData(db DatabaseDeleter, hash math.Hash, number uint64) {
 	db.Delete(append(blockHashPrefix, hash.Bytes()...))
 	db.Delete(append(append(blockPrefix, encodeBlockNumber(number)...), hash.Bytes()...))
 }
 
 // DeleteBlock removes all block data associated with a hash.
 func DeleteBlock(db DatabaseDeleter, hash math.Hash, number uint64) {
-	DeleteHeader(db, hash, number)
+	DeleteBlockData(db, hash, number)
 }
 
 // DeleteTxLookupEntry removes all transaction data associated with a hash.
 func DeleteTxLookupEntry(db DatabaseDeleter, hash math.Hash) {
 	db.Delete(append(lookupPrefix, hash.Bytes()...))
-}
-
-// PreimageTable returns a Database instance with the key prefix for preimage entries.
-func PreimageTable(db lcdb.Database) lcdb.Database {
-	return lcdb.NewTable(db, preimagePrefix)
-}
-
-// WritePreimages writes the provided set of preimages to the database. `number` is the
-// current block number, and is used for debug messages only.
-func WritePreimages(db lcdb.Database, number uint64, preimages map[math.Hash][]byte) error {
-	table := PreimageTable(db)
-	batch := table.NewBatch()
-	hitCount := 0
-	for hash, preimage := range preimages {
-		if _, err := table.Get(hash.Bytes()); err != nil {
-			batch.Put(hash.Bytes(), preimage)
-			hitCount++
-		}
-	}
-
-	if hitCount > 0 {
-		if err := batch.Write(); err != nil {
-			return fmt.Errorf("preimage write fail for block %d: %v", number, err)
-		}
-	}
-	return nil
 }
 
 // WriteChainConfig writes the chain config settings to the database.
@@ -389,4 +364,70 @@ func GetChainConfig(db DatabaseReader, hash math.Hash) (*config.ChainConfig, err
 	}
 
 	return &chainConfig, nil
+}
+
+// DeleteCode remove code.
+func DeleteCode(db DatabaseDeleter, hash math.Hash) {
+	db.Delete(append(codePrefix, hash.Bytes()...))
+}
+
+// DeleteCode set code.
+func WriteCode(db lcdb.Putter, hash math.Hash, code []byte) error {
+	key := append(codePrefix, hash.Bytes()...)
+	return db.Put(key, code)
+}
+
+// DeleteCode get code.
+func GetCode(db DatabaseReader, hash math.Hash) ([]byte, error) {
+	key := append(codePrefix, hash.Bytes()...)
+	return db.Get(key)
+}
+
+// ReadReceipts retrieves all the transaction receipts belonging to a block.
+func ReadReceipts(db DatabaseReader, hash math.Hash, number uint64) core.Receipts {
+	// Retrieve the flattened receipt slice
+	data, _ := db.Get(blockReceiptsKey(number, hash))
+	if len(data) == 0 {
+		return nil
+	}
+	// Convert the receipts from their storage form to their internal representation
+	storageReceipts := []*core.ReceiptForStorage{}
+	if err := rlp.DecodeBytes(data, &storageReceipts); err != nil {
+		log.Error("Invalid receipt array RLP", "hash", hash, "err", err)
+		return nil
+	}
+	receipts := make(core.Receipts, len(storageReceipts))
+	for i, receipt := range storageReceipts {
+		receipts[i] = (*core.Receipt)(receipt)
+	}
+	return receipts
+}
+
+// WriteReceipts stores all the transaction receipts belonging to a block.
+func WriteReceipts(db lcdb.Putter, hash math.Hash, number uint64, receipts core.Receipts) {
+	// Convert the receipts into their storage form and serialize them
+	storageReceipts := make([]*core.ReceiptForStorage, len(receipts))
+	for i, receipt := range receipts {
+		storageReceipts[i] = (*core.ReceiptForStorage)(receipt)
+	}
+	bytes, err := rlp.EncodeToBytes(storageReceipts)
+	if err != nil {
+		log.Crit("Failed to encode block receipts", "err", err)
+	}
+	// Store the flattened receipt slice
+	if err := db.Put(blockReceiptsKey(number, hash), bytes); err != nil {
+		log.Crit("Failed to store block receipts", "err", err)
+	}
+}
+
+// DeleteReceipts removes all receipt data associated with a block hash.
+func DeleteReceipts(db DatabaseDeleter, hash math.Hash, number uint64) {
+	if err := db.Delete(blockReceiptsKey(number, hash)); err != nil {
+		log.Crit("Failed to delete block receipts", "err", err)
+	}
+}
+
+// blockReceiptsKey = blockReceiptsPrefix + num (uint64 big endian) + hash
+func blockReceiptsKey(number uint64, hash math.Hash) []byte {
+	return append(append(blockReceiptsPrefix, encodeBlockNumber(number)...), hash.Bytes()...)
 }

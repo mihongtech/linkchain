@@ -135,7 +135,7 @@ type getBlockHeadersData struct {
 
 func (n *getBlockHeadersData) Serialize() serialize.SerializeStream {
 	var hashdata *protobuf.Hash
-	if n.Hash.IsEmpty() {
+	if !n.Hash.IsEmpty() {
 		hashdata = n.Hash.Serialize().(*protobuf.Hash)
 	} else {
 		empty := meta.BlockID{}

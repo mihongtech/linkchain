@@ -10,12 +10,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/p2p/discover"
 	"github.com/linkchain/p2p/message"
-	"github.com/linkchain/p2p/node"
 	"github.com/linkchain/p2p/peer_error"
 	"github.com/linkchain/protobuf"
+
+	"github.com/golang/protobuf/proto"
 )
 
 const (
@@ -91,6 +92,12 @@ func (p *pbfmsg) Close(err error) {
 	p.fd.Close()
 }
 
+// only for test
+func NewTestPbfmsg(fd net.Conn) Transport {
+	fd.SetDeadline(time.Now().Add(handshakeTimeout))
+	return &pbfmsg{fd: fd, rw: newPBFrameRW(fd)}
+}
+
 func (p *pbfmsg) DoProtoHandshake(our *message.ProtoHandshake) (their *message.ProtoHandshake, err error) {
 	// Writing our handshake happens concurrently, we prefer
 	// returning the handshake read error. If the remote side
@@ -143,7 +150,7 @@ func readProtocolHandshake(rw message.MsgReader, our *message.ProtoHandshake) (*
 		return nil, err
 	}
 
-	nodeID := node.NodeID{}
+	nodeID := discover.NodeID{}
 	if len(pbmsg.Id) > 0 {
 		copy(nodeID[:], pbmsg.Id[:])
 	}
@@ -158,7 +165,7 @@ func readProtocolHandshake(rw message.MsgReader, our *message.ProtoHandshake) (*
 	}
 
 	hs := message.ProtoHandshake{Version: *pbmsg.Version, Caps: caps, Name: *pbmsg.Name, ListenPort: port, ID: nodeID, Rest: pbmsg.Rest}
-	if (hs.ID == node.NodeID{}) {
+	if (hs.ID == discover.NodeID{}) {
 		return nil, peer_error.DiscInvalidIdentity
 	}
 	return &hs, nil

@@ -1,6 +1,10 @@
 package common
 
-import "encoding/hex"
+import (
+	"encoding/binary"
+	"encoding/hex"
+	"errors"
+)
 
 func ToHex(b []byte) string {
 	hex := Bytes2Hex(b)
@@ -101,4 +105,17 @@ func LeftPadBytes(slice []byte, l int) []byte {
 	copy(padded[l-len(slice):], slice)
 
 	return padded
+}
+
+func UInt32ToBytes(i uint32) []byte {
+	var buf = make([]byte, 8)
+	binary.BigEndian.PutUint32(buf, i)
+	return buf
+}
+
+func BytesToUInt32(buf []byte) (uint32, error) {
+	if len(buf) > 8 || len(buf) == 0 {
+		return 0, errors.New("buff len is error")
+	}
+	return binary.BigEndian.Uint32(buf), nil
 }

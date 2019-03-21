@@ -12,8 +12,8 @@ import (
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/core/meta"
 	"github.com/linkchain/node"
+	p2p_node "github.com/linkchain/p2p/discover"
 	"github.com/linkchain/p2p/message"
-	p2p_node "github.com/linkchain/p2p/node"
 	p2p_peer "github.com/linkchain/p2p/peer"
 	"github.com/linkchain/p2p/peer_error"
 	"github.com/linkchain/protobuf"
@@ -63,16 +63,16 @@ type ProtocolManager struct {
 func NewProtocolManager(config interface{}, nodeSvc *node.PublicNodeAPI, networkId uint64, mux *event.TypeMux, tx *event.Feed) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		networkId:    networkId,
-		maxPeers:     64,
-		eventTx:      tx,
-		eventMux:     mux,
-		peers:        newPeerSet(),
-		newPeerCh:    make(chan *peer),
-		noMorePeers:  make(chan struct{}),
+		networkId:   networkId,
+		maxPeers:    64,
+		eventTx:     tx,
+		eventMux:    mux,
+		peers:       newPeerSet(),
+		newPeerCh:   make(chan *peer),
+		noMorePeers: make(chan struct{}),
 		nodeAPI:     nodeSvc,
-		txsyncCh:     make(chan *txsync),
-		quitSync:     make(chan struct{}),
+		txsyncCh:    make(chan *txsync),
+		quitSync:    make(chan struct{}),
 	}
 
 	// Initiate a sub-protocol for every implemented version we can handle
@@ -115,10 +115,10 @@ func NewProtocolManager(config interface{}, nodeSvc *node.PublicNodeAPI, network
 	heighter := func() uint64 {
 		return uint64(manager.nodeAPI.GetBestBlock().GetHeight())
 	}
-	validator := func(block *meta.Block) bool {
+	validator := func(block *meta.Block) error {
 		return manager.nodeAPI.CheckBlock(block)
 	}
-	manager.fetcher = fetcher.New(manager.nodeAPI.GetBlockByID, validator, manager.BroadcastBlock, heighter, manager.nodeAPI, manager.removePeer)
+	manager.fetcher = fetcher.New(manager.nodeAPI.GetBlockByID, validator, manager.BroadcastBlock, heighter, manager.nodeAPI.ProcessBlock, manager.removePeer)
 
 	return manager, nil
 }
@@ -361,7 +361,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		transaction.Deserialize(&t)
 		p.MarkTransaction(*transaction.GetTxID())
 		log.Debug("Receive TxMsg", "transaction is", transaction)
-		pm.nodeAPI.AddTransaction(transaction)
+		if err = pm.nodeAPI.ProcessTx(transaction); err != nil {
+			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		}
 		//		for _, t := range pm.txmanager.getAllTransaction() {
 		//			log.Debug("all txs is", "tx", t)
 		//		}

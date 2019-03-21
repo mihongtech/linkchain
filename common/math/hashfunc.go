@@ -2,6 +2,7 @@ package math
 
 import (
 	"crypto/sha256"
+	"math/big"
 )
 
 // HashB calculates hash(b) and returns the resulting bytes.
@@ -27,4 +28,8 @@ func DoubleHashB(b []byte) []byte {
 func DoubleHashH(b []byte) Hash {
 	first := sha256.Sum256(b)
 	return Hash(sha256.Sum256(first[:]))
+}
+
+func Int64ToHash(data int64) Hash {
+	return DoubleHashH(new(big.Int).SetInt64(data).Bytes())
 }

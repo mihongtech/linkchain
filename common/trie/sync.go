@@ -6,6 +6,7 @@ import (
 
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/math"
+
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 

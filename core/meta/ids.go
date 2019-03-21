@@ -1,6 +1,8 @@
 package meta
 
-import "github.com/linkchain/common/math"
+import (
+	"github.com/linkchain/common/math"
+)
 
 type TxID = math.Hash
 
@@ -17,8 +19,3 @@ func MakeBlockId(b []byte) *BlockID {
 }
 
 type TreeID = math.Hash
-
-func MakeTreeID(b []byte) (*TreeID, error) {
-	return math.NewHash(b)
-}
-

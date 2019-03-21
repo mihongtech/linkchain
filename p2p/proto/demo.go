@@ -1,9 +1,11 @@
 package main
 
 import (
-	"github.com/golang/protobuf/proto"
-	"github.com/linkchain/p2p/proto/example"
 	"log"
+
+	"github.com/golang/protobuf/proto"
+
+	"github.com/linkchain/p2p/proto/example"
 )
 
 func main() {

@@ -1,123 +1,196 @@
+// Package math provides integer math utilities.
 package math
 
 import (
-	"encoding/json"
-	"errors"
+	"fmt"
 	"math/big"
-
-	"github.com/linkchain/common"
 )
 
-// A BigInt represents a signed multi-precision integer.
-type BigInt struct {
-	bigint *big.Int
-}
+// Various big integer limit values.
+var (
+	tt255     = BigPow(2, 255)
+	tt256     = BigPow(2, 256)
+	tt256m1   = new(big.Int).Sub(tt256, big.NewInt(1))
+	tt63      = BigPow(2, 63)
+	MaxBig256 = new(big.Int).Set(tt256m1)
+	MaxBig63  = new(big.Int).Sub(tt63, big.NewInt(1))
+)
 
-// NewBigInt allocates and returns a new BigInt set to x.
-func NewBigInt(x int64) *BigInt {
-	return &BigInt{big.NewInt(x)}
-}
+const (
+	// number of bits in a big.Word
+	wordBits = 32 << (uint64(^big.Word(0)) >> 63)
+	// number of bytes in a big.Word
+	wordBytes = wordBits / 8
+)
 
-// GetBytes returns the absolute value of x as a big-endian byte slice.
-func (bi *BigInt) GetBytes() []byte {
-	return bi.bigint.Bytes()
-}
+// HexOrDecimal256 marshals big.Int as hex or decimal.
+type HexOrDecimal256 big.Int
 
-// String returns the value of x as a formatted decimal string.
-func (bi *BigInt) String() string {
-	return bi.bigint.String()
-}
-
-// GetInt64 returns the int64 representation of x. If x cannot be represented in
-// an int64, the result is undefined.
-func (bi *BigInt) GetInt64() int64 {
-	return bi.bigint.Int64()
-}
-
-// SetBytes interprets buf as the bytes of a big-endian unsigned integer and sets
-// the big int to that value.
-func (bi *BigInt) SetBytes(buf []byte) {
-	bi.bigint.SetBytes(common.CopyBytes(buf))
-}
-
-// SetInt64 sets the big int to x.
-func (bi *BigInt) SetInt64(x int64) {
-	bi.bigint.SetInt64(x)
-}
-
-// Sign returns:
-//
-//	-1 if x <  0
-//	 0 if x == 0
-//	+1 if x >  0
-//
-func (bi *BigInt) Sign() int {
-	return bi.bigint.Sign()
-}
-
-// SetString sets the big int to x.
-//
-// The string prefix determines the actual conversion base. A prefix of "0x" or
-// "0X" selects base 16; the "0" prefix selects base 8, and a "0b" or "0B" prefix
-// selects base 2. Otherwise the selected base is 10.
-func (bi *BigInt) SetString(x string, base int) {
-	bi.bigint.SetString(x, base)
-}
-
-// BigInts represents a slice of big ints.
-type BigInts struct{ bigints []*big.Int }
-
-// Size returns the number of big ints in the slice.
-func (bi *BigInts) Size() int {
-	return len(bi.bigints)
-}
-
-// Get returns the bigint at the given index from the slice.
-func (bi *BigInts) Get(index int) (bigint *BigInt, _ error) {
-	if index < 0 || index >= len(bi.bigints) {
-		return nil, errors.New("index out of bounds")
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (i *HexOrDecimal256) UnmarshalText(input []byte) error {
+	bigint, ok := ParseBig256(string(input))
+	if !ok {
+		return fmt.Errorf("invalid hex or decimal integer %q", input)
 	}
-	return &BigInt{bi.bigints[index]}, nil
-}
-
-// Set sets the big int at the given index in the slice.
-func (bi *BigInts) Set(index int, bigint *BigInt) error {
-	if index < 0 || index >= len(bi.bigints) {
-		return errors.New("index out of bounds")
-	}
-	bi.bigints[index] = bigint.bigint
+	*i = HexOrDecimal256(*bigint)
 	return nil
 }
 
-// GetString returns the value of x as a formatted string in some number base.
-func (bi *BigInt) GetString(base int) string {
-	return bi.bigint.Text(base)
+// MarshalText implements encoding.TextMarshaler.
+func (i *HexOrDecimal256) MarshalText() ([]byte, error) {
+	if i == nil {
+		return []byte("0x0"), nil
+	}
+	return []byte(fmt.Sprintf("%#x", (*big.Int)(i))), nil
 }
 
-func (a *BigInt) IsLessThan(otherAmount BigInt) bool {
-	return a.GetInt64() < otherAmount.GetInt64()
+// ParseBig256 parses s as a 256 bit integer in decimal or hexadecimal syntax.
+// Leading zeros are accepted. The empty string parses as zero.
+func ParseBig256(s string) (*big.Int, bool) {
+	if s == "" {
+		return new(big.Int), true
+	}
+	var bigint *big.Int
+	var ok bool
+	if len(s) >= 2 && (s[:2] == "0x" || s[:2] == "0X") {
+		bigint, ok = new(big.Int).SetString(s[2:], 16)
+	} else {
+		bigint, ok = new(big.Int).SetString(s, 10)
+	}
+	if ok && bigint.BitLen() > 256 {
+		bigint, ok = nil, false
+	}
+	return bigint, ok
 }
 
-func (a *BigInt) Subtraction(otherAmount BigInt) *BigInt {
-	a.SetInt64(a.GetInt64() - otherAmount.GetInt64())
-	return a
+// MustParseBig256 parses s as a 256 bit big integer and panics if the string is invalid.
+func MustParseBig256(s string) *big.Int {
+	v, ok := ParseBig256(s)
+	if !ok {
+		panic("invalid 256 bit integer: " + s)
+	}
+	return v
 }
 
-func (a *BigInt) Addition(otherAmount BigInt) *BigInt {
-	a.SetInt64(a.GetInt64() + otherAmount.GetInt64())
-	return a
+// BigPow returns a ** b as a big integer.
+func BigPow(a, b int64) *big.Int {
+	r := big.NewInt(a)
+	return r.Exp(r, big.NewInt(b), nil)
 }
 
-func (a *BigInt) Reverse() *BigInt {
-	a.SetInt64(0 - a.GetInt64())
-	return a
+// BigMax returns the larger of x or y.
+func BigMax(x, y *big.Int) *big.Int {
+	if x.Cmp(y) < 0 {
+		return y
+	}
+	return x
 }
 
-//Json Hash convert to Hex
-func (a BigInt) MarshalJSON() ([]byte, error) {
-	return json.Marshal(a.GetInt64())
+// BigMin returns the smaller of x or y.
+func BigMin(x, y *big.Int) *big.Int {
+	if x.Cmp(y) > 0 {
+		return y
+	}
+	return x
 }
 
-func (a *BigInt) UnmarshalJSON(data []byte) error {
-	return nil
+// FirstBitSet returns the index of the first 1 bit in v, counting from LSB.
+func FirstBitSet(v *big.Int) int {
+	for i := 0; i < v.BitLen(); i++ {
+		if v.Bit(i) > 0 {
+			return i
+		}
+	}
+	return v.BitLen()
+}
+
+// PaddedBigBytes encodes a big integer as a big-endian byte slice. The length
+// of the slice is at least n bytes.
+func PaddedBigBytes(bigint *big.Int, n int) []byte {
+	if bigint.BitLen()/8 >= n {
+		return bigint.Bytes()
+	}
+	ret := make([]byte, n)
+	ReadBits(bigint, ret)
+	return ret
+}
+
+// bigEndianByteAt returns the byte at position n,
+// in Big-Endian encoding
+// So n==0 returns the least significant byte
+func bigEndianByteAt(bigint *big.Int, n int) byte {
+	words := bigint.Bits()
+	// Check word-bucket the byte will reside in
+	i := n / wordBytes
+	if i >= len(words) {
+		return byte(0)
+	}
+	word := words[i]
+	// Offset of the byte
+	shift := 8 * uint(n%wordBytes)
+
+	return byte(word >> shift)
+}
+
+// Byte returns the byte at position n,
+// with the supplied padlength in Little-Endian encoding.
+// n==0 returns the MSB
+// Example: bigint '5', padlength 32, n=31 => 5
+func Byte(bigint *big.Int, padlength, n int) byte {
+	if n >= padlength {
+		return byte(0)
+	}
+	return bigEndianByteAt(bigint, padlength-1-n)
+}
+
+// ReadBits encodes the absolute value of bigint as big-endian bytes. Callers must ensure
+// that buf has enough space. If buf is too short the result will be incomplete.
+func ReadBits(bigint *big.Int, buf []byte) {
+	i := len(buf)
+	for _, d := range bigint.Bits() {
+		for j := 0; j < wordBytes && i > 0; j++ {
+			i--
+			buf[i] = byte(d)
+			d >>= 8
+		}
+	}
+}
+
+// U256 encodes as a 256 bit two's complement number. This operation is destructive.
+func U256(x *big.Int) *big.Int {
+	return x.And(x, tt256m1)
+}
+
+// S256 interprets x as a two's complement number.
+// x must not exceed 256 bits (the result is undefined if it does) and is not modified.
+//
+//   S256(0)        = 0
+//   S256(1)        = 1
+//   S256(2**255)   = -2**255
+//   S256(2**256-1) = -1
+func S256(x *big.Int) *big.Int {
+	if x.Cmp(tt255) < 0 {
+		return x
+	}
+	return new(big.Int).Sub(x, tt256)
+}
+
+// Exp implements exponentiation by squaring.
+// Exp returns a newly-allocated big integer and does not change
+// base or exponent. The result is truncated to 256 bits.
+//
+// Courtesy @karalabe and @chfast
+func Exp(base, exponent *big.Int) *big.Int {
+	result := big.NewInt(1)
+
+	for _, word := range exponent.Bits() {
+		for i := 0; i < wordBits; i++ {
+			if word&1 == 1 {
+				U256(result.Mul(result, base))
+			}
+			U256(base.Mul(base, base))
+			word >>= 1
+		}
+	}
+	return result
 }

@@ -1,6 +1,8 @@
 package downloader
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // SyncMode represents the synchronisation mode of the downloader.
 type SyncMode int

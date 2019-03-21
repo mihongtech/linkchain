@@ -3,7 +3,10 @@ package wallet
 import (
 	"encoding/hex"
 	"errors"
+	"path/filepath"
 
+	"github.com/linkchain/accounts"
+	"github.com/linkchain/accounts/keystore"
 	"github.com/linkchain/app/context"
 	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/math"
@@ -14,125 +17,48 @@ import (
 	"github.com/linkchain/node"
 )
 
-var minePriv, _ = hex.DecodeString("7a9c6f2b865c98c9fe174869de5818f4c62bc845441c08269487cdba6688f6b1")
-
-type WAccount struct {
-	privKey btcec.PrivateKey
-	account meta.Account
-}
-
-func NewWSAccount() WAccount {
-	priv, err := btcec.NewPrivateKey(btcec.S256())
-	if err != nil {
-		log.Info("Wallet", "NewAccount - generate private key failed", err)
-	}
-
-	a, err := helper.CreateNormalAccount(priv)
-	if err != nil {
-		log.Info("Wallet", "NewAccount - failed", err)
-	}
-	return WAccount{privKey: *priv, account: *a}
-}
-
-func CreateWAccountFromBytes(privb []byte) WAccount {
-	priv, _ := btcec.PrivKeyFromBytes(btcec.S256(), privb)
-	a, err := helper.CreateNormalAccount(priv)
-	if err != nil {
-		log.Info("Wallet", "NewAccount - failed", err)
-	}
-	return WAccount{*priv, *a}
-}
-
-func (wa *WAccount) UpdateWAccount(account meta.Account) error {
-	if !wa.account.GetAccountID().IsEqual(*account.GetAccountID()) {
-		return errors.New("IAccount is error")
-	}
-	wa.account = account
-	return nil
-}
-
-func (wa *WAccount) GetAccountID() meta.AccountID {
-	id := meta.NewAccountId(wa.privKey.PubKey())
-	return *id
-}
-
-func (wa *WAccount) getAccount() *meta.Account {
-	return &wa.account
-}
-
-func (wa *WAccount) MakeFromCoin(value *meta.Amount) (*meta.FromCoin, *meta.Amount, error) {
-	if wa.GetAmount() < value.GetInt64() {
-		return nil, nil, errors.New("WAccount MakeFromCoin() amount is too large")
-	}
-	fc := helper.CreateFromCoin(wa.GetAccountID())
-	fromAmount := meta.NewAmount(0)
-	for _, v := range wa.account.UTXOs {
-		fromAmount.Addition(v.Value)
-		t := meta.NewTicket(v.Txid, v.Index)
-		fc.AddTicket(t)
-	}
-
-	return fc, fromAmount, nil
-}
-
-func (wa *WAccount) GetAccountInfo() {
-	log.Info("Wallet Info", "account", wa.account.GetAccountID().String(), "amount", wa.GetAmount(), "accounts", wa.account)
-	for _, c := range wa.account.UTXOs {
-		log.Info("Wallet Info", "Tickets", c.String())
-	}
-}
-
-func (wa *WAccount) GetAccountPubkey() string {
-	return hex.EncodeToString(wa.privKey.PubKey().SerializeCompressed())
-}
-
-func (wa *WAccount) GetAccountPrivkey() string {
-	return hex.EncodeToString(wa.privKey.Serialize())
-}
-
-func (wa *WAccount) GetAmount() int64 {
-	return wa.account.GetAmount().GetInt64()
-}
-
-func (wa *WAccount) Sign(messageHash []byte) math.ISignature {
-	signature, err := wa.privKey.Sign(messageHash)
-	if err != nil {
-		log.Error("WAccount", "Sign", err)
-		return nil
-	}
-	return meta.NewSignatrue(signature.Serialize())
-}
-
 type Wallet struct {
-	accounts         map[string]WAccount
+	keystore         *keystore.KeyStore
+	password         string
+	Name             string
+	DataDir          string
+	accounts         map[string]meta.Account
 	nodeAPI          *node.PublicNodeAPI
 	updateAccountSub *event.TypeMuxSubscription
 }
 
 func NewWallet() *Wallet {
-	gensisWA := CreateWAccountFromBytes(minePriv)
-	gensisKey := hex.EncodeToString(gensisWA.privKey.PubKey().SerializeCompressed())
-
-	accounts := make(map[string]WAccount)
-	accounts[gensisKey] = gensisWA
-	return &Wallet{accounts: accounts}
+	name := "wallet"
+	password := "password"
+	return &Wallet{accounts: make(map[string]meta.Account), Name: name, password: password}
 }
+
 func (w *Wallet) Setup(i interface{}) bool {
+	globalConfig := i.(*context.Context).Config
+	w.nodeAPI = i.(*context.Context).NodeAPI.(*node.PublicNodeAPI)
+	w.DataDir = globalConfig.DataDir
+	path := w.instanceDir(w.DataDir)
+	w.keystore = keystore.NewKeyStore(path, keystore.StandardScryptN, keystore.StandardScryptP)
 	w.nodeAPI = i.(*context.Context).NodeAPI.(*node.PublicNodeAPI)
 	return true
 }
 
 func (w *Wallet) Start() bool {
-	log.Info("Wallet start...")
-	w.updateAccountSub = w.nodeAPI.GetAccountEvent().Subscribe(node.AccountEvent{})
-	w.ReScanAllAccount()
+	accountEvent := w.nodeAPI.GetAccountEvent()
+	w.updateAccountSub = accountEvent.Subscribe(node.AccountEvent{})
+	ksAccounts := w.keystore.Accounts()
+	for i := range ksAccounts {
+		account := helper.CreateTemplateAccount(ksAccounts[i].Address)
+		w.accounts[account.Id.String()] = *account
+	}
+	w.reScanAllAccount()
 	go w.updateWalletLoop()
 
 	return true
 }
 
 func (w *Wallet) Stop() {
-	log.Info("Wallet stop...")
+	log.Info("Stop wallet...")
 	w.updateAccountSub.Unsubscribe()
 }
 
@@ -141,17 +67,17 @@ func (w *Wallet) updateWalletLoop() {
 		switch ev := obj.Data.(type) {
 		case node.AccountEvent:
 			if ev.IsUpdate {
-				w.ReScanAllAccount()
+				w.reScanAllAccount()
 			}
 		}
 	}
 }
 
-func (w *Wallet) ReScanAllAccount() {
+func (w *Wallet) reScanAllAccount() {
 	newWas := make([]meta.Account, 0)
 	for key := range w.accounts {
 		wa := w.accounts[key]
-		newWa, err := w.nodeAPI.GetAccount(wa.GetAccountID())
+		newWa, err := w.nodeAPI.GetAccount(wa.Id)
 		if err != nil {
 			continue
 		}
@@ -159,61 +85,62 @@ func (w *Wallet) ReScanAllAccount() {
 		newWas = append(newWas, newWa)
 	}
 	for _, wa := range newWas {
-		w.UpdateWalletAccount(wa)
+		w.updateWalletAccount(wa)
 	}
 }
 
-func (w *Wallet) UpdateWalletAccount(account meta.Account) error {
+func (w *Wallet) updateWalletAccount(account meta.Account) error {
 	a, ok := w.accounts[account.GetAccountID().String()]
 	if !ok {
 		return errors.New("GetAccountID can not find account")
 	}
-	err := a.UpdateWAccount(account)
-	if err != nil {
-		log.Error("UpdateWalletAccount", "error", err)
-		return err
-	}
-	w.AddWAccount(a)
+
+	a = account
+	w.AddAccount(a)
 	return nil
 }
 
-func (w *Wallet) AddWAccount(wa WAccount) {
-	key := hex.EncodeToString(wa.privKey.PubKey().SerializeCompressed())
-	w.accounts[key] = wa
-}
-
-func (w *Wallet) ChooseWAccount(amount *meta.Amount) (WAccount, error) {
-	if len(w.accounts) > 0 {
-		for key := range w.accounts {
-			wa := w.accounts[key]
-			if wa.GetAmount() >= amount.GetInt64() {
-				return w.accounts[key], nil
-			}
-		}
+func (w *Wallet) NewAccount() (*meta.AccountID, error) {
+	ksAccount, err := w.keystore.NewAccount(w.password)
+	if err != nil {
+		log.Error("wallet", "newAccount", err)
+		return nil, err
 	}
-	return NewWSAccount(), errors.New("wallet can not find legal account")
+	account := helper.CreateTemplateAccount(ksAccount.Address)
+	w.AddAccount(*account)
+	return &ksAccount.Address, nil
 }
 
-func (w *Wallet) GetAllWAccount() []WAccount {
-	w.ReScanAllAccount()
-	var WAs []WAccount
+func (w *Wallet) AddAccount(account meta.Account) {
+	w.accounts[account.Id.String()] = account
+}
+
+func (w *Wallet) GetAllWAccount() []meta.Account {
+	w.reScanAllAccount()
+	var WAs []meta.Account
 	for a := range w.accounts {
 		WAs = append(WAs, w.accounts[a])
 	}
 	return WAs
 }
 
-func (w *Wallet) GetWAccount(key string) (WAccount, error) {
+func (w *Wallet) GetAccount(key string) (*meta.Account, error) {
 	wa, ok := w.accounts[key]
 	if ok {
-		return wa, nil
+		return &wa, nil
+	} else {
+		id, err := meta.HexToAccountID(key)
+		if err != nil {
+			return nil, err
+		}
+		newWa, err := w.nodeAPI.GetAccount(id)
+		return &newWa, err
 	}
-	return WAccount{}, errors.New("can not find waccount")
 }
 
 func (w *Wallet) SignTransaction(tx meta.Transaction) (*meta.Transaction, error) {
 	for _, fc := range tx.GetFromCoins() {
-		sign, err := w.signByFromCoin(fc, tx.GetTxID())
+		sign, err := w.SignMessage(fc.Id, tx.GetTxID().CloneBytes())
 		if err != nil {
 			return nil, err
 		}
@@ -222,15 +149,59 @@ func (w *Wallet) SignTransaction(tx meta.Transaction) (*meta.Transaction, error)
 	return &tx, nil
 }
 
-func (w *Wallet) signByFromCoin(fromCoin meta.FromCoin, data *meta.TxID) (math.ISignature, error) {
-	a, ok := w.accounts[fromCoin.GetId().String()]
+func (w *Wallet) SignMessage(accountId meta.AccountID, hash []byte) (math.ISignature, error) {
+	_, ok := w.accounts[accountId.String()]
 	if !ok {
-		return nil, errors.New("signByFromCoin can not find tx from account")
-	}
-	sign := a.Sign(data.CloneBytes())
-	if sign == nil {
-		return nil, errors.New("signByFromCoin failed")
+		return nil, errors.New("SignMessage can not find account id")
 	}
 
-	return sign, nil
+	ksAccount, err := w.keystore.Find(accounts.Account{Address: accountId})
+	if err != nil {
+		return nil, err
+	}
+	sign, err := w.keystore.SignHashWithPassphrase(ksAccount, w.password, hash)
+	return meta.NewSignature(sign), nil
+}
+
+func (w *Wallet) importKey(privkeyStr string) (*meta.AccountID, error) {
+	privkeyBuff, err := hex.DecodeString(privkeyStr)
+	if err != nil {
+		return nil, err
+	}
+	privkey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privkeyBuff)
+	ksAccount, err := w.keystore.ImportECDSA(privkey, w.password)
+	if err != nil {
+		return nil, err
+	}
+	account := helper.CreateTemplateAccount(ksAccount.Address)
+	w.AddAccount(*account)
+	return &ksAccount.Address, err
+}
+
+func (w *Wallet) ImportAccount(privateKeyStr string) (*meta.AccountID, error) {
+	a, err := w.importKey(privateKeyStr)
+	if err != nil {
+		return nil, err
+	}
+	return a, nil
+}
+
+func (w *Wallet) ExportAccount(id meta.AccountID) (string, error) {
+	_, ok := w.accounts[id.String()]
+	if !ok {
+		return "", errors.New("export can not find account id")
+	}
+	ksAccount, err := w.keystore.Find(accounts.Account{Address: id})
+	if err != nil {
+		return "", err
+	}
+
+	return w.keystore.ExportECDSA(ksAccount, w.password)
+}
+
+func (w *Wallet) instanceDir(path string) string {
+	if path == "" {
+		return ""
+	}
+	return filepath.Join(path, w.Name)
 }

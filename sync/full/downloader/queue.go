@@ -8,6 +8,7 @@ import (
 
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/core/meta"
+
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -45,11 +46,11 @@ type queue struct {
 
 	// Blocks are "special", they download in batches, supported by a skeleton chain
 	blockHead      meta.BlockID                   // [full/62] Hash of the last queued block to verify order
-	blockTaskPool  map[uint64]*meta.Block      // [full/62] Pending block retrieval tasks, mapping starting indexes to skeleton headers
+	blockTaskPool  map[uint64]*meta.Block         // [full/62] Pending block retrieval tasks, mapping starting indexes to skeleton headers
 	blockTaskQueue *prque.Prque                   // [full/62] Priority queue of the skeleton indexes to fetch the filling headers for
 	blockPeerMiss  map[string]map[uint64]struct{} // [full/62] Set of per-peer block batches known to be unavailable
 	blockPendPool  map[string]*fetchRequest       // [full/62] Currently pending block retrieval operations
-	blockResults   []*meta.Block               // [full/62] Result cache accumulating the completed headers
+	blockResults   []*meta.Block                  // [full/62] Result cache accumulating the completed headers
 	blockProced    int                            // [full/62] Number of headers already processed from the results
 	blockOffset    uint64                         // [full/62] Number of the first block in the result cache
 	blockContCh    chan bool                      // [full/62] Channel to notify when block download finishes
@@ -208,11 +209,11 @@ func (q *queue) Schedule(blocks []*meta.Block, from uint64) []*meta.Block {
 		// Make sure chain order is honoured and preserved throughout
 		hash := *block.GetBlockID()
 		if uint64(block.GetHeight()) != from {
-			log.Warn("Header broke chain ordering", "number", block.GetHeight(), "hash", hash, "expected", from)
+			log.Warn("header broke chain ordering", "number", block.GetHeight(), "hash", hash, "expected", from)
 			break
 		}
-		if q.blockHead.IsEmpty() && !q.blockHead.IsEqual(block.GetPrevBlockID()) {
-			log.Warn("Header broke chain ancestry", "number", block.GetHeight(), "hash", hash, "q.blockHead", q.blockHead, "block.GetPrevBlockID()", block.GetPrevBlockID())
+		if !q.blockHead.IsEmpty() && !q.blockHead.IsEqual(block.GetPrevBlockID()) {
+			log.Warn("header broke chain ancestry", "number", block.GetHeight(), "hash", hash, "q.blockHead", q.blockHead, "block.GetPrevBlockID()", block.GetPrevBlockID())
 			break
 		}
 
@@ -508,12 +509,12 @@ func (q *queue) DeliverBlocks(id string, blocks []*meta.Block, blockProcCh chan 
 		for i, block := range blocks[1:] {
 			hash := block.GetBlockID()
 			if want := request.From + 1 + uint64(i); uint64(block.GetHeight()) != want {
-				log.Warn("Header broke chain ordering", "peer", id, "number", block.GetHeight(), "hash", hash, "expected", want)
+				log.Warn("header broke chain ordering", "peer", id, "number", block.GetHeight(), "hash", hash, "expected", want)
 				accepted = false
 				break
 			}
 			if !blocks[i].GetBlockID().IsEqual(block.GetPrevBlockID()) {
-				log.Warn("Header broke chain ancestry", "peer", id, "number", block.GetHeight(), "hash", hash)
+				log.Warn("header broke chain ancestry", "peer", id, "number", block.GetHeight(), "hash", hash)
 				accepted = false
 				break
 			}

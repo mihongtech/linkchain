@@ -1,0 +1,51 @@
+syntax = "proto2";
+
+import "protobuf/transaction.proto";
+
+package protobuf;
+
+message BlockHeaderData {
+    required Hash receiptHash = 1;
+    required uint64 gasLimit = 2;
+    required uint64 gasUsed = 3;
+}
+
+message TxData {
+    required uint64 price = 1;
+    required uint64 gasLimit = 2;
+    required bytes payload = 3;
+}
+
+message Receipt {
+    required bytes postStateOrStatus = 1;
+    required uint64 cumulativeGasUsed = 2;
+    required bytes bloom = 3;
+    repeated Log logs = 4;
+}
+message Log {
+    required AccountID address =1;
+    repeated Hash topics = 2;
+    required bytes data  =3;
+}
+
+
+message ReceiptForStorage {
+    required bytes postStateOrStatus = 1;
+    required uint64 cumulativeGasUsed = 2;
+    required bytes bloom = 3;
+    repeated LogForStorage logs = 4;
+    required Hash txHash = 5;
+    required uint64 gasUsed = 6;
+    required AccountID ContractAddress = 7;
+}
+
+message LogForStorage {
+    required AccountID address =1;
+    repeated Hash topics = 2;
+    required bytes data  =3;
+    required uint64 blockNumber = 4;
+    required Hash txHash = 5;
+    required uint32 txIndex = 6;
+    required Hash blockHash =7;
+	required uint32 index = 8;
+}

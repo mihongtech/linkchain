@@ -11,16 +11,17 @@ import (
 	"github.com/linkchain/config"
 	"github.com/linkchain/core/meta"
 	"github.com/linkchain/storage"
+	"github.com/linkchain/storage/state"
 )
 
 var errGenesisNoConfig = errors.New("genesis has no chain configuration")
 
 type Genesis struct {
 	Config     *config.ChainConfig `json:"config"`
-	Version    uint32                     `json:"version"`
-	Time       int64                      `json:"time"`
-	Data       []byte                     `json:"data"`
-	Difficulty uint32                     `json:"difficulty" gencodec:"required"`
+	Version    uint32              `json:"version"`
+	Time       int64               `json:"time"`
+	Data       []byte              `json:"data"`
+	Difficulty uint32              `json:"difficulty" gencodec:"required"`
 
 	// These fields are used for consensus tests. Please don't use them
 	// in actual genesis blocks.
@@ -134,8 +135,9 @@ func (g *Genesis) ToBlock(db lcdb.Database) *meta.Block {
 	if db == nil {
 		db, _ = lcdb.NewMemDatabase()
 	}
-	//	statedb, _ := state.New(math.Hash{}, state.NewDatabase(db))
-
+	statedb, _ := state.New(math.Hash{}, db)
+	// TODO: add tx to account
+	root, _ := statedb.Commit()
 	head := meta.BlockHeader{
 		Version:    g.Version,
 		Height:     g.Height,
@@ -144,16 +146,13 @@ func (g *Genesis) ToBlock(db lcdb.Database) *meta.Block {
 		Data:       g.Data,
 		Nonce:      config.DefaultNounce,
 		TxRoot:     math.Hash{},
-		Status:     math.Hash{},
+		Status:     root,
 		Difficulty: g.Difficulty,
 	}
 
-	//	statedb.Commit(false)
-	//	statedb.Database().TrieDB().Commit(root, true)
-
 	block := meta.NewBlock(head, []meta.Transaction{})
-	root := block.CalculateTxTreeRoot()
-	block.Header.SetMerkleRoot(root)
+	txRoot := block.CalculateTxTreeRoot()
+	block.Header.SetMerkleRoot(txRoot)
 
 	return block
 }
@@ -170,6 +169,7 @@ func (g *Genesis) Commit(db lcdb.Database) (*meta.Block, error) {
 		log.Info("Commit", "err", err)
 		return nil, err
 	}
+	storage.WriteReceipts(db, *block.GetBlockID(), uint64(block.GetHeight()), nil)
 
 	if err := storage.WriteCanonicalHash(db, *block.GetBlockID(), uint64(block.GetHeight())); err != nil {
 		return nil, err

@@ -1,12 +1,13 @@
 package peer
 
 import (
-	_ "github.com/linkchain/common/util/log"
-	"github.com/linkchain/p2p/message"
-	"github.com/linkchain/p2p/node"
-	"github.com/linkchain/p2p/transport"
 	"net"
 	"time"
+
+	_ "github.com/linkchain/common/util/log"
+	"github.com/linkchain/p2p/discover"
+	"github.com/linkchain/p2p/message"
+	"github.com/linkchain/p2p/transport"
 )
 
 type ConnFlag int
@@ -31,10 +32,10 @@ type Conn struct {
 	FD net.Conn
 	transport.Transport
 	Flags ConnFlag
-	Cont  chan error    // The run loop uses cont to signal errors to SetupConn.
-	ID    node.NodeID   // valid after the encryption handshake
-	Caps  []message.Cap // valid after the protocol handshake
-	Name  string        // valid after the protocol handshake
+	Cont  chan error      // The run loop uses cont to signal errors to SetupConn.
+	ID    discover.NodeID // valid after the encryption handshake
+	Caps  []message.Cap   // valid after the protocol handshake
+	Name  string          // valid after the protocol handshake
 }
 
 func NewConn(fd net.Conn, transporter func(net.Conn) transport.Transport, flags ConnFlag, cont chan error) *Conn {
@@ -43,7 +44,7 @@ func NewConn(fd net.Conn, transporter func(net.Conn) transport.Transport, flags 
 
 func (c *Conn) String() string {
 	s := c.Flags.String()
-	if (c.ID != node.NodeID{}) {
+	if (c.ID != discover.NodeID{}) {
 		s += " " + c.ID.String()
 	}
 	s += " " + c.FD.RemoteAddr().String()

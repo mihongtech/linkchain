@@ -8,3 +8,12 @@ message Test {
   optional int32 type = 2 [default=77];
   repeated int64 reps = 3;
 }
+
+message TestStringArray{
+  required string s1 = 1;
+  required string s2 = 2;
+}
+
+message TestUint{
+  required uint32 u = 1;
+}

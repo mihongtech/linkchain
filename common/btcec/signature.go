@@ -534,3 +534,13 @@ func bits2octets(in []byte, curve elliptic.Curve, rolen int) []byte {
 	}
 	return int2octets(z2, rolen)
 }
+
+func GetSigner(hash []byte, sign []byte) (*PublicKey, error) {
+	pub, _, err := RecoverCompact(S256(), sign, hash)
+	if err != nil {
+		return nil, err
+	}
+
+	return pub, nil
+
+}

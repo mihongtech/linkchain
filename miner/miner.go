@@ -1,7 +1,7 @@
 package miner
 
 import (
-	"encoding/hex"
+	"errors"
 	"sync"
 	"time"
 
@@ -10,100 +10,177 @@ import (
 	"github.com/linkchain/config"
 	"github.com/linkchain/core/meta"
 	"github.com/linkchain/helper"
+	"github.com/linkchain/interpreter"
 	"github.com/linkchain/node"
-	"github.com/linkchain/wallet"
 )
 
-var fristPrivMiner, _ = hex.DecodeString("55b55e136cc6671014029dcbefc42a7db8ad9b9d11f62677a47fd2ed77eeef7b")
-var secondPrivMiner, _ = hex.DecodeString("7a9c6f2b865c98c9fe174869de5818f4c62bc845441c08269487cdba6688f6b1")
-var thirdPrivMiner, _ = hex.DecodeString("6647e717248720f1b50f3f1f765b731783205f2de2fedc9e447438966af7df85")
-
 type Miner struct {
-	signers  []wallet.WAccount
-	nodeAPI  *node.PublicNodeAPI
-	isMining bool
-	minerMtx sync.Mutex
+	nodeAPI   *node.PublicNodeAPI
+	executor  interpreter.Executor
+	walletAPI interpreter.Wallet
+	isMining  bool
+	minerMtx  sync.Mutex
 }
 
 func NewMiner() *Miner {
-	fristWA := wallet.CreateWAccountFromBytes(fristPrivMiner)
-	secondWA := wallet.CreateWAccountFromBytes(secondPrivMiner)
-	thirdWA := wallet.CreateWAccountFromBytes(thirdPrivMiner)
-	signers := make([]wallet.WAccount, 0)
-	signers = append(signers, fristWA, secondWA, thirdWA)
-	return &Miner{signers: signers, isMining: false}
-	return &Miner{}
+	return &Miner{isMining: false}
 }
-func (w *Miner) Setup(i interface{}) bool {
-	w.nodeAPI = i.(*context.Context).NodeAPI.(*node.PublicNodeAPI)
+func (m *Miner) Setup(i interface{}) bool {
+	m.nodeAPI = i.(*context.Context).NodeAPI.(*node.PublicNodeAPI)
+	m.walletAPI = i.(*context.Context).WalletAPI
+	m.executor = i.(*context.Context).InterpreterAPI
 	return true
 }
 
-func (w *Miner) Start() bool {
+func (m *Miner) Start() bool {
 	log.Info("Miner start...")
 	return true
 }
 
-func (w *Miner) Stop() {
+func (m *Miner) Stop() {
 	log.Info("Miner stop...")
 }
 
-func (w *Miner) MineBlock() {
-	best := w.nodeAPI.GetBestBlock()
+func (m *Miner) MineBlock() (*meta.Block, error) {
+	signerId, err := m.getMineBlock()
+	if err != nil {
+		return nil, errors.New("the node can not mine block" + err.Error())
+	}
+	best := m.nodeAPI.GetBestBlock()
 	block, err := helper.CreateBlock(best.GetHeight(), *best.GetBlockID())
 	if err != nil {
 		log.Error("Miner", "New Block error", err)
-		return
+		return nil, err
 	}
-	mineIndex := block.GetHeight() % 3
 
-	id := w.signers[mineIndex].GetAccountID()
-	coinbase := helper.CreateCoinBaseTx(id, meta.NewAmount(50))
+	coinbase := helper.CreateCoinBaseTx(*signerId, meta.NewAmount(config.DefaultBlockReward), block.GetHeight())
 	block.SetTx(*coinbase)
 
-	txs := w.nodeAPI.GetAllTransaction()
+	txs := m.nodeAPI.GetAllTransaction()
+	txs = m.executor.ChooseTransaction(txs, best, m.nodeAPI.GetOffChain(), m.walletAPI, signerId)
 	block.SetTx(txs...)
 
-	w.signBlock(w.signers[mineIndex], block)
+	if !IsBestBlockOffspring(m.nodeAPI, block) {
+		m.removeBlockTxs(block)
+		return nil, errors.New("current block is not block prev")
+	}
+
+	//excute block status
+	err, results, rootStatus, txFee := m.nodeAPI.ExecuteBlock(block)
+	if err != nil {
+		log.Error("Miner", "update Block status error", err, "block", block.String())
+		m.removeBlockTxs(block)
+		return nil, err
+	}
+
+	if err := m.executor.ExecuteResult(results, txFee, block); err != nil {
+		m.removeBlockTxs(block)
+		return nil, err
+	}
+
+	if !IsBestBlockOffspring(m.nodeAPI, block) {
+		m.removeBlockTxs(block)
+		return nil, errors.New("current block is not block prev")
+	}
+
+	block.Header.Status = rootStatus
 
 	block, err = helper.RebuildBlock(block)
 	if err != nil {
 		log.Error("Miner", "Rebuild Block error", err)
-		return
+		m.removeBlockTxs(block)
+		return nil, err
 	}
-	w.nodeAPI.ProcessBlock(block)
-	w.nodeAPI.GetBlockEvent().Post(node.NewMinedBlockEvent{Block: block})
+
+	err = m.signBlock(*signerId, block)
+	log.Debug("Miner", "signer", signerId.String())
+	if err != nil {
+		log.Error("Miner", "sign Block status error", err)
+		m.removeBlockTxs(block)
+		return nil, err
+	}
+
+	err = m.nodeAPI.ProcessBlock(block)
+	if err != nil {
+		m.removeBlockTxs(block)
+		return nil, err
+	}
+	m.nodeAPI.GetBlockEvent().Post(node.NewMinedBlockEvent{Block: block})
+
+	return block, nil
 }
 
-func (w *Miner) signBlock(signer wallet.WAccount, block *meta.Block) {
-	sign := signer.Sign(block.GetBlockID().CloneBytes())
+func (m *Miner) signBlock(signer meta.AccountID, block *meta.Block) error {
+	sign, err := m.walletAPI.SignMessage(signer, block.GetBlockID().CloneBytes())
+	if err != nil {
+		return err
+	}
 	block.SetSign(sign)
+	return nil
 }
 
-func (w *Miner) StartMine() {
-	w.minerMtx.Lock()
-	w.isMining = true
-	w.minerMtx.Unlock()
+func (m *Miner) StartMine() error {
+	m.minerMtx.Lock()
+	if m.isMining {
+		m.minerMtx.Unlock()
+		return errors.New("the node is mining")
+	}
+	m.isMining = true
+	m.minerMtx.Unlock()
 	for true {
-		w.minerMtx.Lock()
-		tempMing := w.isMining
-		w.minerMtx.Unlock()
+		m.minerMtx.Lock()
+		tempMing := m.isMining
+		m.minerMtx.Unlock()
 		if !tempMing {
 			break
 		}
-		w.MineBlock()
+		m.MineBlock()
 		time.Sleep(time.Duration(config.DefaultPeriod) * time.Second)
+	}
+	return nil
+}
+
+func (m *Miner) StopMine() {
+	m.minerMtx.Lock()
+	defer m.minerMtx.Unlock()
+	m.isMining = false
+}
+
+func (m *Miner) GetInfo() bool {
+	m.minerMtx.Lock()
+	defer m.minerMtx.Unlock()
+	return m.isMining
+}
+
+//check miner if not can mine next block
+func (m *Miner) getMineBlock() (*meta.AccountID, error) {
+	best := m.nodeAPI.GetBestBlock()
+	newBlock, err := helper.CreateBlock(best.GetHeight(), *best.GetBlockID())
+	if err != nil {
+		return nil, err
+	}
+	signerStr := m.nodeAPI.GetEngine().GetBlockSigner(&newBlock.Header)
+
+	if _, err = meta.NewAccountIdFromStr(signerStr); err != nil {
+		log.Error("Get signer account id failed", "err", err)
+		return nil, err
+	}
+
+	signer, err := m.walletAPI.GetAccount(signerStr)
+	if err != nil {
+
+		log.Error("GetAccount failed", "err", err, "signerStr", signerStr)
+		return nil, err
+	}
+	return signer.GetAccountID(), nil
+}
+
+func (m *Miner) removeBlockTxs(block *meta.Block) {
+	for index := range block.TXs {
+		m.nodeAPI.RemoveTransaction(*block.TXs[index].GetTxID())
 	}
 }
 
-func (w *Miner) StopMine() {
-	w.minerMtx.Lock()
-	defer w.minerMtx.Unlock()
-	w.isMining = false
-}
-
-func (w *Miner) GetInfo() {
-	w.minerMtx.Lock()
-	defer w.minerMtx.Unlock()
-	log.Info("Miner", "isMing", w.isMining)
+func IsBestBlockOffspring(nodeAPI *node.PublicNodeAPI, block *meta.Block) bool {
+	return block.GetPrevBlockID().IsEqual(nodeAPI.GetBestBlock().GetBlockID())
 }

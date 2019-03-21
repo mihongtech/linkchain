@@ -4,14 +4,16 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/golang/protobuf/proto"
-	"github.com/linkchain/common/util/event"
-	"github.com/linkchain/p2p/node"
-	"github.com/linkchain/p2p/peer_error"
 	"io"
 	"io/ioutil"
 	"sync/atomic"
 	"time"
+
+	"github.com/linkchain/common/util/event"
+	"github.com/linkchain/p2p/discover"
+	"github.com/linkchain/p2p/peer_error"
+
+	"github.com/golang/protobuf/proto"
 )
 
 // Msg defines the structure of a p2p message.
@@ -56,6 +58,10 @@ func (msg Msg) String() string {
 
 // Discard reads any remaining payload data into a black hole.
 func (msg Msg) Discard() error {
+	if nil == msg.Payload {
+		return nil
+	}
+
 	_, err := io.Copy(ioutil.Discard, msg.Payload)
 	return err
 }
@@ -96,7 +102,7 @@ func Send(w MsgWriter, msgcode uint64, data proto.Message) error {
 	return w.WriteMsg(Msg{Code: msgcode, Size: uint32(len(r)), Payload: bytes.NewReader(r)})
 }
 
-// SendItems writes an RLP with the given code and data elements.
+// SendItems writes an protobuf with the given code and data elements.
 // For a call such as:
 //
 //    SendItems(w, code, e1, e2, e3)
@@ -254,13 +260,13 @@ type msgEventer struct {
 	MsgReadWriter
 
 	feed     *event.Feed
-	peerID   node.NodeID
+	peerID   discover.NodeID
 	Protocol string
 }
 
 // newMsgEventer returns a msgEventer which sends message events to the given
 // feed
-func NewMsgEventer(rw MsgReadWriter, feed *event.Feed, peerID node.NodeID, proto string) *msgEventer {
+func NewMsgEventer(rw MsgReadWriter, feed *event.Feed, peerID discover.NodeID, proto string) *msgEventer {
 	return &msgEventer{
 		MsgReadWriter: rw,
 		feed:          feed,
@@ -318,7 +324,7 @@ type ProtoHandshake struct {
 	Name       string
 	Caps       []Cap
 	ListenPort uint64
-	ID         node.NodeID
+	ID         discover.NodeID
 
 	// Ignore additional fields (for foRWard compatibility).
 	Rest []byte

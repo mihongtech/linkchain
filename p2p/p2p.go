@@ -1,19 +1,24 @@
 package p2p
 
 import (
+	"crypto/ecdsa"
 	"errors"
+	"fmt"
+	"github.com/linkchain/app/context"
 	"net"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
-	appContext "github.com/linkchain/app/context"
-	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/common/util/mclock"
+	"github.com/linkchain/config"
+	"github.com/linkchain/p2p/crypto"
+	"github.com/linkchain/p2p/discover"
 	"github.com/linkchain/p2p/message"
 	"github.com/linkchain/p2p/netutil"
-	"github.com/linkchain/p2p/node"
 	"github.com/linkchain/p2p/peer"
 	"github.com/linkchain/p2p/peer_error"
 	"github.com/linkchain/p2p/transport"
@@ -24,7 +29,7 @@ var errServerStopped = errors.New("server stopped")
 
 type Config struct {
 	// This field must be set to a valid private key.
-	PrivateKey *btcec.PrivateKey `toml:"-"`
+	PrivateKey *ecdsa.PrivateKey `toml:"-"`
 	// MaxPeers is the maximum number of peers that can be
 	// connected. It must be greater than zero.
 	MaxPeers int
@@ -45,15 +50,15 @@ type Config struct {
 
 	// BootstrapNodes are used to establish connectivity
 	// with the rest of the network.
-	BootstrapNodes []*node.Node
+	BootstrapNodes []*discover.Node
 
 	// Static nodes are used as pre-configured connections which are always
 	// maintained and re-connected on disconnects.
-	StaticNodes []*node.Node
+	StaticNodes []*discover.Node
 
 	// Trusted nodes are used as pre-configured connections which are always
 	// allowed to connect, even above the peer limit.
-	TrustedNodes []*node.Node
+	TrustedNodes []*discover.Node
 
 	// Connectivity can be restricted to certain IP networks.
 	// If this option is set to a non-nil value, only hosts which match one of the
@@ -77,6 +82,10 @@ type Config struct {
 	// the server is started.
 	ListenAddr string
 
+	// NoDiscovery can be used to disable the peer discovery mechanism.
+	// Disabling is useful for protocol debugging (manual topology).
+	NoDiscovery bool
+
 	// If Dialer is set to a non-nil value, the given Dialer
 	// is used to dial outbound peer connections.
 	Dialer NodeDialer `toml:"-"`
@@ -99,7 +108,9 @@ type Service struct {
 
 	running bool
 
+	ntab         discoverTable
 	ourHandshake *message.ProtoHandshake
+	lastLookup   time.Time
 	listener     net.Listener
 
 	// These are for Peers, PeerCount (and nothing else).
@@ -110,8 +121,8 @@ type Service struct {
 	newPeerHook  func(*peer.Peer)
 
 	quit          chan struct{}
-	addstatic     chan *node.Node
-	removestatic  chan *node.Node
+	addstatic     chan *discover.Node
+	removestatic  chan *discover.Node
 	posthandshake chan *peer.Conn
 	addpeer       chan *peer.Conn
 	delpeer       chan peerDrop
@@ -121,7 +132,7 @@ type Service struct {
 	sync          *data_sync.Service
 }
 
-type peerOpFunc func(map[node.NodeID]*peer.Peer)
+type peerOpFunc func(map[discover.NodeID]*peer.Peer)
 
 type peerDrop struct {
 	*peer.Peer
@@ -136,11 +147,35 @@ func NewP2P() *Service {
 func (srv *Service) Setup(i interface{}) bool {
 	log.Info("p2p service init...")
 	// TODO: init config
-	srv.ListenAddr = i.(*appContext.Context).Config.ListenAddress
-	srv.PrivateKey, _ = btcec.NewPrivateKey(btcec.S256())
+	srv.ListenAddr = i.(*context.Context).Config.ListenAddress
+	srv.PrivateKey = srv.NodeKey(filepath.Join(i.(*context.Context).Config.DataDir, config.DefaultPrivateKeyDir))
+	srv.NoDiscovery = i.(*context.Context).Config.NoDiscovery
+	srv.NodeDatabase = filepath.Join(i.(*context.Context).Config.DataDir, config.DefaultNodeDatabaseDir)
 	srv.sync = &data_sync.Service{}
+	srv.NoDial = false
+	srv.MaxPeers = config.DefaultMaxPeers
+	setBootstrapNodes(i.(*context.Context).Config.BootstrapNodes, &srv.Config)
 	srv.sync.Setup(i)
 	return true
+}
+
+func (srv *Service) NodeKey(keyfile string) *ecdsa.PrivateKey {
+	// Use any specifically configured key.
+
+	if key, err := crypto.LoadECDSA(keyfile); err == nil {
+		return key
+	}
+	// No persistent key found, generate and store a new one.
+	key, err := crypto.GenerateKey()
+	if err != nil {
+		log.Crit(fmt.Sprintf("Failed to generate node key: %v", err))
+	}
+
+	if err := crypto.SaveECDSA(keyfile, key); err != nil {
+		log.Error(fmt.Sprintf("Failed to persist node key: %v", err))
+	}
+
+	return key
 }
 
 func (srv *Service) Start() bool {
@@ -168,14 +203,52 @@ func (srv *Service) Start() bool {
 	srv.addpeer = make(chan *peer.Conn)
 	srv.delpeer = make(chan peerDrop)
 	srv.posthandshake = make(chan *peer.Conn)
-	srv.addstatic = make(chan *node.Node)
-	srv.removestatic = make(chan *node.Node)
+	srv.addstatic = make(chan *discover.Node)
+	srv.removestatic = make(chan *discover.Node)
 	srv.peerOp = make(chan peerOpFunc)
 	srv.peerOpDone = make(chan struct{})
 	srv.Protocols = append(srv.Protocols, srv.sync.Protocols()...)
 
+	var (
+		conn      *net.UDPConn
+		realaddr  *net.UDPAddr
+		unhandled chan discover.ReadPacket
+	)
+
+	if !srv.NoDiscovery {
+		addr, err := net.ResolveUDPAddr("udp", srv.ListenAddr)
+		if err != nil {
+			log.Error("discover resolve udp failed", "err", err)
+			return false
+		}
+		conn, err = net.ListenUDP("udp", addr)
+		if err != nil {
+			log.Error("discover net listen udp failed", "err", err)
+			return false
+		}
+		realaddr = conn.LocalAddr().(*net.UDPAddr)
+
+		cfg := discover.Config{
+			PrivateKey:   srv.PrivateKey,
+			AnnounceAddr: realaddr,
+			NodeDBPath:   srv.NodeDatabase,
+			NetRestrict:  srv.NetRestrict,
+			Bootnodes:    srv.BootstrapNodes,
+			Unhandled:    unhandled,
+		}
+		ntab, err := discover.ListenUDP(conn, cfg)
+		if err != nil {
+			log.Error("discover listen udp failed", "err", err)
+			return false
+		}
+		srv.ntab = ntab
+	}
+
+	for _, n := range srv.BootstrapNodes {
+		srv.StaticNodes = append(srv.StaticNodes, n)
+	}
 	dynPeers := srv.maxDialedConns()
-	dialer := newDialState(srv.StaticNodes, srv.BootstrapNodes, nil, dynPeers, srv.NetRestrict)
+	dialer := newDialState(srv.StaticNodes, srv.BootstrapNodes, srv.ntab, dynPeers, srv.NetRestrict)
 
 	// listen/dial
 	if srv.ListenAddr != "" {
@@ -185,7 +258,7 @@ func (srv *Service) Start() bool {
 	}
 
 	// handshake
-	srv.ourHandshake = &message.ProtoHandshake{Version: peer.BaseProtocolVersion, Name: srv.Name, ID: node.PubkeyID(&srv.PrivateKey.PublicKey)}
+	srv.ourHandshake = &message.ProtoHandshake{Version: peer.BaseProtocolVersion, Name: srv.Name, ID: discover.PubkeyID(&srv.PrivateKey.PublicKey)}
 	for _, p := range srv.Protocols {
 		srv.ourHandshake.Caps = append(srv.ourHandshake.Caps, p.Cap())
 	}
@@ -202,7 +275,7 @@ func (srv *Service) Start() bool {
 }
 
 func (srv *Service) Stop() {
-	log.Info("p2p service stop...")
+	log.Info("Stop p2p service ...")
 	srv.sync.Stop()
 	srv.lock.Lock()
 	defer srv.lock.Unlock()
@@ -241,7 +314,7 @@ func (srv *Service) Peers() []*peer.Peer {
 	// Note: We'd love to put this function into a variable but
 	// that seems to cause a weird compiler error in some
 	// environments.
-	case srv.peerOp <- func(peers map[node.NodeID]*peer.Peer) {
+	case srv.peerOp <- func(peers map[discover.NodeID]*peer.Peer) {
 		for _, p := range peers {
 			ps = append(ps, p)
 		}
@@ -256,7 +329,7 @@ func (srv *Service) Peers() []*peer.Peer {
 func (srv *Service) PeerCount() int {
 	var count int
 	select {
-	case srv.peerOp <- func(ps map[node.NodeID]*peer.Peer) { count = len(ps) }:
+	case srv.peerOp <- func(ps map[discover.NodeID]*peer.Peer) { count = len(ps) }:
 		<-srv.peerOpDone
 	case <-srv.quit:
 	}
@@ -266,7 +339,7 @@ func (srv *Service) PeerCount() int {
 // AddPeer connects to the given node and maintains the connection until the
 // server is shut down. If the connection fails for any reason, the server will
 // attempt to reconnect the peer.
-func (srv *Service) AddPeer(node *node.Node) {
+func (srv *Service) AddPeer(node *discover.Node) {
 	select {
 	case srv.addstatic <- node:
 	case <-srv.quit:
@@ -274,7 +347,7 @@ func (srv *Service) AddPeer(node *node.Node) {
 }
 
 // RemovePeer disconnects from the given node
-func (srv *Service) RemovePeer(node *node.Node) {
+func (srv *Service) RemovePeer(node *discover.Node) {
 	select {
 	case srv.removestatic <- node:
 	case <-srv.quit:
@@ -286,37 +359,40 @@ func (srv *Service) SubscribeEvents(ch chan *peer_error.PeerEvent) event.Subscri
 	return srv.peerFeed.Subscribe(ch)
 }
 
-// Self returns the local node's endpoint information.
-func (srv *Service) Self() *node.Node {
+func (srv *Service) Self() *discover.Node {
 	srv.lock.Lock()
 	defer srv.lock.Unlock()
 
 	if !srv.running {
-		return &node.Node{IP: net.ParseIP("0.0.0.0")}
+		return &discover.Node{IP: net.ParseIP("0.0.0.0")}
 	}
-	return srv.makeSelf(srv.listener)
+	return srv.makeSelf(srv.listener, srv.ntab)
 }
 
-func (srv *Service) makeSelf(listener net.Listener) *node.Node {
-	// Inbound connections disabled, use zero address.
-	if listener == nil {
-		// TODO use publikey to generate ID
-		return &node.Node{IP: net.ParseIP("0.0.0.0"), ID: node.PubkeyID(&srv.PrivateKey.PublicKey)}
+func (srv *Service) makeSelf(listener net.Listener, ntab discoverTable) *discover.Node {
+	// If the server's not running, return an empty node.
+	// If the node is running but discovery is off, manually assemble the node infos.
+	if ntab == nil {
+		// Inbound connections disabled, use zero address.
+		if listener == nil {
+			return &discover.Node{IP: net.ParseIP("0.0.0.0"), ID: discover.PubkeyID(&srv.PrivateKey.PublicKey)}
+		}
+		// Otherwise inject the listener address too
+		addr := listener.Addr().(*net.TCPAddr)
+		return &discover.Node{
+			ID:  discover.PubkeyID(&srv.PrivateKey.PublicKey),
+			IP:  addr.IP,
+			TCP: uint16(addr.Port),
+		}
 	}
-	// Otherwise inject the listener address too
-	addr := listener.Addr().(*net.TCPAddr)
-	// TODO use publikey to generate ID
-	return &node.Node{
-		IP:  addr.IP,
-		TCP: uint16(addr.Port),
-		ID:  node.PubkeyID(&srv.PrivateKey.PublicKey),
-	}
+	// Otherwise return the discovery node.
+	return ntab.Self()
 }
 
 // SetupConn runs the handshakes and attempts to add the connection
 // as a peer. It returns when the connection has been added as a peer
 // or the handshakes have failed.
-func (srv *Service) SetupConn(fd net.Conn, flags peer.ConnFlag, dialDest *node.Node) error {
+func (srv *Service) SetupConn(fd net.Conn, flags peer.ConnFlag, dialDest *discover.Node) error {
 	self := srv.Self()
 	if self == nil {
 		return errors.New("shutdown")
@@ -330,7 +406,7 @@ func (srv *Service) SetupConn(fd net.Conn, flags peer.ConnFlag, dialDest *node.N
 	return err
 }
 
-func (srv *Service) setupConn(c *peer.Conn, flags peer.ConnFlag, dialDest *node.Node) error {
+func (srv *Service) setupConn(c *peer.Conn, flags peer.ConnFlag, dialDest *discover.Node) error {
 	// Prevent leftover pending conns from entering the handshake.
 	srv.lock.Lock()
 	running := srv.running
@@ -342,7 +418,7 @@ func (srv *Service) setupConn(c *peer.Conn, flags peer.ConnFlag, dialDest *node.
 	var err error
 	clog := srv.log.New("id", c.ID, "addr", c.FD.RemoteAddr(), "conn", c.Flags)
 	// For dialed connections, check that the remote public key matches.
-	if (dialDest != nil) && (c.ID == node.NodeID{}) {
+	if (dialDest != nil) && (c.ID == discover.NodeID{}) {
 		c.ID = dialDest.ID
 	}
 
@@ -353,7 +429,7 @@ func (srv *Service) setupConn(c *peer.Conn, flags peer.ConnFlag, dialDest *node.
 		return err
 	}
 
-	if c.ID == (node.NodeID{}) {
+	if c.ID == (discover.NodeID{}) {
 		c.ID = phs.ID
 	}
 
@@ -412,7 +488,7 @@ type tempError interface {
 // inbound connections.
 func (srv *Service) listenLoop() {
 	defer srv.loopWG.Done()
-	srv.log.Info("Protobuf listener up", "self", srv.makeSelf(srv.listener))
+	srv.log.Info("Protobuf listener up", "self", srv.makeSelf(srv.listener, srv.ntab))
 
 	tokens := peer.DefaultMaxPendingPeers
 	if srv.MaxPendingPeers > 0 {
@@ -463,18 +539,18 @@ func (srv *Service) listenLoop() {
 }
 
 type dialer interface {
-	newTasks(running int, peers map[node.NodeID]*peer.Peer, now time.Time) []task
+	newTasks(running int, peers map[discover.NodeID]*peer.Peer, now time.Time) []task
 	taskDone(task, time.Time)
-	addStatic(*node.Node)
-	removeStatic(*node.Node)
+	addStatic(*discover.Node)
+	removeStatic(*discover.Node)
 }
 
 func (srv *Service) run(dialstate dialer) {
 	defer srv.loopWG.Done()
 	var (
-		peers        = make(map[node.NodeID]*peer.Peer)
+		peers        = make(map[discover.NodeID]*peer.Peer)
 		inboundCount = 0
-		trusted      = make(map[node.NodeID]bool, len(srv.TrustedNodes))
+		trusted      = make(map[discover.NodeID]bool, len(srv.TrustedNodes))
 		taskdone     = make(chan task, peer.MaxActiveDialTasks)
 		runningTasks []task
 		queuedTasks  []task // tasks that can't run yet
@@ -603,7 +679,10 @@ running:
 	}
 
 	srv.log.Trace("P2P networking is spinning down")
-
+	// Terminate discovery. If there is a running lookup it will terminate soon.
+	if srv.ntab != nil {
+		srv.ntab.Close()
+	}
 	// Disconnect all peers.
 	for _, p := range peers {
 		p.Disconnect(peer_error.DiscQuitting)
@@ -618,7 +697,7 @@ running:
 	}
 }
 
-func (srv *Service) protoHandshakeChecks(peers map[node.NodeID]*peer.Peer, inboundCount int, c *peer.Conn) error {
+func (srv *Service) protoHandshakeChecks(peers map[discover.NodeID]*peer.Peer, inboundCount int, c *peer.Conn) error {
 	// Drop connections with no matching protocols.
 	if len(srv.Protocols) > 0 && countMatchingProtocols(srv.Protocols, c.Caps) == 0 {
 		return peer_error.DiscUselessPeer
@@ -676,4 +755,22 @@ func countMatchingProtocols(protocols []peer.Protocol, caps []message.Cap) int {
 		}
 	}
 	return n
+}
+
+func setBootstrapNodes(bootnodes string, cfg *Config) {
+
+	urls := strings.Split(bootnodes, ",")
+
+	cfg.BootstrapNodes = make([]*discover.Node, 0, len(urls))
+	for _, url := range urls {
+		if len(url) == 0 {
+			continue
+		}
+		node, err := discover.ParseNode(url)
+		if err != nil {
+			log.Error("Bootstrap URL invalid", "enode", url, "err", err)
+			continue
+		}
+		cfg.BootstrapNodes = append(cfg.BootstrapNodes, node)
+	}
 }

@@ -50,3 +50,12 @@ message Signature {
 message Hash {
     required bytes data = 1;
 }
+
+message CreateInsurance {
+    required int64 time = 1;
+    required AccountID security = 2;
+}
+
+message SetClearTimeData {
+    required int64 time = 1;
+}

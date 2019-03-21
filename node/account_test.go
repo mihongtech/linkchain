@@ -2,62 +2,7 @@ package node
 
 import (
 	"testing"
-
-	"github.com/linkchain/common/btcec"
-	"github.com/linkchain/unittest"
-	"github.com/linkchain/util"
 )
-
-func TestAccountManage_Init(t *testing.T) {
-	m := AccountManage{}
-	unittest.Assert(t, m.Init(nil), "TestAccountManage_Init")
-}
-
-func TestAccountManage_Start(t *testing.T) {
-	m := AccountManage{}
-	unittest.Assert(t, m.Start(), "TestAccountManage_Start")
-}
-
-func TestAccountManage_Stop(t *testing.T) {
-	m := AccountManage{}
-	m.Stop()
-}
-
-func TestAccountManage_AddAccount(t *testing.T) {
-	m := AccountManage{}
-	m.Init(nil)
-	priv, _ := btcec.NewPrivateKey(btcec.S256())
-	a, _ := util.CreateNormalAccount(priv)
-	err := m.AddAccount(a)
-	unittest.Equal(t, err, nil)
-}
-
-func TestAccountManage_GetAccount(t *testing.T) {
-	m := AccountManage{}
-	m.Init(nil)
-	priv, _ := btcec.NewPrivateKey(btcec.S256())
-	a, _ := util.CreateNormalAccount(priv)
-	err := m.AddAccount(a)
-	unittest.Equal(t, err, nil)
-
-	na, err := m.GetAccount(a.GetAccountID())
-	unittest.Equal(t, err, nil)
-	t.Log(na)
-}
-
-func TestAccountManage_RemoveAccount(t *testing.T) {
-	m := AccountManage{}
-	m.Init(nil)
-	priv, _ := btcec.NewPrivateKey(btcec.S256())
-	a, _ := util.CreateNormalAccount(priv)
-	err := m.AddAccount(a)
-	unittest.Equal(t, err, nil)
-
-	err = m.RemoveAccount(a.GetAccountID())
-	unittest.Equal(t, err, nil)
-	_, err = m.GetAccount(a.GetAccountID())
-	unittest.NotEqual(t, err, nil)
-}
 
 func TestAccountManage_UpdateAccountsByTxs(t *testing.T) {
 
@@ -91,7 +36,7 @@ func TestAccountManage_GetAccountRelateTXs(t *testing.T) {
 	m := AccountManage{}
 	m.Init(nil)
 	fromA := poameta.NewAccount(*fId, *poameta.NewAmout(20), 0)
-	m.AddAccount(fromA)
+	m.addAccount(fromA)
 
 	_, err = m.GetAccountRelateTXs(tx, false)
 	unittest.Equal(t, err, nil)*/

@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"sync"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/math"
+
+	"github.com/golang/protobuf/proto"
 )
 
 type hasher struct {

@@ -10,6 +10,9 @@ import (
 	"testing"
 
 	"github.com/linkchain/common/lcdb"
+	"github.com/linkchain/common/math"
+	"github.com/linkchain/unittest"
+	"time"
 )
 
 func newTestLDB() (*lcdb.LDBDatabase, func()) {
@@ -173,4 +176,52 @@ func testParallelPutGet(db lcdb.Database, t *testing.T) {
 		}(strconv.Itoa(i))
 	}
 	pending.Wait()
+}
+
+func TestMaxSizeValue(t *testing.T) {
+	db, _ := lcdb.NewMemDatabase()
+	accountID := math.DoubleHashH([]byte("lifei"))
+	accountIDByte := accountID.CloneBytes()
+	value := make([]byte, 10000)
+	key := []byte("lifei")
+	for i := 0; i < 1000000; i++ {
+		value = append(value, accountIDByte...)
+	}
+	valueHash := math.DoubleHashH(value)
+	time1 := timeGet(t)
+	//put
+	if err := db.Put(key, value); err != nil {
+		t.Error("db put failed   ", err)
+	}
+	t.Log("value size (M)", len(value)/(1024*1024))
+	time2 := timeGet(t)
+	t.Log("put 1000000 accountID waste time(ms)", (time2-time1)/1e6)
+
+	value, err := db.Get(key)
+	if err != nil {
+		t.Error("db get failed   ", err)
+	}
+	time3 := timeGet(t)
+	t.Log("get 1000000 accountID waste time(ms)", (time3-time2)/1e6)
+	valueHash1 := math.DoubleHashH(value)
+	unittest.Equal(t, valueHash1.IsEqual(&valueHash), true)
+
+	time4 := timeGet(t)
+	value = append(value[:10000], value[10257:]...)
+	if err := db.Put(key, value); err != nil {
+		t.Error("db update failed   ", err)
+	}
+	time5 := timeGet(t)
+	t.Log("update 1000000 accountID waste time(ms)", (time5-time4)/1e6)
+	valueHash2 := math.DoubleHashH(value)
+	unittest.NotEqual(t, valueHash2.IsEqual(&valueHash), true)
+
+	time6 := timeGet(t)
+	db.Delete(key)
+	time7 := timeGet(t)
+	t.Log("delete 1000000 accountID waste time(ms)", (time7-time6)/1e6)
+}
+
+func timeGet(t *testing.T) int64 {
+	return time.Now().UnixNano()
 }

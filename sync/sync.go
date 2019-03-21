@@ -1,7 +1,7 @@
 package sync
 
 import (
-	appContext "github.com/linkchain/app/context"
+	"github.com/linkchain/app/context"
 	"github.com/linkchain/node"
 	p2p_peer "github.com/linkchain/p2p/peer"
 	"github.com/linkchain/sync/full"
@@ -15,7 +15,7 @@ type Service struct {
 
 func (s *Service) Setup(i interface{}) bool {
 	//log.Info("sync service init...");
-	nodeAPI := i.(*appContext.Context).NodeAPI.(*node.PublicNodeAPI)
+	nodeAPI := i.(*context.Context).NodeAPI.(*node.PublicNodeAPI)
 	engine, err := full.NewProtocolManager(i,
 		nodeAPI, 0, nodeAPI.GetBlockEvent(), nodeAPI.GetTxEvent())
 	if err != nil {

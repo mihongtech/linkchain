@@ -6,12 +6,12 @@ import (
 	"errors"
 
 	"github.com/linkchain/common/btcec"
+	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/protobuf"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/linkchain/common/math"
 )
 
 type Ticket struct {
@@ -260,8 +260,8 @@ func (tt *TransactionTo) AddToCoin(coin ToCoin) {
 //Serialize/Deserialize
 func (tt *TransactionTo) Serialize() serialize.SerializeStream {
 	coins := make([]*protobuf.ToCoin, 0)
-	for _, c := range tt.Coins {
-		coins = append(coins, c.Serialize().(*protobuf.ToCoin))
+	for index, _ := range tt.Coins {
+		coins = append(coins, tt.Coins[index].Serialize().(*protobuf.ToCoin))
 	}
 
 	peer := protobuf.TransactionTo{
@@ -298,7 +298,7 @@ type Signature struct {
 	Code []byte `json:"code"`
 }
 
-func NewSignatrue(code []byte) *Signature {
+func NewSignature(code []byte) *Signature {
 	return &Signature{Code: code}
 }
 
@@ -320,23 +320,17 @@ func (sign *Signature) String() string {
 	return hex.EncodeToString(sign.Code)
 }
 
-func (sign *Signature) Verify(hash []byte, pubKey []byte) error {
-	signature, err := btcec.ParseSignature(sign.Code, btcec.S256())
+func (sign *Signature) Verify(hash []byte, address []byte) error {
+	signer, err := btcec.GetSigner(hash, sign.Code)
 	if err != nil {
 		return err
 	}
+	id := NewAccountId(signer)
 
-	pk, err := btcec.ParsePubKey(pubKey, btcec.S256())
-	if err != nil {
-		return errors.New("transaction VerifySign ParsePubKey is error")
-	}
-
-	verified := signature.Verify(hash, pk)
-	if verified {
+	if id.IsEqual(BytesToAccountID(address)) {
 		return nil
-	} else {
-		return errors.New("transaction VerifySign failed: Error Sign")
 	}
+	return errors.New("Verify sign failed")
 }
 
 type Transaction struct {
@@ -373,12 +367,14 @@ func NewTransaction(version uint32, txtype uint32, from TransactionFrom, to Tran
 }
 
 func NewEmptyTransaction(version uint32, txtype uint32) *Transaction {
-	fromcoins := make([]FromCoin, 0)
-	tf := *NewTransactionFrom(fromcoins)
+	fromCoins := make([]FromCoin, 0)
+	tf := *NewTransactionFrom(fromCoins)
 
-	tocoins := make([]ToCoin, 0)
-	tt := *NewTransactionTo(tocoins)
-	return NewTransaction(version, txtype, tf, tt, nil, nil)
+	toCoins := make([]ToCoin, 0)
+	tt := *NewTransactionTo(toCoins)
+
+	signs := make([]Signature, 0)
+	return NewTransaction(version, txtype, tf, tt, signs, nil)
 }
 
 func (tx *Transaction) GetTxID() *TxID {
@@ -393,12 +389,43 @@ func (tx *Transaction) GetTxID() *TxID {
 	return &tx.txid
 }
 
-func (tx *Transaction) AddFromCoin(fromCoin FromCoin) {
-	tx.From.AddFromCoin(fromCoin)
+func (tx *Transaction) RebuildTxID() {
+	s := tx.Serialize()
+	err := tx.Deserialize(s)
+	if err != nil {
+		log.Error("Transaction", "GetTxID() error", err)
+		return
+	}
 }
 
-func (tx *Transaction) AddToCoin(toCoin ToCoin) {
-	tx.To.AddToCoin(toCoin)
+func (tx *Transaction) AddFromCoin(fromCoin ...FromCoin) {
+	for i := range fromCoin {
+		tx.From.AddFromCoin(fromCoin[i])
+	}
+
+}
+
+func (tx *Transaction) AddToCoin(toCoin ...ToCoin) {
+	for i := range toCoin {
+		tx.To.AddToCoin(toCoin[i])
+	}
+}
+
+func (tx *Transaction) SetTo(id AccountID, amount Amount) {
+	index := -1
+	for i := range tx.To.Coins {
+		if tx.To.Coins[i].Id.IsEqual(id) {
+			index = i
+			break
+		}
+	}
+
+	if index >= 0 {
+		tx.To.Coins[index].Value.Addition(amount)
+	} else {
+		tc := *NewToCoin(id, &amount)
+		tx.AddToCoin(tc)
+	}
 }
 
 func (tx *Transaction) AddSignature(signature math.ISignature) {
@@ -422,8 +449,12 @@ func (tx *Transaction) GetToValue() *Amount {
 }
 
 func (tx *Transaction) Verify() error {
+	if len(tx.From.Coins) != len(tx.Sign) {
+		return errors.New("tx from count must be equal to sign count in tx verify")
+	}
+
 	for index, sign := range tx.Sign {
-		err := sign.Verify(tx.txid.CloneBytes(), tx.From.Coins[index].Id.ID)
+		err := sign.Verify(tx.txid.CloneBytes(), tx.From.Coins[index].Id.CloneBytes())
 		if err != nil {
 			return err
 		}
@@ -527,4 +558,21 @@ func (tx *Transaction) String() string {
 		return err.Error()
 	}
 	return string(data)
+}
+
+func TxDifference(a, b []Transaction) (keep []Transaction) {
+	keep = make([]Transaction, 0, len(a))
+
+	remove := make(map[TxID]struct{})
+	for _, tx := range b {
+		remove[*tx.GetTxID()] = struct{}{}
+	}
+
+	for _, tx := range a {
+		if _, ok := remove[*tx.GetTxID()]; !ok {
+			keep = append(keep, tx)
+		}
+	}
+
+	return keep
 }

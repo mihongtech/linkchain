@@ -1,14 +1,14 @@
 package meta
 
 import (
-	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"sort"
 	"time"
 
-	"github.com/linkchain/common/btcec"
 	"github.com/linkchain/common/math"
-	"github.com/linkchain/common/merkle"
 	"github.com/linkchain/common/serialize"
+	"github.com/linkchain/common/trie"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/protobuf"
 
@@ -52,14 +52,20 @@ func (b *Block) GetBlockID() *BlockID {
 	return b.Header.GetBlockID()
 }
 
+func (b *Block) GetTime() time.Time {
+	return b.Header.Time
+}
+
+func (b *Block) GetStatus() *TreeID {
+	return &b.Header.Status
+}
+
 func (b *Block) GetPrevBlockID() *BlockID {
 	return &b.Header.Prev
 }
+
 func (b *Block) GetMerkleRoot() *TreeID {
 	return b.Header.GetMerkleRoot()
-}
-func (b *Block) Verify(minerPKStr string) error {
-	return b.Header.Verify(minerPKStr)
 }
 
 //Serialize/Deserialize
@@ -113,16 +119,22 @@ func (b *Block) GetTxs() []Transaction {
 	return b.TXs
 }
 
-func (b *Block) CalculateTxTreeRoot() TreeID {
-	var transactions [][]byte
-	for _, transaction := range b.TXs {
-		txbuff, _ := proto.Marshal(transaction.Serialize())
-		transactions = append(transactions, txbuff)
+func (b *Block) GetTx(id TxID) (*Transaction, error) {
+	for i, _ := range b.TXs {
+		if b.TXs[i].txid.IsEqual(&id) {
+			return &b.TXs[i], nil
+		}
 	}
-	mTree := merkle.NewMerkleTree(transactions)
-
-	hash, _ := MakeTreeID(mTree.RootNode.Data)
-	return *hash
+	return nil, errors.New("can not fin tx in block")
+}
+func (b *Block) CalculateTxTreeRoot() TreeID {
+	transactions := make(map[math.Hash][]byte)
+	for index, _ := range b.TXs {
+		txbuff, _ := proto.Marshal(b.TXs[index].Serialize())
+		transactions[*b.TXs[index].GetTxID()] = txbuff
+	}
+	hash, _ := GetMakeTreeID(transactions)
+	return hash
 }
 
 func (b *Block) IsGensis() bool {
@@ -138,7 +150,7 @@ type BlockHeader struct {
 
 	// Time the block was created.  This is, unfortunately, encoded as a
 	// uint32 on the wire and therefore is limited to 2106.
-	Time time.Time `json:"time"`
+	Time time.Time `json:"Time"`
 
 	// Nonce used to generate the block.
 	Nonce uint32 `json:"nonce"`
@@ -184,8 +196,7 @@ func NewBlockHeader(version uint32, height uint32, time time.Time, nounce uint32
 
 func (bh *BlockHeader) GetBlockID() *BlockID {
 	if bh.hash.IsEmpty() {
-		err := bh.Deserialize(bh.Serialize())
-		if err != nil {
+		if err := bh.Deserialize(bh.Serialize()); err != nil {
 			log.Error("BlockHeader", "GetBlockID() error", err)
 			return nil
 		}
@@ -280,25 +291,35 @@ func (bh *BlockHeader) IsGensis() bool {
 	return bh.Height == 0 && bh.Prev.IsEmpty()
 }
 
-func (bh *BlockHeader) Verify(minerPKStr string) error {
-	signature, err := btcec.ParseSignature(bh.Sign.Code, btcec.S256())
-	if err != nil {
-		log.Error("Signer", "VerifySign", err)
-		return err
+func GetMakeTreeID(txs map[math.Hash][]byte) (math.Hash, error) {
+	trie := new(trie.Trie)
+	for k, v := range txs {
+		trie.Update(k.Bytes(), v)
 	}
-
-	minerPK, err := hex.DecodeString(minerPKStr)
-	if err != nil {
-		return err
-	}
-	pk, err := btcec.ParsePubKey(minerPK, btcec.S256())
-	if err != nil {
-		return err
-	}
-
-	verified := signature.Verify(bh.GetBlockID().CloneBytes(), pk)
-	if !verified {
-		return err
-	}
-	return nil
+	return trie.Hash(), nil
 }
+
+type Blocks []*Block
+
+type BlockBy func(b1, b2 *Block) bool
+
+func (self BlockBy) Sort(blocks Blocks) {
+	bs := blockSorter{
+		blocks: blocks,
+		by:     self,
+	}
+	sort.Sort(bs)
+}
+
+type blockSorter struct {
+	blocks Blocks
+	by     func(b1, b2 *Block) bool
+}
+
+func (self blockSorter) Len() int { return len(self.blocks) }
+func (self blockSorter) Swap(i, j int) {
+	self.blocks[i], self.blocks[j] = self.blocks[j], self.blocks[i]
+}
+func (self blockSorter) Less(i, j int) bool { return self.by(self.blocks[i], self.blocks[j]) }
+
+func Number(b1, b2 *Block) bool { return (*b1).Header.Height < ((*b2).Header.Height) }
