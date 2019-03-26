@@ -13,6 +13,12 @@ import (
 	"github.com/linkchain/rpc/rpcobject"
 )
 
+func getBestBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	block := GetNodeAPI(s).GetBestBlock()
+	b := getBlockObject(block)
+	return b, nil
+}
+
 func getBlockByHeight(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c, ok := cmd.(*rpcobject.GetBlockByHeightCmd)
 	if !ok {

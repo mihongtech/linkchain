@@ -3,11 +3,9 @@ package rpcserver
 import (
 	"reflect"
 
-	"github.com/linkchain/miner"
-	"github.com/linkchain/node"
-	"github.com/linkchain/p2p"
-	"github.com/linkchain/rpc/rpcobject"
-	"github.com/linkchain/wallet"
+	"github.com/linkchain/client/explorer/rpc/rpcjson"
+	"github.com/linkchain/client/explorer/rpc/rpcobject"
+	"github.com/linkchain/client/httpclient"
 )
 
 type commandHandler func(*Server, interface{}, <-chan struct{}) (interface{}, error)
@@ -16,6 +14,7 @@ type commandHandler func(*Server, interface{}, <-chan struct{}) (interface{}, er
 var handlerPool = map[string]commandHandler{
 	"getBlockChainInfo": getBlockChainInfo,
 
+	// peer
 	"addPeer":    addPeer,
 	"listPeer":   listPeer,
 	"selfPeer":   selfPeer,
@@ -45,14 +44,13 @@ var handlerPool = map[string]commandHandler{
 	"getTxByHash": getTxByHash,
 
 	//shutdown
-	"shutdown": shutdown,
+	//"shutdown": shutdown,
 
 	//contract
 	"publishContract":    publishContract,
 	"callContract":       callContract,
-	"getCode":            getCode,
 	"call":               call,
-	"transactionReceipt": GetTransactionReceipt,
+	"transactionReceipt": getTransactionReceipt,
 }
 
 var cmdPool = map[string]reflect.Type{
@@ -80,18 +78,24 @@ var cmdPool = map[string]reflect.Type{
 	"transactionReceipt": reflect.TypeOf((*rpcobject.GetTransactionReceiptCmd)(nil)),
 }
 
-func GetNodeAPI(s *Server) *node.PublicNodeAPI {
-	return s.appContext.NodeAPI.(*node.PublicNodeAPI)
+var httpConfig = &httpclient.Config{
+	RPCUser:     "lc",
+	RPCPassword: "lc",
+	RPCServer:   "localhost:8082",
 }
 
-func GetP2PAPI(s *Server) *p2p.Service {
-	return s.appContext.P2PAPI.(*p2p.Service)
-}
+//rpc call
+func rpc(method string, cmd interface{}) ([]byte, error) {
+	//param
+	s, _ := rpcjson.MarshalCmd(1, method, cmd)
+	//log.Info(method, "req", string(s))
 
-func GetMinerAPI(s *Server) *miner.Miner {
-	return s.appContext.MinerAPI.(*miner.Miner)
-}
+	//response
+	rawRet, err := httpclient.SendPostRequest(s, httpConfig)
+	if err != nil {
+		//log.Error(method, "error", err)
+		return nil, err
+	}
 
-func GetWalletAPI(s *Server) *wallet.Wallet {
-	return s.appContext.WalletAPI.(*wallet.Wallet)
+	return rawRet, nil
 }
