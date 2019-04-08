@@ -5,11 +5,14 @@ import (
 	"os"
 
 	"github.com/linkchain/client/cmd"
+	"github.com/linkchain/client/explorer"
 	"github.com/linkchain/common/util/log"
 )
 
 func main() {
 	logLevel := flag.Int("loglevel", 3, "log level")
+	isExplorer := flag.Bool("explorer", false, "is explorer mode")
+	flag.Parse()
 
 	//init log
 	log.Root().SetHandler(
@@ -18,6 +21,9 @@ func main() {
 
 	log.Info("rpcserver client is running")
 
-	// start console cmd
-	cmd.StartCmd()
+	if *isExplorer {
+		explorer.StartExplore()
+	} else {
+		cmd.StartCmd()
+	}
 }
