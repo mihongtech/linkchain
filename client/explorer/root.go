@@ -1,4 +1,4 @@
-package explore
+package explorer
 
 import (
 	"github.com/linkchain/client/explorer/rpc/rpcserver"
