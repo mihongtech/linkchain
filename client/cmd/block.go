@@ -17,11 +17,14 @@ func init() {
 var blockCmd = &cobra.Command{
 	Use:   "block",
 	Short: "block command",
+	Long:  "This is all block command for handling block",
 }
 
 var heightCmd = &cobra.Command{
-	Use:   "height",
-	Short: "get a block by height in chainmanage",
+	Use:     "height",
+	Short:   "block <height>",
+	Long:    "This is get block body command by height",
+	Example: "block height 0",
 	Run: func(cmd *cobra.Command, args []string) {
 		example := []string{"example", "block height 0"}
 		if len(args) != 1 {
@@ -48,8 +51,10 @@ var heightCmd = &cobra.Command{
 }
 
 var hashCmd = &cobra.Command{
-	Use:   "hash",
-	Short: "get a block by hash",
+	Use:     "hash",
+	Short:   "block <hash>",
+	Long:    "This is get block body command by blockhash",
+	Example: "block hash 98acd27a58c79eaab05ea4abd0daa8e63021df3bf2e65fcb38e2474fb706c3fe",
 	Run: func(cmd *cobra.Command, args []string) {
 		example := []string{"example", "block hash 98acd27a58c79eaab05ea4abd0daa8e63021df3bf2e65fcb38e2474fb706c3fe"}
 		if len(args) != 1 {

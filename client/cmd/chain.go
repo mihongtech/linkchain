@@ -14,12 +14,15 @@ func init() {
 
 var chainCmd = &cobra.Command{
 	Use:   "chain",
-	Short: "handle chain",
+	Short: "chain command",
+	Long:  "This is all chain command for handling chain",
 }
 
 var chainInfoCmd = &cobra.Command{
-	Use:   "info",
-	Short: "getBlockChainInfo",
+	Use:     "info",
+	Short:   "info",
+	Long:    "This is get blockChain info command",
+	Example: "chain info",
 	Run: func(cmd *cobra.Command, args []string) {
 
 		method := "getBlockChainInfo"

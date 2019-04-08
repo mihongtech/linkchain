@@ -4,19 +4,19 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/spf13/cobra"
 	"os"
 
 	"github.com/linkchain/client/httpclient"
 	"github.com/linkchain/rpc/rpcjson"
-
-	"github.com/spf13/cobra"
 )
 
 var RootCmd = &cobra.Command{}
 
 var stopCmd = &cobra.Command{
 	Use:   "stop",
-	Short: "stop linkchain server",
+	Short: "stop",
+	Long:  "This is stop command for stopping linkchain server",
 	Run: func(cmd *cobra.Command, args []string) {
 		method := "shutdown"
 		//call

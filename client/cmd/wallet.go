@@ -22,13 +22,16 @@ func init() {
 
 var walletCmd = &cobra.Command{
 	Use:   "wallet",
-	Short: "handle wallet cmd",
+	Short: "wallet command",
+	Long:  "This is all wallet command for handling wallet",
 }
 
 // get wallet information
 var getWalletInfoCmd = &cobra.Command{
-	Use:   "info",
-	Short: "get wallet info",
+	Use:     "info",
+	Short:   "wallet info",
+	Long:    "This is get wallet info command",
+	Example: "wallet info",
 	Run: func(cmd *cobra.Command, args []string) {
 		method := "getWalletInfo"
 
@@ -44,9 +47,10 @@ var getWalletInfoCmd = &cobra.Command{
 
 // get account information
 var getAccountCmd = &cobra.Command{
-	Use:     "account <accountID>",
-	Short:   "get account info",
-	Example: "wallet getaccount <accountID>, wallet getAccount 55b55e136cc6671014029dcbefc42a7db8ad9b9d11f62677a47fd2ed77eeef7b",
+	Use:     "account",
+	Short:   "wallet account <address>",
+	Long:    "This is get account info command",
+	Example: "wallet account 55b55e136cc6671014029dcbefc42a7db8ad9b9d11f62677a47fd2ed77eeef7b",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 1 {
 			log.Error("getAccount", "error", "please input <accountId>")
@@ -68,8 +72,10 @@ var getAccountCmd = &cobra.Command{
 
 // create new account
 var newAddressCmd = &cobra.Command{
-	Use:   "newaccount",
-	Short: "generate new wallet account address",
+	Use:     "newaccount",
+	Short:   "wallet newaccount",
+	Long:    "This is generate new account command",
+	Example: "wallet newaccount",
 	Run: func(cmd *cobra.Command, args []string) {
 		method := "newAcount"
 
@@ -85,8 +91,9 @@ var newAddressCmd = &cobra.Command{
 
 //normal transaction
 var sendMoneyCmd = &cobra.Command{
-	Use:     "send <from account> <target account> <money>",
-	Short:   "send money to other account",
+	Use:     "send ",
+	Short:   "send <from_address> <target_address> <amount>",
+	Long:    "This is send money to account command(normal tx)",
 	Example: "wallet send 02ed6749d314c2e725f1d23d250b4a041ea9c6369594b4f55500d7db41746cdf50 55b55e136cc6671014029dcbefc42a7db8ad9b9d11f62677a47fd2ed77eeef7b 10",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 3 {
@@ -115,7 +122,8 @@ var sendMoneyCmd = &cobra.Command{
 
 var importCmd = &cobra.Command{
 	Use:     "import",
-	Short:   "import account",
+	Short:   "import <privkey>",
+	Long:    "This is import privkey into wallet command",
 	Example: "wallet import 55b55e136cc6671014029dcbefc42a7db8ad9b9d11f62677a47fd2ed77eeef7b",
 	Run: func(cmd *cobra.Command, args []string) {
 		method := "importAccount"
@@ -135,7 +143,8 @@ var importCmd = &cobra.Command{
 
 var exportCmd = &cobra.Command{
 	Use:     "export",
-	Short:   "export account",
+	Short:   "export <address>",
+	Long:    "This is export privkey from wallet command",
 	Example: "wallet export 025aa040dddd8f873ac5d02dfd249adc4d2c9d6def472a4405252fa6f6650ee1f0",
 	Run: func(cmd *cobra.Command, args []string) {
 		method := "exportAccount"
