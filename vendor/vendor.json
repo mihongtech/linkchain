@@ -31,6 +31,18 @@
 			"revisionTime": "2018-09-27T02:58:44Z"
 		},
 		{
+			"checksumSHA1": "pTs+jg/LpykUnNWMQXwvZ82HWnQ=",
+			"path": "github.com/ethereum/go-ethereum/crypto",
+			"revision": "9dc5d1a915ac0e0bd8429d6ac41df50eec91de5f",
+			"revisionTime": "2019-01-15T20:51:31Z"
+		},
+		{
+			"checksumSHA1": "H8uV6Utd4i6GoV/zgVlbGyoQDz0=",
+			"path": "github.com/ethereum/go-ethereum/crypto/bn256",
+			"revision": "9dc5d1a915ac0e0bd8429d6ac41df50eec91de5f",
+			"revisionTime": "2019-01-15T20:51:31Z"
+		},
+		{
 			"checksumSHA1": "luu+ud4XYZhlCoNnSAwCJlbh0Bg=",
 			"path": "github.com/go-stack/stack",
 			"revision": "259ab82a6cad3992b4e21ff5cac294ccb06474bc",
@@ -323,5 +335,5 @@
 			"revisionTime": "2017-08-11T01:42:03Z"
 		}
 	],
-	"rootPath": "bitbucket.org/rollchain"
+	"rootPath": "github.com/linkchain"
 }

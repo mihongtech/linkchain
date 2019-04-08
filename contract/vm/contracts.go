@@ -23,7 +23,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/bn256"
-
 	"github.com/linkchain/common"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/contract/vm/params"

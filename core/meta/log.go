@@ -1,11 +1,12 @@
 package meta
 
 import (
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/golang/protobuf/proto"
+	"github.com/linkchain/common/hexutil"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/protobuf"
+
+	"github.com/golang/protobuf/proto"
 )
 
 //go:generate gencodec -type Log -field-override logMarshaling -out gen_log_json.go
