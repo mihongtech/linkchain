@@ -44,7 +44,7 @@ cd build/unix
 
 ### Install the binaries in windows
 
-Then,install `lcd` and `lccli` in unix
+Then,install `lcd` and `lccli` in windows
 
 ```bash
 cd build/win
