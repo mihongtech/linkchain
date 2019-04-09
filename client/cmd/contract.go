@@ -26,14 +26,17 @@ func init() {
 
 var contractCmd = &cobra.Command{
 	Use:   "contract",
-	Short: "all contract related command",
+	Short: "contract command",
+	Long:  "This is all contract command for handling contract",
 }
 
 var publishContractCmd = &cobra.Command{
-	Use:   "publish",
-	Short: "publish a contract",
+	Use:     "publish",
+	Short:   "publish <from_address> <amount> <code>",
+	Long:    "This is create contract command",
+	Example: "contract publish 8dafd997b6e65e680768076d92821716fd7950ee 3 6060604052600a8060106000396000f360606040526008565b00",
 	Run: func(cmd *cobra.Command, args []string) {
-		example := []string{"example", "contract publish 435435435435345435435435345435 98acd27a58c79eaab05ea4abd0daa8e63021df3bf2e65fcb38e2474fb706c3fe 3"}
+		example := []string{"example", "contract publish 8dafd997b6e65e680768076d92821716fd7950ee 6060604052600a8060106000396000f360606040526008565b00 3"}
 		if len(args) != 3 {
 			log.Error("publishContractCmd", "error", "please input address ,contract and value", example[0], example[1])
 			return
@@ -78,10 +81,12 @@ var publishContractCmd = &cobra.Command{
 }
 
 var callContractCmd = &cobra.Command{
-	Use:   "call",
-	Short: "call a contract method",
+	Use:     "call",
+	Short:   "call <from_address> <contract_address> <call_method>",
+	Long:    "This is call contract command which is only run in local vm",
+	Example: "contract call 8dafd997b6e65e680768076d92821716fd7950ee 91386e326c72b5d7f92431689d3ca921e13de072 70a082310000000000000000000000000a35c1bd74497c851265774e7e98027b46c27c41",
 	Run: func(cmd *cobra.Command, args []string) {
-		example := []string{"example", "contract call 435435435435345435435435345435 435435435435345435435435345435 70a082310000000000000000000000000a35c1bd74497c851265774e7e98027b46c27c41"}
+		example := []string{"example", "contract call 8dafd997b6e65e680768076d92821716fd7950ee 91386e326c72b5d7f92431689d3ca921e13de072 70a082310000000000000000000000000a35c1bd74497c851265774e7e98027b46c27c41"}
 		if len(args) != 3 {
 			log.Error("callContractCmd", "error", "please input address and contract", example[0], example[1])
 			return
@@ -103,10 +108,12 @@ var callContractCmd = &cobra.Command{
 }
 
 var transactContractCmd = &cobra.Command{
-	Use:   "transact",
-	Short: "transact a contract method",
+	Use:     "transact",
+	Short:   "transact <from_address> <contract_address> <call_method> <amount>",
+	Long:    "This is call contract command which is only run on-chain vm",
+	Example: "contract transact 8dafd997b6e65e680768076d92821716fd7950ee 91386e326c72b5d7f92431689d3ca921e13de072 70a082310000000000000000000000000a35c1bd74497c851265774e7e98027b46c27c41 3",
 	Run: func(cmd *cobra.Command, args []string) {
-		example := []string{"example", "contract transact 435435435435345435435435345435 98acd27a58c79eaab05ea4abd0daa8e63021df3bf2e65fcb38e2474fb706c3fe d27a58c79eaab05ea4abd0daa8e63021df3bf2e65fcb38e2474fb706c3fe"}
+		example := []string{"example", "contract transact 8dafd997b6e65e680768076d92821716fd7950ee 98acd27a58c79eaab05ea4abd0daa8e63021df3bf2e65fcb38e2474fb706c3fe d27a58c79eaab05ea4abd0daa8e63021df3bf2e65fcb38e2474fb706c3fe"}
 		if len(args) != 4 {
 			log.Error("callContractCmd", "error", "please input address and contract", example[0], example[1])
 			return
@@ -133,8 +140,10 @@ var transactContractCmd = &cobra.Command{
 }
 
 var GetCallContractCmd = &cobra.Command{
-	Use:   "get",
-	Short: "get create or call contract running status",
+	Use:     "get",
+	Short:   "get <hash>",
+	Long:    "This is get contract receipt command",
+	Example: "contract get d27a58c79eaab05ea4abd0daa8e63021df3bf2e65fcb38e2474fb706c3fe",
 	Run: func(cmd *cobra.Command, args []string) {
 		example := []string{"example", "contract get d27a58c79eaab05ea4abd0daa8e63021df3bf2e65fcb38e2474fb706c3fe"}
 		if len(args) != 1 {

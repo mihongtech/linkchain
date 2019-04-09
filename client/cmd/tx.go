@@ -15,12 +15,15 @@ func init() {
 
 var txCmd = &cobra.Command{
 	Use:   "tx",
-	Short: "all tx related command",
+	Short: "tx command",
+	Long:  "This is all tx command for handling tx",
 }
 
 var getTxCmd = &cobra.Command{
-	Use:   "get",
-	Short: "get tx",
+	Use:     "get",
+	Short:   "get <hash>",
+	Long:    "This is get transaction body command",
+	Example: "tx get 98acd27a58c79eaab05ea4abd0daa8e63021df3bf2e65fcb38e2474fb706c3fe",
 	Run: func(cmd *cobra.Command, args []string) {
 		example := []string{"example", "tx hash 98acd27a58c79eaab05ea4abd0daa8e63021df3bf2e65fcb38e2474fb706c3fe"}
 		if len(args) != 1 {

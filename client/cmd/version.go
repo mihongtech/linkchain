@@ -8,7 +8,8 @@ func init() {
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Print the version number of linkchain",
+	Short: "version",
+	Long:  "This is get the version number of linkchain command",
 	Run: func(cmd *cobra.Command, args []string) {
 		println("linkchain version is 0.0.1")
 	},

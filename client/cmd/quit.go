@@ -12,7 +12,8 @@ func init() {
 
 var quitCmd = &cobra.Command{
 	Use:   "quit",
-	Short: "quit linkchain client",
+	Short: "quit",
+	Long:  "This is quit command for stopping linkchain client",
 	Run: func(cmd *cobra.Command, args []string) {
 		os.Exit(0)
 	},

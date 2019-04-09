@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-
 	"math/big"
 
 	"github.com/linkchain/common/lcdb"
@@ -16,7 +15,6 @@ import (
 	"github.com/linkchain/core/meta"
 	"github.com/linkchain/protobuf"
 
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -131,7 +129,7 @@ func GetTrieSyncProgress(db DatabaseReader) uint64 {
 	return new(big.Int).SetBytes(data).Uint64()
 }
 
-// GetHeaderRLP retrieves a block header in its raw RLP database encoding, or nil
+// GetHeaderBytes retrieves a block header in its raw database encoding, or nil
 // if the header's not found.
 func GetBlockBytes(db DatabaseReader, hash math.Hash, number uint64) []byte {
 	data, _ := db.Get(blockKey(hash, number))
@@ -392,10 +390,21 @@ func ReadReceipts(db DatabaseReader, hash math.Hash, number uint64) core.Receipt
 	}
 	// Convert the receipts from their storage form to their internal representation
 	storageReceipts := []*core.ReceiptForStorage{}
-	if err := rlp.DecodeBytes(data, &storageReceipts); err != nil {
-		log.Error("Invalid receipt array RLP", "hash", hash, "err", err)
+	protoReceipts := protobuf.ReceiptForStorages{}
+	if err := proto.Unmarshal(data, &protoReceipts); err != nil {
+		log.Error("Invalid receipt array protobuf", "hash", hash, "err", err)
 		return nil
 	}
+
+	for _, v := range protoReceipts.Receipts {
+		storageReceipt := &core.ReceiptForStorage{}
+		if err := storageReceipt.Deserialize(v); err != nil {
+			log.Error("Invalid receipt protobuf", "hash", hash, "err", err)
+			return nil
+		}
+		storageReceipts = append(storageReceipts, storageReceipt)
+	}
+
 	receipts := make(core.Receipts, len(storageReceipts))
 	for i, receipt := range storageReceipts {
 		receipts[i] = (*core.Receipt)(receipt)
@@ -406,11 +415,15 @@ func ReadReceipts(db DatabaseReader, hash math.Hash, number uint64) core.Receipt
 // WriteReceipts stores all the transaction receipts belonging to a block.
 func WriteReceipts(db lcdb.Putter, hash math.Hash, number uint64, receipts core.Receipts) {
 	// Convert the receipts into their storage form and serialize them
-	storageReceipts := make([]*core.ReceiptForStorage, len(receipts))
+	storageReceipts := make([]*protobuf.ReceiptForStorage, len(receipts))
 	for i, receipt := range receipts {
-		storageReceipts[i] = (*core.ReceiptForStorage)(receipt)
+		storageReceipt := (*core.ReceiptForStorage)(receipt)
+		storageReceipts[i] = storageReceipt.Serialize().(*protobuf.ReceiptForStorage)
 	}
-	bytes, err := rlp.EncodeToBytes(storageReceipts)
+
+	protoReceipts := &protobuf.ReceiptForStorages{Receipts: storageReceipts}
+
+	bytes, err := proto.Marshal(protoReceipts)
 	if err != nil {
 		log.Crit("Failed to encode block receipts", "err", err)
 	}

@@ -17,7 +17,8 @@
 package runtime
 
 import (
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/linkchain/accounts/abi"
+	"github.com/linkchain/common"
 	"github.com/linkchain/common/lcdb"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/config"
@@ -29,8 +30,6 @@ import (
 	"math/big"
 	"strings"
 	"testing"
-
-	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 
 func TestDefaults(t *testing.T) {

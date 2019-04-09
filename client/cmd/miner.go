@@ -15,12 +15,15 @@ func init() {
 
 var minerCmd = &cobra.Command{
 	Use:   "miner",
-	Short: "handle miner cmd",
+	Short: "miner command",
+	Long:  "This is all miner command for handling miner",
 }
 
 var minerInfoCmd = &cobra.Command{
-	Use:   "info",
-	Short: "get Miner info",
+	Use:     "info",
+	Short:   "miner info",
+	Long:    "This is get miner info command",
+	Example: "miner info",
 	Run: func(cmd *cobra.Command, args []string) {
 
 		method := "getMineInfo"
@@ -36,8 +39,10 @@ var minerInfoCmd = &cobra.Command{
 }
 
 var startMineCmd = &cobra.Command{
-	Use:   "start",
-	Short: "start mine loop",
+	Use:     "start",
+	Short:   "miner start",
+	Long:    "This is start auto-miner command",
+	Example: "miner start",
 	Run: func(cmd *cobra.Command, args []string) {
 		method := "startMine"
 
@@ -52,8 +57,10 @@ var startMineCmd = &cobra.Command{
 }
 
 var stopMineCmd = &cobra.Command{
-	Use:   "stop",
-	Short: "stop mine loop",
+	Use:     "stop",
+	Short:   "miner stop",
+	Long:    "This is stop auto-miner command",
+	Example: "miner stop",
 	Run: func(cmd *cobra.Command, args []string) {
 		method := "stopMine"
 
@@ -68,8 +75,10 @@ var stopMineCmd = &cobra.Command{
 }
 
 var mineCmd = &cobra.Command{
-	Use:   "mine",
-	Short: "mine a single block",
+	Use:     "single",
+	Short:   "miner single",
+	Long:    "This is mine single block command",
+	Example: "miner single",
 	Run: func(cmd *cobra.Command, args []string) {
 		method := "mine"
 

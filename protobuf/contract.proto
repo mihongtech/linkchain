@@ -39,6 +39,10 @@ message ReceiptForStorage {
     required AccountID ContractAddress = 7;
 }
 
+message ReceiptForStorages {
+    repeated ReceiptForStorage receipts = 1;
+}
+
 message LogForStorage {
     required AccountID address =1;
     repeated Hash topics = 2;
