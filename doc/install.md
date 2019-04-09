@@ -21,6 +21,13 @@ source ~/.bash_profile
 **Go 1.10.1+** is minimum version required for the linkchain.
 :::
 
+### Install golang-dep
+
+```bash
+go get -u github.com/golang/dep/cmd/dep
+
+```
+
 ### Install the binaries
 
 Next, let's download the latest version of linkchain. Here we'll use the `master` branch, which contains the latest stable release.
@@ -30,6 +37,7 @@ mkdir -p $GOPATH/src/github.com/
 cd $GOPATH/src/github.com/
 git clone https://github.com/mihongtech/linkchain.git
 cd linkchain && git checkout master
+dep ensure -v
 
 ```
 ### Install the binaries in unix
@@ -41,7 +49,6 @@ cd build/unix
 ./build.sh
 
 ```
-
 ### Install the binaries in windows
 
 Then,install `lcd` and `lccli` in windows
