@@ -24,7 +24,7 @@ func main() {
 	)
 	flag.Parse()
 
-	if err := initLog(logLevel, *console); err != nil {
+	if err := initLog(logLevel, *console, *dataDir); err != nil {
 		log.Error("initLog failed, exit", "err", err)
 		return
 	}
@@ -48,14 +48,14 @@ func main() {
 	defer app.Stop()
 }
 
-func initLog(logLevel *int, console bool) error {
+func initLog(logLevel *int, console bool, dataDir string) error {
 	//init log
 	ostream := log.StreamHandler(os.Stdout, log.TerminalFormat(true))
 	glogger := log.NewGlogHandler(ostream)
 
 	if !console {
 		rfh, err := log.RotatingFileHandler(
-			filepath.Join(config.DefaultDataDir(), "log"),
+			filepath.Join(dataDir, "log"),
 			512*1024*1024,
 			log.TerminalFormat(true),
 		)

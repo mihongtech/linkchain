@@ -155,8 +155,7 @@ func (srv *Service) Setup(i interface{}) bool {
 	srv.NoDial = false
 	srv.MaxPeers = config.DefaultMaxPeers
 	setBootstrapNodes(i.(*context.Context).Config.BootstrapNodes, &srv.Config)
-	srv.sync.Setup(i)
-	return true
+	return srv.sync.Setup(i)
 }
 
 func (srv *Service) NodeKey(keyfile string) *ecdsa.PrivateKey {
