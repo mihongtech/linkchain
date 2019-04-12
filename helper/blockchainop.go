@@ -99,7 +99,7 @@ func CreateTransaction(fromCoin meta.FromCoin, toCoin meta.ToCoin) *meta.Transac
 
 func CreateCoinBaseTx(to meta.AccountID, amount *meta.Amount, height uint32) *meta.Transaction {
 	toCoin := meta.NewToCoin(to, amount)
-	transaction := meta.NewEmptyTransaction(config.DefaultDifficulty, config.CoinBaseTx)
+	transaction := meta.NewEmptyTransaction(config.DefaultTransactionVersion, config.CoinBaseTx)
 	transaction.AddToCoin(*toCoin)
 	transaction.Data = common.UInt32ToBytes(height)
 	return transaction

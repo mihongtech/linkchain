@@ -1,14 +1,16 @@
 package cmd
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+	"strings"
 
 	"github.com/mihongtech/linkchain/client/httpclient"
 	"github.com/mihongtech/linkchain/rpc/rpcjson"
+	"github.com/spf13/cobra"
 )
 
 var RootCmd = &cobra.Command{}
@@ -28,6 +30,22 @@ var stopCmd = &cobra.Command{
 		fmt.Println(out)
 		os.Exit(0)
 	},
+}
+
+func StartCmd() {
+	scanner := bufio.NewScanner(os.Stdin)
+	for {
+		fmt.Print(">")
+		// Scans a line from Stdin(Console)
+		scanner.Scan()
+		// Holds the string that scanned
+		text := scanner.Text()
+		if len(text) != 0 {
+			words := strings.Fields(text)
+			RootCmd.SetArgs(words)
+			RootCmd.Execute()
+		}
+	}
 }
 
 func init() {

@@ -1,18 +1,18 @@
 package main
 
 import (
-	"bufio"
 	"flag"
-	"fmt"
 	"os"
-	"strings"
 
 	"github.com/mihongtech/linkchain/client/cmd"
+	"github.com/mihongtech/linkchain/client/explorer"
 	"github.com/mihongtech/linkchain/common/util/log"
 )
 
 func main() {
 	logLevel := flag.Int("loglevel", 3, "log level")
+	isExplorer := flag.Bool("explorer", false, "is explorer mode")
+	flag.Parse()
 
 	//init log
 	log.Root().SetHandler(
@@ -21,22 +21,9 @@ func main() {
 
 	log.Info("rpcserver client is running")
 
-	// start console cmd
-	startCmd()
-}
-
-func startCmd() {
-	scanner := bufio.NewScanner(os.Stdin)
-	for {
-		fmt.Print(">")
-		// Scans a line from Stdin(Console)
-		scanner.Scan()
-		// Holds the string that scanned
-		text := scanner.Text()
-		if len(text) != 0 {
-			words := strings.Fields(text)
-			cmd.RootCmd.SetArgs(words)
-			cmd.RootCmd.Execute()
-		}
+	if *isExplorer {
+		explorer.StartExplore()
+	} else {
+		cmd.StartCmd()
 	}
 }
