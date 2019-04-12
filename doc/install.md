@@ -33,7 +33,7 @@ go get -u github.com/golang/dep/cmd/dep
 Next, let's download the latest version of linkchain. Here we'll use the `master` branch, which contains the latest stable release.
 
 ```bash
-mkdir -p $GOPATH/src/github.com/
+mkdir -p $GOPATH/src/github.com/mihongtech/
 cd $GOPATH/src/github.com/
 git clone https://github.com/mihongtech/linkchain.git
 cd linkchain && git checkout master
