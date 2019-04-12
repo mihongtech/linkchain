@@ -21,7 +21,7 @@ package keystore
 import (
 	"time"
 
-	"github.com/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/common/util/log"
 	"github.com/rjeczalik/notify"
 )
 

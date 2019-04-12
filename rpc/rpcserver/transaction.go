@@ -4,9 +4,9 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/rpc/rpcobject"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/rpc/rpcobject"
 )
 
 func getTxByHash(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {

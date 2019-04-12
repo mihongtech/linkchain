@@ -3,7 +3,7 @@ package lcdb
 import (
 	"sync"
 
-	"github.com/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/common/util/log"
 
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"

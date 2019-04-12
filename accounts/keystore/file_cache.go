@@ -24,7 +24,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/common/util/log"
 
 	mapset "github.com/deckarep/golang-set"
 )

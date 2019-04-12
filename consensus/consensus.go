@@ -3,7 +3,7 @@ package consensus
 import (
 	"errors"
 
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 var (

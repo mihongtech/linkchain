@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/linkchain/p2p/discover"
-	"github.com/linkchain/p2p/message"
-	"github.com/linkchain/p2p/peer_error"
-	"github.com/linkchain/p2p/proto/example"
-	"github.com/linkchain/p2p/transport"
+	"github.com/mihongtech/linkchain/p2p/discover"
+	"github.com/mihongtech/linkchain/p2p/message"
+	"github.com/mihongtech/linkchain/p2p/peer_error"
+	"github.com/mihongtech/linkchain/p2p/proto/example"
+	"github.com/mihongtech/linkchain/p2p/transport"
 )
 
 var discard = Protocol{

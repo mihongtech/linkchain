@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/linkchain/common/btcec"
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/common/serialize"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/protobuf"
+	"github.com/mihongtech/linkchain/common/btcec"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/serialize"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/protobuf"
 
 	"github.com/golang/protobuf/proto"
 )

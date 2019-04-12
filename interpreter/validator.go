@@ -1,10 +1,10 @@
 package interpreter
 
 import (
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/consensus"
-	"github.com/linkchain/core"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/consensus"
+	"github.com/mihongtech/linkchain/core"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 type BlockValidator interface {

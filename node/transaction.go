@@ -3,10 +3,10 @@ package node
 import (
 	"errors"
 
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/storage"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/storage"
 )
 
 func (n *Node) addTransaction(tx *meta.Transaction) error {

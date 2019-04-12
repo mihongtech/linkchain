@@ -1,6 +1,6 @@
 package interpreter
 
-import "github.com/linkchain/common/lcdb"
+import "github.com/mihongtech/linkchain/common/lcdb"
 
 type Interpreter interface {
 	Executor

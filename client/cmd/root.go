@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 
-	"github.com/linkchain/client/httpclient"
-	"github.com/linkchain/rpc/rpcjson"
+	"github.com/mihongtech/linkchain/client/httpclient"
+	"github.com/mihongtech/linkchain/rpc/rpcjson"
 )
 
 var RootCmd = &cobra.Command{}

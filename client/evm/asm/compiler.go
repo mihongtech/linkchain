@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/contract/vm"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/contract/vm"
 )
 
 // Compiler contains information about the parsed source

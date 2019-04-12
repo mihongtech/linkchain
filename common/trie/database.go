@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/linkchain/common/lcdb"
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/common/lcdb"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/util/log"
 )
 
 // secureKeyPrefix is the database key prefix used to store trie node preimages.

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/linkchain/client/evm/internal/compiler"
+	"github.com/mihongtech/linkchain/client/evm/internal/compiler"
 
 	cli "gopkg.in/urfave/cli.v1"
 )

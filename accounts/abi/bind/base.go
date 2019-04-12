@@ -6,13 +6,13 @@ import (
 	_ "fmt"
 	"math/big"
 
-	"github.com/linkchain/accounts/abi"
-	_ "github.com/linkchain/common/util/event"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/contract"
-	"github.com/linkchain/contract/vm"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/helper"
+	"github.com/mihongtech/linkchain/accounts/abi"
+	_ "github.com/mihongtech/linkchain/common/util/event"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/contract"
+	"github.com/mihongtech/linkchain/contract/vm"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/helper"
 
 	"github.com/golang/protobuf/proto"
 )

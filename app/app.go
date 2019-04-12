@@ -3,17 +3,17 @@ package app
 import (
 	"time"
 
-	"github.com/linkchain/app/context"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/config"
-	"github.com/linkchain/contract"
-	"github.com/linkchain/interpreter"
-	"github.com/linkchain/miner"
-	"github.com/linkchain/node"
-	"github.com/linkchain/normal"
-	"github.com/linkchain/p2p"
-	"github.com/linkchain/rpc/rpcserver"
-	"github.com/linkchain/wallet"
+	"github.com/mihongtech/linkchain/app/context"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/config"
+	"github.com/mihongtech/linkchain/contract"
+	"github.com/mihongtech/linkchain/interpreter"
+	"github.com/mihongtech/linkchain/miner"
+	"github.com/mihongtech/linkchain/node"
+	"github.com/mihongtech/linkchain/normal"
+	"github.com/mihongtech/linkchain/p2p"
+	"github.com/mihongtech/linkchain/rpc/rpcserver"
+	"github.com/mihongtech/linkchain/wallet"
 )
 
 var (

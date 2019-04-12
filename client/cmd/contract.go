@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/contract"
-	"github.com/linkchain/contract/vm"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/rpc/rpcobject"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/contract"
+	"github.com/mihongtech/linkchain/contract/vm"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/rpc/rpcobject"
 
 	"github.com/spf13/cobra"
 )

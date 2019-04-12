@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/linkchain/common/btcec"
-	_ "github.com/linkchain/common/btcec"
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/config"
-	"github.com/linkchain/protobuf"
-	"github.com/linkchain/unittest"
+	"github.com/mihongtech/linkchain/common/btcec"
+	_ "github.com/mihongtech/linkchain/common/btcec"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/config"
+	"github.com/mihongtech/linkchain/protobuf"
+	"github.com/mihongtech/linkchain/unittest"
 )
 
 var testPri, _ = hex.DecodeString("7a9c6f2b865c98c9fe174869de5818f4c62bc845441c08269487cdba6688f6b1")

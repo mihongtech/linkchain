@@ -4,13 +4,13 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/contract/vm"
-	"github.com/linkchain/core"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/helper"
-	"github.com/linkchain/interpreter"
-	"github.com/linkchain/normal"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/contract/vm"
+	"github.com/mihongtech/linkchain/core"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/helper"
+	"github.com/mihongtech/linkchain/interpreter"
+	"github.com/mihongtech/linkchain/normal"
 )
 
 func (p *Interpreter) ProcessTxState(tx *meta.Transaction, data interpreter.Params) (error, interpreter.Result) {

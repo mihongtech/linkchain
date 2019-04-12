@@ -25,9 +25,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/linkchain/accounts"
-	"github.com/linkchain/common/btcec"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/accounts"
+	"github.com/mihongtech/linkchain/common/btcec"
+	"github.com/mihongtech/linkchain/core/meta"
 	"github.com/pborman/uuid"
 	"golang.org/x/crypto/pbkdf2"
 )

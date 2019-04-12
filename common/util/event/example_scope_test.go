@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/linkchain/common/util/event"
+	"github.com/mihongtech/linkchain/common/util/event"
 )
 
 // This example demonstrates how SubscriptionScope can be used to control the lifetime of

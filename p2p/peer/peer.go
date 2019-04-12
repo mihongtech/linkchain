@@ -8,12 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/linkchain/common/util/event"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/common/util/mclock"
-	"github.com/linkchain/p2p/discover"
-	"github.com/linkchain/p2p/message"
-	"github.com/linkchain/p2p/peer_error"
+	"github.com/mihongtech/linkchain/common/util/event"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/common/util/mclock"
+	"github.com/mihongtech/linkchain/p2p/discover"
+	"github.com/mihongtech/linkchain/p2p/message"
+	"github.com/mihongtech/linkchain/p2p/peer_error"
 )
 
 const (

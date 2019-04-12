@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/linkchain/common/lcdb"
-	"github.com/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/lcdb"
+	"github.com/mihongtech/linkchain/common/math"
 
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )

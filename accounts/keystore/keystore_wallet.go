@@ -19,8 +19,8 @@ package keystore
 import (
 	"math/big"
 
-	"github.com/linkchain/accounts"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/accounts"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 // keystoreWallet implements the accounts.Wallet interface for the original

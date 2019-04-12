@@ -3,12 +3,12 @@ package normal
 import (
 	"errors"
 
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/config"
-	"github.com/linkchain/core"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/interpreter"
-	"github.com/linkchain/storage/state"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/config"
+	"github.com/mihongtech/linkchain/core"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/interpreter"
+	"github.com/mihongtech/linkchain/storage/state"
 )
 
 func (n *Interpreter) ProcessBlockState(block *meta.Block, stateDb *state.StateDB, chain core.Chain, validator interpreter.Validator) (error, []interpreter.Result) {

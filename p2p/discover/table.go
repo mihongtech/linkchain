@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/p2p/netutil"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/p2p/netutil"
 )
 
 const (

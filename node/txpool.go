@@ -1,10 +1,10 @@
 package node
 
 import (
-	"github.com/linkchain/interpreter"
+	"github.com/mihongtech/linkchain/interpreter"
 	"sync"
 
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 type TxPool struct {

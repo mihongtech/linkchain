@@ -12,8 +12,8 @@ import (
 	"testing/quick"
 	"time"
 
-	"github.com/linkchain/common/btcec"
-	"github.com/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/btcec"
+	"github.com/mihongtech/linkchain/common/math"
 )
 
 func ExampleNewNode() {

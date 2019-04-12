@@ -5,7 +5,7 @@ import (
 	"container/heap"
 	"errors"
 
-	"github.com/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/math"
 )
 
 // Iterator is a key-value trie iterator that traverses a Trie.

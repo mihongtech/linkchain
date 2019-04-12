@@ -3,9 +3,9 @@ package normal
 import (
 	"errors"
 
-	"github.com/linkchain/config"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/interpreter"
+	"github.com/mihongtech/linkchain/config"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/interpreter"
 )
 
 func (e *Interpreter) ExecuteResult(results []interpreter.Result, txFee *meta.Amount, block *meta.Block) error {

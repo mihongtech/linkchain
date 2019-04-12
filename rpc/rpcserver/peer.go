@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/linkchain/common/util/log"
-	p2p_node "github.com/linkchain/p2p/discover"
-	"github.com/linkchain/rpc/rpcobject"
+	"github.com/mihongtech/linkchain/common/util/log"
+	p2p_node "github.com/mihongtech/linkchain/p2p/discover"
+	"github.com/mihongtech/linkchain/rpc/rpcobject"
 )
 
 func selfPeer(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {

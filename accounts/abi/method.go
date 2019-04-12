@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/math"
 )
 
 // Method represents a callable given a `Name` and whether the method is a constant.

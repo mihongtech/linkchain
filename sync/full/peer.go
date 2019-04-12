@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/p2p/message"
-	p2p_peer "github.com/linkchain/p2p/peer"
-	"github.com/linkchain/p2p/peer_error"
-	"github.com/linkchain/protobuf"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/p2p/message"
+	p2p_peer "github.com/mihongtech/linkchain/p2p/peer"
+	"github.com/mihongtech/linkchain/p2p/peer_error"
+	"github.com/mihongtech/linkchain/protobuf"
 
 	"gopkg.in/fatih/set.v0"
 )

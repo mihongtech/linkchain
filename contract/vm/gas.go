@@ -3,7 +3,7 @@ package vm
 import (
 	"math/big"
 
-	"github.com/linkchain/contract/vm/params"
+	"github.com/mihongtech/linkchain/contract/vm/params"
 )
 
 // Gas costs

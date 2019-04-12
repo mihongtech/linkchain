@@ -1,13 +1,13 @@
 package vm
 
 import (
-	"github.com/linkchain/storage/state"
+	"github.com/mihongtech/linkchain/storage/state"
 	"math/big"
 	"testing"
 
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/config"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/config"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 var (

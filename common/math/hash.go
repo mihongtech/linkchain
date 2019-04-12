@@ -7,9 +7,9 @@ import (
 
 	"encoding/json"
 	"github.com/golang/protobuf/proto"
-	"github.com/linkchain/common"
-	"github.com/linkchain/common/serialize"
-	"github.com/linkchain/protobuf"
+	"github.com/mihongtech/linkchain/common"
+	"github.com/mihongtech/linkchain/common/serialize"
+	"github.com/mihongtech/linkchain/protobuf"
 )
 
 // HashSize of array used to store hashes.  See Hash.

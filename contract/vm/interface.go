@@ -3,8 +3,8 @@ package vm
 import (
 	"math/big"
 
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 // stateDB is an EVM database for full state querying.

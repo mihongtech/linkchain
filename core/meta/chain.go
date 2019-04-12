@@ -1,7 +1,7 @@
 package meta
 
 import (
-	"github.com/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/math"
 )
 
 // ChainReader defines a small collection of methods needed to access the local

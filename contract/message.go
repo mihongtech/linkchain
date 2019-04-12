@@ -3,7 +3,7 @@ package contract
 import (
 	"math/big"
 
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 type Message struct {

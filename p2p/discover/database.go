@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/protobuf"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/protobuf"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/syndtr/goleveldb/leveldb"

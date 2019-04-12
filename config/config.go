@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/linkchain/contract/vm/params"
+	"github.com/mihongtech/linkchain/contract/vm/params"
 	"math/big"
 	"os"
 	"os/user"

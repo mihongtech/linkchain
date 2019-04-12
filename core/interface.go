@@ -1,10 +1,10 @@
 package core
 
 import (
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/config"
-	"github.com/linkchain/consensus"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/config"
+	"github.com/mihongtech/linkchain/consensus"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 type Chain interface {

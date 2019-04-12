@@ -3,11 +3,11 @@ package rpcserver
 import (
 	"reflect"
 
-	"github.com/linkchain/miner"
-	"github.com/linkchain/node"
-	"github.com/linkchain/p2p"
-	"github.com/linkchain/rpc/rpcobject"
-	"github.com/linkchain/wallet"
+	"github.com/mihongtech/linkchain/miner"
+	"github.com/mihongtech/linkchain/node"
+	"github.com/mihongtech/linkchain/p2p"
+	"github.com/mihongtech/linkchain/rpc/rpcobject"
+	"github.com/mihongtech/linkchain/wallet"
 )
 
 type commandHandler func(*Server, interface{}, <-chan struct{}) (interface{}, error)

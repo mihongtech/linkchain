@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/linkchain/client/cmd"
-	"github.com/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/client/cmd"
+	"github.com/mihongtech/linkchain/common/util/log"
 )
 
 func main() {

@@ -22,7 +22,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 type keyStorePlain struct {

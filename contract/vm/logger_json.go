@@ -6,9 +6,9 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/linkchain/common"
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/common"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 type JSONLogger struct {

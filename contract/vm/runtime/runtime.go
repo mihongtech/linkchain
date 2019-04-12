@@ -1,16 +1,16 @@
 package runtime
 
 import (
-	"github.com/linkchain/storage/state"
+	"github.com/mihongtech/linkchain/storage/state"
 	"math/big"
 	"time"
 
-	"github.com/linkchain/common/lcdb"
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/config"
-	"github.com/linkchain/contract"
-	"github.com/linkchain/contract/vm"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/common/lcdb"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/config"
+	"github.com/mihongtech/linkchain/contract"
+	"github.com/mihongtech/linkchain/contract/vm"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 // Config is a basic type specifying certain configuration flags for running

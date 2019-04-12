@@ -1,8 +1,8 @@
 package node
 
 import (
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 /** interface: BlockValidator **/

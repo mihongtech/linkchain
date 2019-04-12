@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/linkchain/common/lcdb"
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/common/lcdb"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/util/log"
 
 	"github.com/golang/protobuf/proto"
 )

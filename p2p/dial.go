@@ -8,10 +8,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/p2p/discover"
-	"github.com/linkchain/p2p/netutil"
-	"github.com/linkchain/p2p/peer"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/p2p/discover"
+	"github.com/mihongtech/linkchain/p2p/netutil"
+	"github.com/mihongtech/linkchain/p2p/peer"
 )
 
 const (

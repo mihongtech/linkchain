@@ -33,10 +33,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/linkchain/accounts"
-	"github.com/linkchain/common/btcec"
-	"github.com/linkchain/common/util/event"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/accounts"
+	"github.com/mihongtech/linkchain/common/btcec"
+	"github.com/mihongtech/linkchain/common/util/event"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 var (

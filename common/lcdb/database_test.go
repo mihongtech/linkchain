@@ -9,9 +9,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/linkchain/common/lcdb"
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/unittest"
+	"github.com/mihongtech/linkchain/common/lcdb"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/unittest"
 	"time"
 )
 

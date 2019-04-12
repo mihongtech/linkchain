@@ -5,14 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"github.com/linkchain/common/serialize"
-	"github.com/linkchain/common/trie"
-	"github.com/linkchain/protobuf"
+	"github.com/mihongtech/linkchain/common/serialize"
+	"github.com/mihongtech/linkchain/common/trie"
+	"github.com/mihongtech/linkchain/protobuf"
 	"unsafe"
 
-	"github.com/linkchain/common"
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/common"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 //go:generate gencodec -type Receipt -field-override receiptMarshaling -out gen_receipt_json.go

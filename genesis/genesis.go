@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/linkchain/common/lcdb"
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/config"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/storage"
-	"github.com/linkchain/storage/state"
+	"github.com/mihongtech/linkchain/common/lcdb"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/config"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/storage"
+	"github.com/mihongtech/linkchain/storage/state"
 )
 
 var errGenesisNoConfig = errors.New("genesis has no chain configuration")

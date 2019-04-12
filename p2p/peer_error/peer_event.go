@@ -1,7 +1,7 @@
 package peer_error
 
 import (
-	"github.com/linkchain/p2p/discover"
+	"github.com/mihongtech/linkchain/p2p/discover"
 )
 
 // PeerEventType is the type of peer events emitted by a p2p.Server

@@ -1,15 +1,15 @@
 package contract
 
 import (
-	"github.com/linkchain/core"
+	"github.com/mihongtech/linkchain/core"
 	"math/big"
 
-	_ "github.com/linkchain/common"
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/common/serialize"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/protobuf"
+	_ "github.com/mihongtech/linkchain/common"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/serialize"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/protobuf"
 
 	"github.com/golang/protobuf/proto"
 )

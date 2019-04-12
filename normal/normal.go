@@ -1,12 +1,12 @@
 package normal
 
 import (
-	"github.com/linkchain/common/lcdb"
-	"github.com/linkchain/config"
-	"github.com/linkchain/core"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/interpreter"
-	"github.com/linkchain/storage/state"
+	"github.com/mihongtech/linkchain/common/lcdb"
+	"github.com/mihongtech/linkchain/config"
+	"github.com/mihongtech/linkchain/core"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/interpreter"
+	"github.com/mihongtech/linkchain/storage/state"
 )
 
 type Interpreter struct {

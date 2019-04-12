@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/config"
-	"github.com/linkchain/unittest"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/config"
+	"github.com/mihongtech/linkchain/unittest"
 
 	"github.com/golang/protobuf/proto"
 )

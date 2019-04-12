@@ -6,10 +6,10 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/linkchain/p2p/message"
-	"github.com/linkchain/p2p/peer"
-	"github.com/linkchain/p2p/peer_error"
-	"github.com/linkchain/protobuf"
+	"github.com/mihongtech/linkchain/p2p/message"
+	"github.com/mihongtech/linkchain/p2p/peer"
+	"github.com/mihongtech/linkchain/p2p/peer_error"
+	"github.com/mihongtech/linkchain/protobuf"
 
 	"github.com/golang/protobuf/proto"
 )

@@ -2,11 +2,11 @@ package normal
 
 import (
 	"errors"
-	"github.com/linkchain/interpreter"
+	"github.com/mihongtech/linkchain/interpreter"
 
-	"github.com/linkchain/common"
-	"github.com/linkchain/config"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/common"
+	"github.com/mihongtech/linkchain/config"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 func (n *Interpreter) CheckTx(tx *meta.Transaction) error {

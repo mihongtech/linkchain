@@ -3,7 +3,7 @@ package meta
 import (
 	"encoding/json"
 	"errors"
-	"github.com/linkchain/common"
+	"github.com/mihongtech/linkchain/common"
 	"math/big"
 )
 

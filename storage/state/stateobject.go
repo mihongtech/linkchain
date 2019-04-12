@@ -3,9 +3,9 @@ package state
 import (
 	"bytes"
 	"fmt"
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/storage"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/storage"
 )
 
 type Code []byte

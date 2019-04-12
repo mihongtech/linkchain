@@ -1,7 +1,7 @@
 package transport
 
 import (
-	"github.com/linkchain/p2p/message"
+	"github.com/mihongtech/linkchain/p2p/message"
 )
 
 type Transport interface {

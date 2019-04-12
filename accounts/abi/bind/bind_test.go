@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/linkchain/common"
+	"github.com/mihongtech/linkchain/common"
 
 	"golang.org/x/tools/imports"
 )

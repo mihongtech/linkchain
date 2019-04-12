@@ -15,10 +15,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/linkchain/common/btcec"
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/common/serialize"
-	"github.com/linkchain/protobuf"
+	"github.com/mihongtech/linkchain/common/btcec"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/serialize"
+	"github.com/mihongtech/linkchain/protobuf"
 )
 
 const NodeIDBits = 512

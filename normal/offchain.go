@@ -1,6 +1,6 @@
 package normal
 
-import "github.com/linkchain/core/meta"
+import "github.com/mihongtech/linkchain/core/meta"
 
 type OffChainState struct {
 }

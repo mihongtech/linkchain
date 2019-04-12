@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"github.com/linkchain/p2p/proto/example"
+	"github.com/mihongtech/linkchain/p2p/proto/example"
 )
 
 func main() {

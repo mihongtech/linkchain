@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	//"github.com/linkchain/app"
+	//"github.com/mihongtech/linkchain/app"
 
 	"fmt"
 	"github.com/spf13/cobra"

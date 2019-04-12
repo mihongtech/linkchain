@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/core/meta"
 
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )

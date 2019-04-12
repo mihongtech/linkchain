@@ -5,13 +5,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/linkchain/app/context"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/config"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/helper"
-	"github.com/linkchain/interpreter"
-	"github.com/linkchain/node"
+	"github.com/mihongtech/linkchain/app/context"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/config"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/helper"
+	"github.com/mihongtech/linkchain/interpreter"
+	"github.com/mihongtech/linkchain/node"
 )
 
 type Miner struct {

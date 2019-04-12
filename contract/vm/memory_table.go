@@ -1,7 +1,7 @@
 package vm
 
 import (
-	"github.com/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/math"
 	"math/big"
 )
 

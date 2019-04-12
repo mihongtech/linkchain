@@ -6,9 +6,9 @@ import (
 	_ "sync/atomic"
 	"time"
 
-	_ "github.com/linkchain/common/util/log"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/p2p/discover"
+	_ "github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/p2p/discover"
 )
 
 const (

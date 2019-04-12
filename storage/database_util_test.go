@@ -5,9 +5,9 @@ import (
 	_ "math/big"
 	"testing"
 
-	"github.com/linkchain/common/lcdb"
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/common/lcdb"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 // Tests block storage and retrieval operations.

@@ -38,10 +38,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/core/meta"
 
-	"github.com/linkchain/common/btcec"
-	"github.com/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/btcec"
+	"github.com/mihongtech/linkchain/common/math"
 	"github.com/pborman/uuid"
 	"golang.org/x/crypto/pbkdf2"
 	"golang.org/x/crypto/scrypt"

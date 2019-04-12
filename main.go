@@ -4,11 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
-
-	"github.com/linkchain/app"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/config"
 	"path/filepath"
+
+	"github.com/mihongtech/linkchain/app"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/config"
 )
 
 func main() {

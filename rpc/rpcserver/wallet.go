@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/helper"
-	"github.com/linkchain/node"
-	"github.com/linkchain/rpc/rpcobject"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/helper"
+	"github.com/mihongtech/linkchain/node"
+	"github.com/mihongtech/linkchain/rpc/rpcobject"
 )
 
 func getWalletInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {

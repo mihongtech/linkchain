@@ -1,9 +1,9 @@
 package context
 
 import (
-	"github.com/linkchain/config"
-	"github.com/linkchain/core"
-	"github.com/linkchain/interpreter"
+	"github.com/mihongtech/linkchain/config"
+	"github.com/mihongtech/linkchain/core"
+	"github.com/mihongtech/linkchain/interpreter"
 )
 
 type Context struct {

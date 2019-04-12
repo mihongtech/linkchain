@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/math"
 )
 
 // Event is an event potentially triggered by the EVM's LOG mechanism. The Event

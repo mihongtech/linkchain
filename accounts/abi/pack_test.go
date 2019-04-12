@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/linkchain/common"
-	common_math "github.com/linkchain/common/math"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/common"
+	common_math "github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 func TestPack(t *testing.T) {

@@ -4,10 +4,10 @@ import (
 	"net"
 	"time"
 
-	_ "github.com/linkchain/common/util/log"
-	"github.com/linkchain/p2p/discover"
-	"github.com/linkchain/p2p/message"
-	"github.com/linkchain/p2p/transport"
+	_ "github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/p2p/discover"
+	"github.com/mihongtech/linkchain/p2p/message"
+	"github.com/mihongtech/linkchain/p2p/transport"
 )
 
 type ConnFlag int

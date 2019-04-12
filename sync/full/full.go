@@ -8,17 +8,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/linkchain/common/util/event"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/node"
-	p2p_node "github.com/linkchain/p2p/discover"
-	"github.com/linkchain/p2p/message"
-	p2p_peer "github.com/linkchain/p2p/peer"
-	"github.com/linkchain/p2p/peer_error"
-	"github.com/linkchain/protobuf"
-	"github.com/linkchain/sync/full/downloader"
-	"github.com/linkchain/sync/full/fetcher"
+	"github.com/mihongtech/linkchain/common/util/event"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/node"
+	p2p_node "github.com/mihongtech/linkchain/p2p/discover"
+	"github.com/mihongtech/linkchain/p2p/message"
+	p2p_peer "github.com/mihongtech/linkchain/p2p/peer"
+	"github.com/mihongtech/linkchain/p2p/peer_error"
+	"github.com/mihongtech/linkchain/protobuf"
+	"github.com/mihongtech/linkchain/sync/full/downloader"
+	"github.com/mihongtech/linkchain/sync/full/fetcher"
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are

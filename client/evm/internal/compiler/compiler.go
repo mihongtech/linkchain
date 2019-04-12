@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/linkchain/client/evm/asm"
+	"github.com/mihongtech/linkchain/client/evm/asm"
 )
 
 func Compile(fn string, src []byte, debug bool) (string, error) {

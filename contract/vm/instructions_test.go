@@ -9,7 +9,7 @@ package vm
 //	"github.com/ethereum/go-ethereum/common"
 //	"github.com/ethereum/go-ethereum/crypto"
 //	"github.com/ethereum/go-ethereum/params"
-//	"github.com/linkchain/core/meta"
+//	"github.com/mihongtech/linkchain/core/meta"
 //)
 //
 //type twoOperandTest struct {

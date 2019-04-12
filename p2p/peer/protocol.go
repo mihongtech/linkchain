@@ -3,8 +3,8 @@ package peer
 import (
 	_ "fmt"
 
-	"github.com/linkchain/p2p/discover"
-	"github.com/linkchain/p2p/message"
+	"github.com/mihongtech/linkchain/p2p/discover"
+	"github.com/mihongtech/linkchain/p2p/message"
 )
 
 // Protocol represents a P2P subprotocol implementation.

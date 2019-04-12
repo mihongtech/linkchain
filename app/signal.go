@@ -5,7 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/common/util/log"
 )
 
 // shutdownRequestChannel is used to initiate shutdown from one of the

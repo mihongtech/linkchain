@@ -5,9 +5,9 @@ import (
 	"hash"
 	"sync/atomic"
 
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/contract/vm/params"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/contract/vm/params"
 )
 
 // Config are the configuration options for the Interpreter

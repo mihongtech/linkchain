@@ -18,8 +18,8 @@ package vm
 
 import (
 	"fmt"
-	"github.com/linkchain/common"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/common"
+	"github.com/mihongtech/linkchain/core/meta"
 	"math/big"
 	"testing"
 )

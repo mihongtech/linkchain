@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/core/meta"
 
 	"github.com/davecgh/go-spew/spew"
 )

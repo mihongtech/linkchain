@@ -12,7 +12,7 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/linkchain/common/btcec"
+	"github.com/mihongtech/linkchain/common/btcec"
 )
 
 var (

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/linkchain/common/util/log"
-	_ "github.com/linkchain/contract"
-	"github.com/linkchain/core"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/common/util/log"
+	_ "github.com/mihongtech/linkchain/contract"
+	"github.com/mihongtech/linkchain/core"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 // WaitMined waits for tx to be mined on the blockchain.

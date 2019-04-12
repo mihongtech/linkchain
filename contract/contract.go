@@ -1,11 +1,11 @@
 package contract
 
 import (
-	"github.com/linkchain/config"
-	"github.com/linkchain/contract/vm"
-	"github.com/linkchain/core"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/normal"
+	"github.com/mihongtech/linkchain/config"
+	"github.com/mihongtech/linkchain/contract/vm"
+	"github.com/mihongtech/linkchain/core"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/normal"
 )
 
 type Input struct {

@@ -1,10 +1,10 @@
 package sync
 
 import (
-	"github.com/linkchain/app/context"
-	"github.com/linkchain/node"
-	p2p_peer "github.com/linkchain/p2p/peer"
-	"github.com/linkchain/sync/full"
+	"github.com/mihongtech/linkchain/app/context"
+	"github.com/mihongtech/linkchain/node"
+	p2p_peer "github.com/mihongtech/linkchain/p2p/peer"
+	"github.com/mihongtech/linkchain/sync/full"
 )
 
 var ()

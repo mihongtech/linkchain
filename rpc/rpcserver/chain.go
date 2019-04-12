@@ -1,8 +1,8 @@
 package rpcserver
 
 import (
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/rpc/rpcobject"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/rpc/rpcobject"
 )
 
 func getBlockChainInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {

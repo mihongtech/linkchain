@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/common/util/log"
 
-	"github.com/linkchain/rpc/rpcobject"
+	"github.com/mihongtech/linkchain/rpc/rpcobject"
 	"github.com/spf13/cobra"
 )
 

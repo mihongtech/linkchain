@@ -10,9 +10,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/linkchain/common/util/event"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/common/util/event"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 const (

@@ -20,8 +20,8 @@ package accounts
 import (
 	"math/big"
 
-	"github.com/linkchain/common/util/event"
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/common/util/event"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 // Account represents an Ethereum account located at a specific location defined

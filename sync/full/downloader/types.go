@@ -3,7 +3,7 @@ package downloader
 import (
 	"fmt"
 
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 // peerDropFn is a callback type for dropping a peer detected as malicious.

@@ -5,7 +5,7 @@ import (
 
 	"fmt"
 
-	"github.com/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/math"
 )
 
 func TestSample(t *testing.T) {

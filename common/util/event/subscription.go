@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/linkchain/common/util/mclock"
+	"github.com/mihongtech/linkchain/common/util/mclock"
 )
 
 // Subscription represents a stream of events. The carrier of the events is typically a

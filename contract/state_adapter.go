@@ -6,13 +6,13 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/config"
-	"github.com/linkchain/contract/vm/params"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/helper"
-	"github.com/linkchain/storage/state"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/config"
+	"github.com/mihongtech/linkchain/contract/vm/params"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/helper"
+	"github.com/mihongtech/linkchain/storage/state"
 )
 
 type BalanceChange struct {

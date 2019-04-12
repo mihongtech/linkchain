@@ -17,9 +17,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/linkchain/common"
-	"github.com/linkchain/common/math"
-	"github.com/linkchain/p2p/crypto"
+	"github.com/mihongtech/linkchain/common"
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/p2p/crypto"
 
 	"github.com/davecgh/go-spew/spew"
 )

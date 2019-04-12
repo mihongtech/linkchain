@@ -5,9 +5,9 @@ import (
 	_ "io"
 	_ "math/big"
 
-	"github.com/linkchain/common/serialize"
-	"github.com/linkchain/core/meta"
-	"github.com/linkchain/protobuf"
+	"github.com/mihongtech/linkchain/common/serialize"
+	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/protobuf"
 )
 
 // Constants to match up protocol versions and messages

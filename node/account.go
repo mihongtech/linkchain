@@ -3,7 +3,7 @@ package node
 import (
 	"errors"
 
-	"github.com/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 func (n *Node) initAccountManager() {
