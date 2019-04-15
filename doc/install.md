@@ -25,7 +25,8 @@ source ~/.bash_profile
 
 ```bash
 go get -u github.com/golang/dep/cmd/dep
-
+or
+curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 ```
 
 ### Install the binaries
@@ -34,7 +35,7 @@ Next, let's download the latest version of linkchain. Here we'll use the `master
 
 ```bash
 mkdir -p $GOPATH/src/github.com/mihongtech/
-cd $GOPATH/src/github.com/
+cd $GOPATH/src/github.com/mihongtech/
 git clone https://github.com/mihongtech/linkchain.git
 cd linkchain && git checkout master
 dep ensure -v
