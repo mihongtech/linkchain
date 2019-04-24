@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+	"sync/atomic"
 	"time"
 
 	"github.com/mihongtech/linkchain/common/math"
@@ -15,9 +16,14 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+const (
+	BlockSizeLimit = 2 * 1024 * 1024 * 8 // 2MB
+)
+
 type Block struct {
 	Header BlockHeader   `json:"header"`
 	TXs    []Transaction `json:"txs"`
+	size   atomic.Value  // Cache the size of the block
 }
 
 func NewBlock(header BlockHeader, txs []Transaction) *Block {
@@ -139,6 +145,34 @@ func (b *Block) CalculateTxTreeRoot() TreeID {
 
 func (b *Block) IsGensis() bool {
 	return b.Header.IsGensis()
+}
+
+// get block size
+func (b *Block) Size() (int, error) {
+	size := b.size.Load().(int)
+	if size > 0 {
+		return size, nil
+	}
+	buffer, err := proto.Marshal(b.Serialize())
+	if err != nil {
+		log.Error("Block Size()", "error", err.Error())
+		return 0, err
+	}
+	size = len(buffer)
+	b.size.Store(size)
+	return size, nil
+}
+
+func (b *Block) Verify() error {
+	// verify block size
+	size, err := b.Size()
+	if err != nil {
+		return err
+	}
+	if size > BlockSizeLimit {
+		return errors.New("oversized block")
+	}
+	return nil
 }
 
 type BlockHeader struct {

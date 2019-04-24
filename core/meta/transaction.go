@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"sync/atomic"
 
 	"github.com/mihongtech/linkchain/common/btcec"
 	"github.com/mihongtech/linkchain/common/math"
@@ -12,6 +13,10 @@ import (
 	"github.com/mihongtech/linkchain/protobuf"
 
 	"github.com/golang/protobuf/proto"
+)
+
+const (
+	TransactionSizeLimit = 100 * 1024 * 8 // 100KB
 )
 
 type Ticket struct {
@@ -353,6 +358,8 @@ type Transaction struct {
 	Data []byte `json:"data"`
 
 	txid TxID
+
+	size atomic.Value // Cache of the transaction size
 }
 
 func NewTransaction(version uint32, txtype uint32, from TransactionFrom, to TransactionTo, sign []Signature, data []byte) *Transaction {
@@ -449,6 +456,15 @@ func (tx *Transaction) GetToValue() *Amount {
 }
 
 func (tx *Transaction) Verify() error {
+	// verify transaction size
+	size, err := tx.Size()
+	if err != nil {
+		return err
+	}
+	if size > TransactionSizeLimit {
+		return errors.New("oversized transaction")
+	}
+
 	if len(tx.From.Coins) != len(tx.Sign) {
 		return errors.New("tx from count must be equal to sign count in tx verify")
 	}
@@ -558,6 +574,22 @@ func (tx *Transaction) String() string {
 		return err.Error()
 	}
 	return string(data)
+}
+
+// get transaction size
+func (tx *Transaction) Size() (int, error) {
+	size := tx.size.Load().(int)
+	if size > 0 {
+		return size, nil
+	}
+	buffer, err := proto.Marshal(tx.Serialize())
+	if err != nil {
+		log.Error("Transaction Size()", "error", err.Error())
+		return 0, err
+	}
+	size = len(buffer)
+	tx.size.Store(size)
+	return size, nil
 }
 
 func TxDifference(a, b []Transaction) (keep []Transaction) {
