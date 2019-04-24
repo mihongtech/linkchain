@@ -578,16 +578,16 @@ func (tx *Transaction) String() string {
 
 // get transaction size
 func (tx *Transaction) Size() (int, error) {
-	size := tx.size.Load().(int)
-	if size > 0 {
-		return size, nil
+	s := tx.size.Load()
+	if s != nil {
+		return s.(int), nil
 	}
 	buffer, err := proto.Marshal(tx.Serialize())
 	if err != nil {
 		log.Error("Transaction Size()", "error", err.Error())
 		return 0, err
 	}
-	size = len(buffer)
+	size := len(buffer)
 	tx.size.Store(size)
 	return size, nil
 }

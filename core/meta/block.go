@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	BlockSizeLimit = 2 * 1024 * 1024 * 8 // 2MB
+	BlockSizeLimit = 2 * 1024 * 1024 * 8 // block size limit. 2MB
 )
 
 type Block struct {
@@ -149,16 +149,16 @@ func (b *Block) IsGensis() bool {
 
 // get block size
 func (b *Block) Size() (int, error) {
-	size := b.size.Load().(int)
-	if size > 0 {
-		return size, nil
+	s := b.size.Load()
+	if s != nil {
+		return s.(int), nil
 	}
 	buffer, err := proto.Marshal(b.Serialize())
 	if err != nil {
 		log.Error("Block Size()", "error", err.Error())
 		return 0, err
 	}
-	size = len(buffer)
+	size := len(buffer)
 	b.size.Store(size)
 	return size, nil
 }
@@ -172,6 +172,7 @@ func (b *Block) Verify() error {
 	if size > BlockSizeLimit {
 		return errors.New("oversized block")
 	}
+
 	return nil
 }
 
