@@ -367,6 +367,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if err = pm.txPoolAPI.ProcessTx(transaction); err != nil {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
+		pm.BroadcastTx(*transaction.GetTxID(), transaction)
 		//		for _, t := range pm.txmanager.getAllTransaction() {
 		//			log.Debug("all txs is", "tx", t)
 		//		}
