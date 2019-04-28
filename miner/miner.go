@@ -12,12 +12,14 @@ import (
 	"github.com/mihongtech/linkchain/helper"
 	"github.com/mihongtech/linkchain/interpreter"
 	"github.com/mihongtech/linkchain/node"
+	"github.com/mihongtech/linkchain/txpool"
 )
 
 type Miner struct {
 	nodeAPI   *node.PublicNodeAPI
 	executor  interpreter.Executor
 	walletAPI interpreter.Wallet
+	txPoolAPI *txpool.TxPool
 	isMining  bool
 	minerMtx  sync.Mutex
 }
@@ -28,6 +30,7 @@ func NewMiner() *Miner {
 func (m *Miner) Setup(i interface{}) bool {
 	m.nodeAPI = i.(*context.Context).NodeAPI.(*node.PublicNodeAPI)
 	m.walletAPI = i.(*context.Context).WalletAPI
+	m.txPoolAPI = i.(*context.Context).TxpoolAPI.(*txpool.TxPool)
 	m.executor = i.(*context.Context).InterpreterAPI
 	return true
 }
@@ -56,7 +59,7 @@ func (m *Miner) MineBlock() (*meta.Block, error) {
 	coinbase := helper.CreateCoinBaseTx(*signerId, meta.NewAmount(config.DefaultBlockReward), block.GetHeight())
 	block.SetTx(*coinbase)
 
-	txs := m.nodeAPI.GetAllTransaction()
+	txs := m.txPoolAPI.GetAllTransaction()
 	txs = m.executor.ChooseTransaction(txs, best, m.nodeAPI.GetOffChain(), m.walletAPI, signerId)
 	block.SetTx(txs...)
 
@@ -177,7 +180,7 @@ func (m *Miner) getMineBlock() (*meta.AccountID, error) {
 
 func (m *Miner) removeBlockTxs(block *meta.Block) {
 	for index := range block.TXs {
-		m.nodeAPI.RemoveTransaction(*block.TXs[index].GetTxID())
+		m.txPoolAPI.RemoveTransaction(*block.TXs[index].GetTxID())
 	}
 }
 

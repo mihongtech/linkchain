@@ -7,6 +7,7 @@ import (
 	"github.com/mihongtech/linkchain/node"
 	"github.com/mihongtech/linkchain/p2p"
 	"github.com/mihongtech/linkchain/rpc/rpcobject"
+	"github.com/mihongtech/linkchain/txpool"
 	"github.com/mihongtech/linkchain/wallet"
 )
 
@@ -94,4 +95,8 @@ func GetMinerAPI(s *Server) *miner.Miner {
 
 func GetWalletAPI(s *Server) *wallet.Wallet {
 	return s.appContext.WalletAPI.(*wallet.Wallet)
+}
+
+func GetTxpoolAPI(s *Server) *txpool.TxPool {
+	return s.appContext.TxpoolAPI.(*txpool.TxPool)
 }

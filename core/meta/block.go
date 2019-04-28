@@ -164,7 +164,15 @@ func (b *Block) Size() (int, error) {
 }
 
 func (b *Block) Verify() error {
-	// verify block size
+	if err := b.VerifySize(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// verify block size
+func (b *Block) VerifySize() error {
 	size, err := b.Size()
 	if err != nil {
 		return err
@@ -172,7 +180,6 @@ func (b *Block) Verify() error {
 	if size > BlockSizeLimit {
 		return errors.New("oversized block")
 	}
-
 	return nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"github.com/mihongtech/linkchain/node"
 	p2p_peer "github.com/mihongtech/linkchain/p2p/peer"
 	"github.com/mihongtech/linkchain/sync/full"
+	"github.com/mihongtech/linkchain/txpool"
 )
 
 var ()
@@ -16,8 +17,9 @@ type Service struct {
 func (s *Service) Setup(i interface{}) bool {
 	//log.Info("sync service init...");
 	nodeAPI := i.(*context.Context).NodeAPI.(*node.PublicNodeAPI)
+	txPoolAPI := i.(*context.Context).TxpoolAPI.(*txpool.TxPool)
 	engine, err := full.NewProtocolManager(i,
-		nodeAPI, 0, nodeAPI.GetBlockEvent(), nodeAPI.GetTxEvent())
+		nodeAPI, txPoolAPI, 0, nodeAPI.GetBlockEvent(), nodeAPI.GetTxEvent())
 	if err != nil {
 		return false
 	}

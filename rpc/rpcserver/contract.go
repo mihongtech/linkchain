@@ -3,7 +3,6 @@ package rpcserver
 import (
 	"errors"
 	"fmt"
-	"github.com/mihongtech/linkchain/contract"
 	"math/big"
 	"reflect"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"github.com/mihongtech/linkchain/common/hexutil"
 	"github.com/mihongtech/linkchain/common/math"
 	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/contract"
 	"github.com/mihongtech/linkchain/contract/vm"
 	"github.com/mihongtech/linkchain/core"
 	"github.com/mihongtech/linkchain/core/meta"
@@ -68,7 +68,7 @@ func publishContract(s *Server, cmd interface{}, closeChan <-chan struct{}) (int
 		return nil, err
 	}
 
-	if err = GetNodeAPI(s).ProcessTx(transaction); err == nil {
+	if err = GetTxpoolAPI(s).ProcessTx(transaction); err == nil {
 		GetNodeAPI(s).GetTxEvent().Send(node.TxEvent{transaction})
 	}
 
@@ -146,7 +146,7 @@ func callContract(s *Server, cmd interface{}, closeChan <-chan struct{}) (interf
 		return nil, err
 	}
 
-	if err = GetNodeAPI(s).ProcessTx(transaction); err == nil {
+	if err = GetTxpoolAPI(s).ProcessTx(transaction); err == nil {
 		GetNodeAPI(s).GetTxEvent().Send(node.TxEvent{transaction})
 	}
 

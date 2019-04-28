@@ -25,9 +25,6 @@ var (
 )
 
 type Node struct {
-	//transaction
-	txPool *TxPool
-
 	//account state
 	accountMtx sync.RWMutex
 
@@ -48,6 +45,7 @@ type Node struct {
 	//event
 	newBlockEvent   *event.TypeMux
 	newAccountEvent *event.TypeMux
+	txPoolEvent     *event.TypeMux
 	newTxEvent      *event.Feed
 
 	// offchain
@@ -69,6 +67,7 @@ func (n *Node) Setup(i interface{}) bool {
 
 	n.newBlockEvent = new(event.TypeMux)
 	n.newAccountEvent = new(event.TypeMux)
+	n.txPoolEvent = new(event.TypeMux)
 	n.newTxEvent = new(event.Feed)
 	n.mapBlockIndexByHash = make(map[math.Hash]meta.Block)
 
@@ -95,9 +94,6 @@ func (n *Node) Setup(i interface{}) bool {
 	}
 
 	n.offchain.Setup(i)
-
-	n.txPool = NewTxPool(n.validatorAPI)
-	n.txPool.SetUp(i)
 
 	return true
 }
@@ -139,9 +135,6 @@ func (n *Node) Start() bool {
 	if !n.offchain.Start() {
 		return false
 	}
-	if !n.txPool.Start() {
-		return false
-	}
 
 	go n.updateState()
 	return true
@@ -152,8 +145,8 @@ func (n *Node) updateState() {
 		select {
 		case ev := <-n.MainChainCh:
 			n.offchain.UpdateMainChain(ev)
-			n.txPool.MainChainCh <- ev
 			n.newAccountEvent.Post(AccountEvent{IsUpdate: true})
+			n.txPoolEvent.Post(InsertBlockEvent{Block: ev.Block})
 		case ev := <-n.SideChainCh:
 			n.offchain.UpdateSideChain(ev)
 		}
@@ -162,7 +155,6 @@ func (n *Node) updateState() {
 func (n *Node) Stop() {
 	log.Info("Stop node...")
 	n.offchain.Stop()
-	n.txPool.Stop()
 }
 
 //func (n *Node) getBlockEvent() *event.TypeMux {

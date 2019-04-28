@@ -45,6 +45,10 @@ func (a *PublicNodeAPI) GetAccountEvent() *event.TypeMux {
 	return a.n.newAccountEvent
 }
 
+func (a *PublicNodeAPI) GetTxPoolEvent() *event.TypeMux {
+	return a.n.txPoolEvent
+}
+
 func (a *PublicNodeAPI) GetTxEvent() *event.Feed {
 	return a.n.newTxEvent
 }
@@ -91,6 +95,11 @@ func (a *PublicNodeAPI) GetAccount(id meta.AccountID) (meta.Account, error) {
 	return a.n.getAccount(id)
 }
 
+// tx
+func (a *PublicNodeAPI) GetTXByID(hash meta.TxID) (*meta.Transaction, math.Hash, uint64, uint64) {
+	return a.n.getTxByID(hash)
+}
+
 //chain
 func (a *PublicNodeAPI) GetBlockChainInfo() interface{} {
 	// TODO: implement me
@@ -100,31 +109,6 @@ func (a *PublicNodeAPI) GetBlockChainInfo() interface{} {
 		BestHash:   block.GetBlockID().GetString(),
 		ChainId:    int(a.n.blockchain.GetChainID().Int64())}
 	return info
-}
-
-//tx
-
-func (a *PublicNodeAPI) GetAllTransaction() []meta.Transaction {
-	return a.n.getAllTransaction()
-}
-
-func (a *PublicNodeAPI) AddTransaction(tx *meta.Transaction) error {
-	return a.n.addTransaction(tx)
-}
-
-func (a *PublicNodeAPI) RemoveTransaction(id meta.TxID) error {
-	return a.n.removeTransaction(id)
-}
-func (a *PublicNodeAPI) ProcessTx(tx *meta.Transaction) error {
-	return a.n.processTx(tx)
-}
-
-func (a *PublicNodeAPI) CheckTx(tx *meta.Transaction) error {
-	return a.n.checkTx(tx)
-}
-
-func (a *PublicNodeAPI) GetTXByID(hash meta.TxID) (*meta.Transaction, math.Hash, uint64, uint64) {
-	return a.n.getTxByID(hash)
 }
 
 //offchain

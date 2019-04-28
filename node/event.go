@@ -13,3 +13,7 @@ type TxEvent struct {
 type AccountEvent struct {
 	IsUpdate bool
 }
+
+type InsertBlockEvent struct {
+	Block *meta.Block
+}
