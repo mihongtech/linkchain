@@ -20,6 +20,10 @@ const (
 	BlockSizeLimit = 2 * 1024 * 1024 * 8 // block size limit. 2MB
 )
 
+var (
+	BlockOversizeErr = errors.New("block oversized")
+)
+
 type Block struct {
 	Header BlockHeader   `json:"header"`
 	TXs    []Transaction `json:"txs"`
@@ -43,6 +47,12 @@ func (b *Block) SetTx(newTXs ...Transaction) error {
 	}
 	b.Header.SetMerkleRoot(b.CalculateTxTreeRoot()) //calculate merkle root
 
+	return nil
+}
+
+func (b *Block) RemoveLastTx() error {
+	b.TXs = b.TXs[0 : len(b.TXs)-1]
+	b.Header.SetMerkleRoot(b.CalculateTxTreeRoot()) //calculate merkle root
 	return nil
 }
 
@@ -178,7 +188,7 @@ func (b *Block) VerifySize() error {
 		return err
 	}
 	if size > BlockSizeLimit {
-		return errors.New("oversized block")
+		return BlockOversizeErr
 	}
 	return nil
 }
