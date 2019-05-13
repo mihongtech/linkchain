@@ -3,9 +3,6 @@ package miner
 import (
 	"container/heap"
 	"errors"
-	"sync"
-	"time"
-
 	"github.com/mihongtech/linkchain/app/context"
 	"github.com/mihongtech/linkchain/common/util/log"
 	"github.com/mihongtech/linkchain/config"
@@ -14,6 +11,8 @@ import (
 	"github.com/mihongtech/linkchain/interpreter"
 	"github.com/mihongtech/linkchain/node"
 	"github.com/mihongtech/linkchain/txpool"
+	"sync"
+	"time"
 )
 
 type Miner struct {
@@ -57,6 +56,12 @@ func (m *Miner) MineBlock() (*meta.Block, error) {
 		return nil, err
 	}
 
+	difficulty, err := m.nodeAPI.CalcNextRequiredDifficulty()
+	if err != nil {
+		m.removeBlockTxs(block)
+		return nil, err
+	}
+
 	coinbase := helper.CreateCoinBaseTx(*signerId, meta.NewAmount(config.DefaultBlockReward), block.GetHeight())
 	block.SetTx(*coinbase)
 
@@ -74,6 +79,28 @@ func (m *Miner) MineBlock() (*meta.Block, error) {
 
 	err = m.generateValidBlock(tq, block, signerId, false)
 	if err != nil {
+		m.removeBlockTxs(block)
+		return nil, err
+	}
+
+	for extraNonce := uint32(0); extraNonce < ^uint32(0); extraNonce++ {
+		block.Header.Nonce = extraNonce
+		err := block.Deserialize(block.Serialize())
+		if err != nil {
+			return nil, err
+		}
+		if node.HashToBig(block.GetBlockID()).Cmp(node.CompactToBig(difficulty)) < 0 {
+			block.Header.Difficulty = difficulty
+			block.Header.Time = time.Now()
+			break
+		}
+	}
+
+	err = m.signBlock(*signerId, block)
+	log.Debug("Miner", "signer", signerId.String())
+	if err != nil {
+		log.Error("Miner", "sign Block status error", err)
+		m.removeBlockTxs(block)
 		return nil, err
 	}
 
@@ -112,7 +139,7 @@ func (m *Miner) StartMine() error {
 			break
 		}
 		m.MineBlock()
-		time.Sleep(time.Duration(config.DefaultPeriod) * time.Second)
+		//time.Sleep(time.Duration(config.DefaultPeriod) * time.Second)
 	}
 	return nil
 }
@@ -206,14 +233,6 @@ func (m *Miner) generateValidBlock(tq TxDescQueue, block *meta.Block, signerId *
 	block, err = helper.RebuildBlock(block)
 	if err != nil {
 		log.Error("Miner", "Rebuild Block error", err)
-		m.removeBlockTxs(block)
-		return err
-	}
-
-	err = m.signBlock(*signerId, block)
-	log.Debug("Miner", "signer", signerId.String())
-	if err != nil {
-		log.Error("Miner", "sign Block status error", err)
 		m.removeBlockTxs(block)
 		return err
 	}

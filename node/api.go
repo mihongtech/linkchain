@@ -164,3 +164,7 @@ func (a *PublicNodeAPI) GetReceiptsByHash(hash math.Hash) core.Receipts {
 func (a *PublicNodeAPI) ExecuteBlock(block *meta.Block) (error, []interpreter.Result, math.Hash, *meta.Amount) {
 	return a.n.blockchain.executeBlock(block)
 }
+
+func (a *PublicNodeAPI) CalcNextRequiredDifficulty() (uint32, error) {
+	return a.n.CalcNextRequiredDifficulty()
+}
