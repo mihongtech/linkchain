@@ -3,6 +3,9 @@ package miner
 import (
 	"container/heap"
 	"errors"
+	"sync"
+	"time"
+
 	"github.com/mihongtech/linkchain/app/context"
 	"github.com/mihongtech/linkchain/common/util/log"
 	"github.com/mihongtech/linkchain/config"
@@ -11,8 +14,6 @@ import (
 	"github.com/mihongtech/linkchain/interpreter"
 	"github.com/mihongtech/linkchain/node"
 	"github.com/mihongtech/linkchain/txpool"
-	"sync"
-	"time"
 )
 
 type Miner struct {
@@ -61,6 +62,7 @@ func (m *Miner) MineBlock() (*meta.Block, error) {
 		m.removeBlockTxs(block)
 		return nil, err
 	}
+	block.Header.Difficulty = difficulty
 
 	coinbase := helper.CreateCoinBaseTx(*signerId, meta.NewAmount(config.DefaultBlockReward), block.GetHeight())
 	block.SetTx(*coinbase)
@@ -84,14 +86,13 @@ func (m *Miner) MineBlock() (*meta.Block, error) {
 	}
 
 	for extraNonce := uint32(0); extraNonce < ^uint32(0); extraNonce++ {
+		block.Header.Time = time.Now()
 		block.Header.Nonce = extraNonce
 		err := block.Deserialize(block.Serialize())
 		if err != nil {
 			return nil, err
 		}
 		if node.HashToBig(block.GetBlockID()).Cmp(node.CompactToBig(difficulty)) < 0 {
-			block.Header.Difficulty = difficulty
-			block.Header.Time = time.Now()
 			break
 		}
 	}

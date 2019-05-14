@@ -1,10 +1,13 @@
 package node
 
 import (
-	"github.com/mihongtech/linkchain/common/math"
-	"github.com/mihongtech/linkchain/config"
+	"errors"
 	"math/big"
 	"time"
+
+	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/config"
+	"github.com/mihongtech/linkchain/core/meta"
 )
 
 // HashToBig converts a chainhash.Hash into a big.Int that can be used to
@@ -114,30 +117,50 @@ func BigToCompact(n *big.Int) uint32 {
 	return compact
 }
 
+// calcEasiestDifficulty calculates the easiest possible difficulty that a block
+// can have given starting difficulty bits and a duration.  It is mainly used to
+// verify that claimed proof of work by a block is sane as compared to a
+// known good checkpoint.
+func (bc *BlockChain) calcEasiestDifficulty(block *meta.Block) (uint32, error) {
+	prevBlock, err := bc.GetBlockByID(*block.GetPrevBlockID())
+	if err != nil {
+		return 0, err
+	}
+	if prevBlock == nil {
+		return 0, errors.New("parent block not found")
+	}
+
+	return bc.calcDifficulty(prevBlock)
+}
+
 // calcNextRequiredDifficulty calculates the required difficulty for the block
 // after the passed previous block node based on the difficulty retarget rules.
 // This function differs from the exported CalcNextRequiredDifficulty in that
 // the exported version uses the current best chain as the previous block node
 // while this function accepts any block node.
-func (n *Node) CalcNextRequiredDifficulty() (uint32, error) {
-	bestBlock, err := n.blockchain.GetBlockByID(n.blockchain.currentBlockHash)
+func (bc *BlockChain) CalcNextRequiredDifficulty() (uint32, error) {
+	bestBlock, err := bc.GetBlockByID(bc.currentBlockHash)
 	if err != nil {
 		return 0, err
 	}
 
+	return bc.calcDifficulty(bestBlock)
+}
+
+func (bc *BlockChain) calcDifficulty(block *meta.Block) (uint32, error) {
 	// Genesis block.
-	if bestBlock.IsGensis() {
-		return bestBlock.Header.Difficulty, nil
+	if block.IsGensis() {
+		return block.Header.Difficulty, nil
 	}
 
-	prevBlock, err := n.blockchain.GetBlockByID(bestBlock.Header.Prev)
+	prevBlock, err := bc.GetBlockByID(block.Header.Prev)
 	if err != nil {
 		return 0, err
 	}
 
 	// Limit the amount of adjustment that can occur to the previous
 	// difficulty.
-	actualTimespan := bestBlock.GetTime().Sub(prevBlock.GetTime())
+	actualTimespan := block.GetTime().Sub(prevBlock.GetTime())
 	adjustedTimespan := actualTimespan
 	if actualTimespan < config.MinTimespan {
 		adjustedTimespan = config.MinTimespan
@@ -150,7 +173,7 @@ func (n *Node) CalcNextRequiredDifficulty() (uint32, error) {
 	// The result uses integer division which means it will be slightly
 	// rounded down.  Bitcoind also uses integer division to calculate this
 	// result.
-	oldTarget := CompactToBig(bestBlock.Header.Difficulty)
+	oldTarget := CompactToBig(block.Header.Difficulty)
 	newTarget := new(big.Int).Mul(oldTarget, big.NewInt(int64(adjustedTimespan/time.Second)))
 	targetTimeSpan := int64(config.TargetTimespan / time.Second)
 	newTarget.Div(newTarget, big.NewInt(targetTimeSpan))

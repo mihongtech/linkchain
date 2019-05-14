@@ -2,6 +2,7 @@ package node
 
 import (
 	"errors"
+
 	"github.com/mihongtech/linkchain/common/math"
 	"github.com/mihongtech/linkchain/common/util/event"
 	"github.com/mihongtech/linkchain/common/util/log"
@@ -166,5 +167,5 @@ func (a *PublicNodeAPI) ExecuteBlock(block *meta.Block) (error, []interpreter.Re
 }
 
 func (a *PublicNodeAPI) CalcNextRequiredDifficulty() (uint32, error) {
-	return a.n.CalcNextRequiredDifficulty()
+	return a.n.blockchain.CalcNextRequiredDifficulty()
 }

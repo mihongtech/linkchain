@@ -3,7 +3,6 @@ package node
 import (
 	"errors"
 	"fmt"
-	"github.com/mihongtech/linkchain/interpreter"
 	"math/big"
 	"sync"
 	"sync/atomic"
@@ -19,6 +18,7 @@ import (
 	"github.com/mihongtech/linkchain/consensus"
 	"github.com/mihongtech/linkchain/core"
 	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/interpreter"
 	"github.com/mihongtech/linkchain/normal"
 	"github.com/mihongtech/linkchain/storage"
 	"github.com/mihongtech/linkchain/storage/state"
@@ -720,7 +720,16 @@ func (bc *BlockChain) insertChain(chain *meta.Block) ([]interface{}, error) {
 		lastCanon *meta.Block
 	)
 
-	err := bc.validator.ValidateBlockHeader(bc.engine, bc, chain)
+	// validate block difficulty
+	difficulty, err := bc.calcEasiestDifficulty(chain)
+	if err != nil {
+		return events, err
+	}
+	if CompactToBig(difficulty).Cmp(CompactToBig(chain.Header.Difficulty)) < 0 {
+		return events, errors.New("block target difficulty is too low")
+	}
+
+	err = bc.validator.ValidateBlockHeader(bc.engine, bc, chain)
 	if err != nil {
 		return events, err
 	}
