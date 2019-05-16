@@ -444,32 +444,32 @@ func (s *StateAdapter) GetResultTransaction() (meta.Transaction, error) {
 	//CoinBase
 	contractTx := helper.CreateTempleteTx(config.DefaultTransactionVersion, ContractResultTx)
 
-	subBalance := make(map[meta.AccountID]int64)
-	subSum := int64(0)
-	addBalance := make(map[meta.AccountID]int64)
-	addSum := int64(0)
+	subBalance := make(map[meta.AccountID]*big.Int)
+	subSum := big.NewInt(0)
+	addBalance := make(map[meta.AccountID]*big.Int)
+	addSum := big.NewInt(0)
 	for _, transfer := range s.transfers {
 		switch transfer.Code {
 		case params.CoinBase:
-			addBalance[*transfer.to] += transfer.value.Int64()
-			addSum += transfer.value.Int64()
+			addBalance[*transfer.to] = new(big.Int).Add(addBalance[*transfer.to], transfer.value)
+			addSum = new(big.Int).Add(addSum, transfer.value)
 		case params.AddZero:
 		case params.Refund:
-			addBalance[*transfer.to] += transfer.value.Int64()
-			addSum += transfer.value.Int64()
+			addBalance[*transfer.to] = new(big.Int).Add(addBalance[*transfer.to], transfer.value)
+			addSum = new(big.Int).Add(addSum, transfer.value)
 		case params.BuyGas:
-			subBalance[*transfer.from] += transfer.value.Int64()
-			subSum += transfer.value.Int64()
+			subBalance[*transfer.from] = new(big.Int).Add(subBalance[*transfer.from], transfer.value)
+			subSum = new(big.Int).Add(subSum, transfer.value)
 		case params.Suicide:
-			subBalance[*transfer.from] += transfer.value.Int64()
-			subSum += transfer.value.Int64()
-			addBalance[*transfer.to] += transfer.value.Int64()
-			addSum += transfer.value.Int64()
+			subBalance[*transfer.from] = new(big.Int).Add(subBalance[*transfer.from], transfer.value)
+			subSum = new(big.Int).Add(subSum, transfer.value)
+			addBalance[*transfer.to] = new(big.Int).Add(addBalance[*transfer.to], transfer.value)
+			addSum = new(big.Int).Add(addSum, transfer.value)
 		case params.Normal:
-			subBalance[*transfer.from] += transfer.value.Int64()
-			subSum += transfer.value.Int64()
-			addBalance[*transfer.to] += transfer.value.Int64()
-			addSum += transfer.value.Int64()
+			subBalance[*transfer.from] = new(big.Int).Add(subBalance[*transfer.from], transfer.value)
+			subSum = new(big.Int).Add(subSum, transfer.value)
+			addBalance[*transfer.to] = new(big.Int).Add(addBalance[*transfer.to], transfer.value)
+			addSum = new(big.Int).Add(addSum, transfer.value)
 		}
 	}
 
@@ -479,7 +479,7 @@ func (s *StateAdapter) GetResultTransaction() (meta.Transaction, error) {
 		if obj != nil {
 			//make from
 			account := obj.GetAccount()
-			amount := meta.NewAmount(v)
+			amount := meta.NewAmount(v.Int64())
 			fc, fAmount, err := account.MakeFromCoin(amount, uint32(s.blockHeight))
 			if err != nil {
 				return *contractTx, err
@@ -495,7 +495,7 @@ func (s *StateAdapter) GetResultTransaction() (meta.Transaction, error) {
 
 	//make to
 	for k, v := range addBalance {
-		contractTx.SetTo(k, *meta.NewAmount(v))
+		contractTx.SetTo(k, *meta.NewAmount(v.Int64()))
 	}
 	helper.SortTransaction(contractTx)
 	log.Debug("state_adapter", "contract result tx", contractTx.String())
