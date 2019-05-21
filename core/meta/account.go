@@ -488,9 +488,14 @@ func (a *Account) MakeFromCoin(value *Amount, blockHeight uint32) (*FromCoin, *A
 		if blockHeight < v.EffectHeight {
 			continue
 		}
-		fromAmount.Addition(v.Value)
-		t := NewTicket(v.Txid, v.Index)
-		fc.AddTicket(t)
+		// if not enough add a ticket
+		if fromAmount.IsLessThan(*value) {
+			fromAmount.Addition(v.Value)
+			t := NewTicket(v.Txid, v.Index)
+			fc.AddTicket(t)
+		} else {
+			break
+		}
 	}
 	if len(fc.Ticket) == 0 || fromAmount.GetInt64() < value.GetInt64() {
 		log.Error("MakeFromCoin failed", "len(fc.Ticket)", len(fc.Ticket), "a.GetAmount().GetInt64()", a.GetAmount().GetInt64(), "value.GetInt64()", value.GetInt64())
