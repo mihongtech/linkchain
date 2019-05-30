@@ -13,6 +13,7 @@ import (
 	"github.com/mihongtech/linkchain/normal"
 	"github.com/mihongtech/linkchain/p2p"
 	"github.com/mihongtech/linkchain/rpc/rpcserver"
+	"github.com/mihongtech/linkchain/txpool"
 	"github.com/mihongtech/linkchain/wallet"
 )
 
@@ -22,6 +23,7 @@ var (
 	p2pSvc     *p2p.Service
 	minerSvc   *miner.Miner
 	walletSvc  *wallet.Wallet
+	txPoolSvc  *txpool.TxPool
 )
 
 func Setup(globalConfig *config.LinkChainConfig) bool {
@@ -36,6 +38,7 @@ func Setup(globalConfig *config.LinkChainConfig) bool {
 	//create service
 	nodeSvc = node.NewNode()
 
+	txPoolSvc = txpool.NewTxPool()
 	p2pSvc = p2p.NewP2P()
 	minerSvc = miner.NewMiner()
 	walletSvc = wallet.NewWallet()
@@ -47,6 +50,13 @@ func Setup(globalConfig *config.LinkChainConfig) bool {
 
 	//consensus api init
 	appContext.NodeAPI = node.NewPublicNodeAPI(nodeSvc)
+
+	//txpool init
+	if !txPoolSvc.Setup(&appContext) {
+		return false
+	}
+	//txPool api init
+	appContext.TxpoolAPI = txPoolSvc
 
 	//p2p init
 	if !p2pSvc.Setup(&appContext) {
@@ -76,6 +86,7 @@ func Setup(globalConfig *config.LinkChainConfig) bool {
 func Run() {
 	//start all service
 	nodeSvc.Start()
+	txPoolSvc.Start()
 	p2pSvc.Start()
 	walletSvc.Start()
 
@@ -94,6 +105,7 @@ func Stop() {
 	log.Info("Stopping app...")
 	walletSvc.Stop()
 	p2pSvc.Stop()
+	txPoolSvc.Stop()
 	nodeSvc.Stop()
 	log.Info("App exit")
 }

@@ -2,6 +2,7 @@ package config
 
 import (
 	"math/big"
+	"time"
 )
 
 const (
@@ -10,7 +11,7 @@ const (
 	ThirdPubMiner  = "56c5636befbe7cc23f5157c9278fca4e09109ffc"
 
 	DefaultBlockVersion       = 0x00000001 //the version of block.
-	DefaultDifficulty         = 0xffffffff //the default difficult.
+	DefaultDifficulty         = 0x1f00ffff //the default difficult.
 	DefaultNounce             = 0x00000000 //the default nounce of  block.
 	DefaultTransactionVersion = 0x00000001 //the version of transaction
 	DefaultBlockReward        = 5000000000 //the reward of mining a block
@@ -24,10 +25,22 @@ const (
 	NormalTx    = 0x00000001 //the normal tx
 
 	NormalAccount = 0x00000000 // the normal account
+
+	TargetTimespan = 10 * time.Second
+	MaxTimespan    = 1 * time.Minute
+	MinTimespan    = 5 * time.Second
+	PowLimitBits   = 0x0100ffff
+
+	BlockSizeLimit       = 2 * 1024 * 1024 * 8
+	TransactionSizeLimit = 100 * 1024 * 8
 )
 
 var (
 	SignMiners         = []string{FirstPubMiner, SecondPubMiner, ThirdPubMiner}
 	DefaultPeriod      = 15
 	DefaultChainConfig = &ChainConfig{big.NewInt(1337), uint64(DefaultPeriod)}
+
+	// PowLimit is the highest proof of work value a Bitcoin block can
+	// have for the main network.  It is the value 2^224 - 1.
+	PowLimit = new(big.Int).Sub(new(big.Int).Lsh(new(big.Int).SetInt64(0), 224), new(big.Int).SetInt64(0))
 )

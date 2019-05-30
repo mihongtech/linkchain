@@ -1,6 +1,7 @@
 package miner
 
 import (
+	"container/heap"
 	"errors"
 	"sync"
 	"time"
@@ -12,12 +13,14 @@ import (
 	"github.com/mihongtech/linkchain/helper"
 	"github.com/mihongtech/linkchain/interpreter"
 	"github.com/mihongtech/linkchain/node"
+	"github.com/mihongtech/linkchain/txpool"
 )
 
 type Miner struct {
 	nodeAPI   *node.PublicNodeAPI
 	executor  interpreter.Executor
 	walletAPI interpreter.Wallet
+	txPoolAPI *txpool.TxPool
 	isMining  bool
 	minerMtx  sync.Mutex
 }
@@ -28,6 +31,7 @@ func NewMiner() *Miner {
 func (m *Miner) Setup(i interface{}) bool {
 	m.nodeAPI = i.(*context.Context).NodeAPI.(*node.PublicNodeAPI)
 	m.walletAPI = i.(*context.Context).WalletAPI
+	m.txPoolAPI = i.(*context.Context).TxpoolAPI.(*txpool.TxPool)
 	m.executor = i.(*context.Context).InterpreterAPI
 	return true
 }
@@ -53,43 +57,44 @@ func (m *Miner) MineBlock() (*meta.Block, error) {
 		return nil, err
 	}
 
+	difficulty, err := m.nodeAPI.CalcNextRequiredDifficulty()
+	if err != nil {
+		m.removeBlockTxs(block)
+		return nil, err
+	}
+	block.Header.Difficulty = difficulty
+
 	coinbase := helper.CreateCoinBaseTx(*signerId, meta.NewAmount(config.DefaultBlockReward), block.GetHeight())
 	block.SetTx(*coinbase)
 
-	txs := m.nodeAPI.GetAllTransaction()
+	txs := m.txPoolAPI.GetAllTransaction()
 	txs = m.executor.ChooseTransaction(txs, best, m.nodeAPI.GetOffChain(), m.walletAPI, signerId)
-	block.SetTx(txs...)
 
-	if !IsBestBlockOffspring(m.nodeAPI, block) {
-		m.removeBlockTxs(block)
-		return nil, errors.New("current block is not block prev")
+	tq := make(TxDescQueue, 0)
+	for _, tx := range txs {
+		tq.Push(&TxDesc{
+			tx:  &tx,
+			fee: m.calcGasFee(&tx),
+		})
 	}
+	heap.Init(&tq)
 
-	//excute block status
-	err, results, rootStatus, txFee := m.nodeAPI.ExecuteBlock(block)
+	err = m.generateValidBlock(tq, block, signerId, false)
 	if err != nil {
-		log.Error("Miner", "update Block status error", err, "block", block.String())
 		m.removeBlockTxs(block)
 		return nil, err
 	}
 
-	if err := m.executor.ExecuteResult(results, txFee, block); err != nil {
-		m.removeBlockTxs(block)
-		return nil, err
-	}
-
-	if !IsBestBlockOffspring(m.nodeAPI, block) {
-		m.removeBlockTxs(block)
-		return nil, errors.New("current block is not block prev")
-	}
-
-	block.Header.Status = rootStatus
-
-	block, err = helper.RebuildBlock(block)
-	if err != nil {
-		log.Error("Miner", "Rebuild Block error", err)
-		m.removeBlockTxs(block)
-		return nil, err
+	for extraNonce := uint32(0); extraNonce < ^uint32(0); extraNonce++ {
+		block.Header.Time = time.Now()
+		block.Header.Nonce = extraNonce
+		err := block.Deserialize(block.Serialize())
+		if err != nil {
+			return nil, err
+		}
+		if node.HashToBig(block.GetBlockID()).Cmp(node.CompactToBig(difficulty)) < 0 {
+			break
+		}
 	}
 
 	err = m.signBlock(*signerId, block)
@@ -135,7 +140,7 @@ func (m *Miner) StartMine() error {
 			break
 		}
 		m.MineBlock()
-		time.Sleep(time.Duration(config.DefaultPeriod) * time.Second)
+		//time.Sleep(time.Duration(config.DefaultPeriod) * time.Second)
 	}
 	return nil
 }
@@ -177,10 +182,133 @@ func (m *Miner) getMineBlock() (*meta.AccountID, error) {
 
 func (m *Miner) removeBlockTxs(block *meta.Block) {
 	for index := range block.TXs {
-		m.nodeAPI.RemoveTransaction(*block.TXs[index].GetTxID())
+		m.txPoolAPI.RemoveTransaction(*block.TXs[index].GetTxID())
 	}
+}
+
+// choose transaction from txpool
+// ensure not oversized block size limit
+func (m *Miner) generateValidBlock(tq TxDescQueue, block *meta.Block, signerId *meta.AccountID, oversized bool) error {
+	// if prev generate block ovsized, remove last transaction
+	if oversized {
+		err := block.RemoveLastTx()
+		if err != nil {
+			return err
+		}
+	} else {
+		// if has transaction add a transaction
+		if tq.Len() > 0 {
+			txDesc := tq.Pop().(*TxDesc)
+			err := block.SetTx(*txDesc.tx)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if !IsBestBlockOffspring(m.nodeAPI, block) {
+		m.removeBlockTxs(block)
+		return errors.New("current block is not block prev")
+	}
+
+	//excute block status
+	err, results, rootStatus, txFee := m.nodeAPI.ExecuteBlock(block)
+	if err != nil {
+		log.Error("Miner", "update Block status error", err, "block", block.String())
+		m.removeBlockTxs(block)
+		return err
+	}
+
+	if err := m.executor.ExecuteResult(results, txFee, block); err != nil {
+		m.removeBlockTxs(block)
+		return err
+	}
+
+	if !IsBestBlockOffspring(m.nodeAPI, block) {
+		m.removeBlockTxs(block)
+		return errors.New("current block is not block prev")
+	}
+
+	block.Header.Status = rootStatus
+
+	block, err = helper.RebuildBlock(block)
+	if err != nil {
+		log.Error("Miner", "Rebuild Block error", err)
+		m.removeBlockTxs(block)
+		return err
+	}
+
+	// verify block size
+	err = block.VerifySize()
+	if err != nil {
+		// oversized error
+		if err == meta.BlockOversizeErr {
+			return m.generateValidBlock(tq, block, signerId, true)
+		} else {
+			return err
+		}
+	}
+
+	if oversized {
+		return nil
+	} else {
+		if tq.Len() > 0 {
+			return m.generateValidBlock(tq, block, signerId, false)
+		} else {
+			return nil
+		}
+	}
+
+}
+
+func (m *Miner) calcGasFee(tx *meta.Transaction) int64 {
+	if tx.Type == config.CoinBaseTx {
+		return 0
+	}
+	var inTotal int64
+	for _, coin := range tx.From.Coins {
+		for _, ticket := range coin.Ticket {
+			tx, _, _, _ := m.nodeAPI.GetTXByID(ticket.Txid)
+			inTotal += tx.To.Coins[ticket.Index].GetValue().GetInt64()
+		}
+	}
+	var toTotal int64
+	for _, coin := range tx.To.Coins {
+		toTotal += coin.GetValue().GetInt64()
+	}
+	return toTotal - inTotal
 }
 
 func IsBestBlockOffspring(nodeAPI *node.PublicNodeAPI, block *meta.Block) bool {
 	return block.GetPrevBlockID().IsEqual(nodeAPI.GetBestBlock().GetBlockID())
+}
+
+type TxDesc struct {
+	tx  *meta.Transaction
+	fee int64
+}
+
+type TxDescQueue []*TxDesc
+
+func (tq *TxDescQueue) Len() int {
+	return len(*tq)
+}
+
+func (tq *TxDescQueue) Less(i, j int) bool {
+	return (*tq)[i].fee < (*tq)[j].fee
+}
+
+func (tq *TxDescQueue) Swap(i, j int) {
+	(*tq)[i], (*tq)[j] = (*tq)[j], (*tq)[i]
+}
+
+func (tq *TxDescQueue) Push(x interface{}) {
+	*tq = append(*tq, x.(*TxDesc))
+}
+
+func (tq *TxDescQueue) Pop() interface{} {
+	n := len(*tq)
+	item := (*tq)[n-1]
+	*tq = (*tq)[0 : n-1]
+	return item
 }

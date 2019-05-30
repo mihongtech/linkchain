@@ -118,7 +118,7 @@ func sendMoneyTransaction(s *Server, cmd interface{}, closeChan <-chan struct{})
 		return nil, err
 	}
 
-	if err = GetNodeAPI(s).ProcessTx(transaction); err == nil {
+	if err = GetTxpoolAPI(s).ProcessTx(transaction); err == nil {
 		GetNodeAPI(s).GetTxEvent().Send(node.TxEvent{transaction})
 	}
 

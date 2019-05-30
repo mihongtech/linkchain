@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"sync/atomic"
 
 	"github.com/mihongtech/linkchain/common/btcec"
 	"github.com/mihongtech/linkchain/common/math"
@@ -353,6 +354,8 @@ type Transaction struct {
 	Data []byte `json:"data"`
 
 	txid TxID
+
+	size atomic.Value // Cache of the transaction size
 }
 
 func NewTransaction(version uint32, txtype uint32, from TransactionFrom, to TransactionTo, sign []Signature, data []byte) *Transaction {
@@ -558,6 +561,22 @@ func (tx *Transaction) String() string {
 		return err.Error()
 	}
 	return string(data)
+}
+
+// get transaction size
+func (tx *Transaction) Size() (int, error) {
+	s := tx.size.Load()
+	if s != nil {
+		return s.(int), nil
+	}
+	buffer, err := proto.Marshal(tx.Serialize())
+	if err != nil {
+		log.Error("Transaction Size()", "error", err.Error())
+		return 0, err
+	}
+	size := len(buffer)
+	tx.size.Store(size)
+	return size, nil
 }
 
 func TxDifference(a, b []Transaction) (keep []Transaction) {

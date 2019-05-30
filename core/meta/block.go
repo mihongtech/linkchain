@@ -4,20 +4,27 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+	"sync/atomic"
 	"time"
 
 	"github.com/mihongtech/linkchain/common/math"
 	"github.com/mihongtech/linkchain/common/serialize"
 	"github.com/mihongtech/linkchain/common/trie"
 	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/config"
 	"github.com/mihongtech/linkchain/protobuf"
 
 	"github.com/golang/protobuf/proto"
 )
 
+var (
+	BlockOversizeErr = errors.New("block oversized")
+)
+
 type Block struct {
 	Header BlockHeader   `json:"header"`
 	TXs    []Transaction `json:"txs"`
+	size   atomic.Value  // Cache the size of the block
 }
 
 func NewBlock(header BlockHeader, txs []Transaction) *Block {
@@ -37,6 +44,12 @@ func (b *Block) SetTx(newTXs ...Transaction) error {
 	}
 	b.Header.SetMerkleRoot(b.CalculateTxTreeRoot()) //calculate merkle root
 
+	return nil
+}
+
+func (b *Block) RemoveLastTx() error {
+	b.TXs = b.TXs[0 : len(b.TXs)-1]
+	b.Header.SetMerkleRoot(b.CalculateTxTreeRoot()) //calculate merkle root
 	return nil
 }
 
@@ -139,6 +152,38 @@ func (b *Block) CalculateTxTreeRoot() TreeID {
 
 func (b *Block) IsGensis() bool {
 	return b.Header.IsGensis()
+}
+
+// get block size
+func (b *Block) Size() (int, error) {
+	s := b.size.Load()
+	if s != nil {
+		return s.(int), nil
+	}
+	buffer, err := proto.Marshal(b.Serialize())
+	if err != nil {
+		log.Error("Block Size()", "error", err.Error())
+		return 0, err
+	}
+	size := len(buffer)
+	b.size.Store(size)
+	return size, nil
+}
+
+func (b *Block) Verify() error {
+	return nil
+}
+
+// verify block size
+func (b *Block) VerifySize() error {
+	size, err := b.Size()
+	if err != nil {
+		return err
+	}
+	if size > config.BlockSizeLimit {
+		return BlockOversizeErr
+	}
+	return nil
 }
 
 type BlockHeader struct {

@@ -19,6 +19,7 @@ import (
 	"github.com/mihongtech/linkchain/protobuf"
 	"github.com/mihongtech/linkchain/sync/full/downloader"
 	"github.com/mihongtech/linkchain/sync/full/fetcher"
+	"github.com/mihongtech/linkchain/txpool"
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are
@@ -45,7 +46,8 @@ type ProtocolManager struct {
 	txSub         event.Subscription
 	minedBlockSub *event.TypeMuxSubscription
 
-	nodeAPI *node.PublicNodeAPI
+	nodeAPI   *node.PublicNodeAPI
+	txPoolAPI *txpool.TxPool
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -60,7 +62,7 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new linkchain sub protocol manager. The Linkchain sub protocol manages peers capable
 // with the linkchain network.
-func NewProtocolManager(config interface{}, nodeSvc *node.PublicNodeAPI, networkId uint64, mux *event.TypeMux, tx *event.Feed) (*ProtocolManager, error) {
+func NewProtocolManager(config interface{}, nodeSvc *node.PublicNodeAPI, txPoolSvc *txpool.TxPool, networkId uint64, mux *event.TypeMux, tx *event.Feed) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -71,6 +73,7 @@ func NewProtocolManager(config interface{}, nodeSvc *node.PublicNodeAPI, network
 		newPeerCh:   make(chan *peer),
 		noMorePeers: make(chan struct{}),
 		nodeAPI:     nodeSvc,
+		txPoolAPI:   txPoolSvc,
 		txsyncCh:    make(chan *txsync),
 		quitSync:    make(chan struct{}),
 	}
@@ -361,9 +364,10 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		transaction.Deserialize(&t)
 		p.MarkTransaction(*transaction.GetTxID())
 		log.Debug("Receive TxMsg", "transaction is", transaction)
-		if err = pm.nodeAPI.ProcessTx(transaction); err != nil {
+		if err = pm.txPoolAPI.ProcessTx(transaction); err != nil {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
+		pm.BroadcastTx(*transaction.GetTxID(), transaction)
 		//		for _, t := range pm.txmanager.getAllTransaction() {
 		//			log.Debug("all txs is", "tx", t)
 		//		}

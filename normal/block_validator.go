@@ -38,6 +38,17 @@ func (n *Interpreter) ValidateBlockHeader(engine consensus.Engine, chain core.Ch
 }
 
 func (n *Interpreter) ValidateBlockBody(txValidator interpreter.TransactionValidator, chain core.Chain, block *meta.Block) error {
+	// block normal check
+	if err := block.Verify(); err != nil {
+		return err
+	}
+
+	// verify block size
+	err := block.VerifySize()
+	if err != nil {
+		return err
+	}
+
 	croot := block.CalculateTxTreeRoot()
 	if !block.GetMerkleRoot().IsEqual(&croot) {
 		log.Error("POA checkBlock", "check merkle root", false)
