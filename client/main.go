@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"os"
+	"strconv"
 
 	"github.com/mihongtech/linkchain/client/cmd"
 	"github.com/mihongtech/linkchain/client/explorer"
@@ -12,6 +13,8 @@ import (
 func main() {
 	logLevel := flag.Int("loglevel", 3, "log level")
 	isExplorer := flag.Bool("explorer", false, "is explorer mode")
+	rpcIp := flag.String("rpcip", "127.0.0.1", "linkchain rpc ip")
+	rpcPort := flag.Int("rpcport", 8082, "linkchain rpc port")
 	flag.Parse()
 
 	//init log
@@ -24,6 +27,6 @@ func main() {
 	if *isExplorer {
 		explorer.StartExplore()
 	} else {
-		cmd.StartCmd()
+		cmd.StartCmd(*rpcIp + ":" + strconv.Itoa(*rpcPort))
 	}
 }

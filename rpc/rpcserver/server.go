@@ -46,6 +46,7 @@ type Config struct {
 	// StartupTime is the unix timestamp for when the server that is hosting
 	// the RPC server started.
 	StartupTime int64
+	Addr        string
 }
 
 // newRPCServer returns a new instance of the rpcServer struct.
@@ -65,7 +66,7 @@ func (s *Server) Start() {
 	log.Info("Starting RPC rpcserver")
 	rpcServeMux := http.NewServeMux()
 	httpServer := &http.Server{
-		Addr:    listenPort,
+		Addr:    s.config.Addr,
 		Handler: rpcServeMux,
 
 		// Timeout connections which don't complete the initial

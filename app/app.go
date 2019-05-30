@@ -122,6 +122,7 @@ func startRPC() {
 	//init rpc servce
 	s, err := rpcserver.NewRPCServer(&rpcserver.Config{
 		StartupTime: time.Now().Unix(),
+		Addr:        appContext.Config.RpcAddr,
 	}, &appContext)
 	if err != nil {
 		return

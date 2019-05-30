@@ -32,7 +32,8 @@ var stopCmd = &cobra.Command{
 	},
 }
 
-func StartCmd() {
+func StartCmd(server string) {
+	httpConfig.RPCServer = server
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print(">")
