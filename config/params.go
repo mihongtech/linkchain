@@ -31,7 +31,8 @@ const (
 	MinTimespan    = 5 * time.Second
 	PowLimitBits   = 0x0100ffff
 
-	BlockSizeLimit = 2 * 1024 * 1024 * 8
+	BlockSizeLimit       = 2 * 1024 * 1024 * 8
+	TransactionSizeLimit = 100 * 1024 * 8
 )
 
 var (

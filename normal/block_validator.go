@@ -44,12 +44,9 @@ func (n *Interpreter) ValidateBlockBody(txValidator interpreter.TransactionValid
 	}
 
 	// verify block size
-	size, err := block.Size()
+	err := block.VerifySize()
 	if err != nil {
 		return err
-	}
-	if size > config.BlockSizeLimit {
-		return errors.New("block oversized")
 	}
 
 	croot := block.CalculateTxTreeRoot()

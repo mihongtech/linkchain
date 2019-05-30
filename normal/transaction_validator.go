@@ -2,11 +2,11 @@ package normal
 
 import (
 	"errors"
-	"github.com/mihongtech/linkchain/interpreter"
 
 	"github.com/mihongtech/linkchain/common"
 	"github.com/mihongtech/linkchain/config"
 	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/interpreter"
 )
 
 func (n *Interpreter) CheckTx(tx *meta.Transaction) error {
@@ -66,6 +66,15 @@ func checkCoinBaseTx(tx *meta.Transaction) error {
 }
 
 func checkNormalTx(tx *meta.Transaction) error {
+	// verify transaction size
+	size, err := tx.Size()
+	if err != nil {
+		return err
+	}
+	if size > config.TransactionSizeLimit {
+		return errors.New("oversized transaction")
+	}
+
 	if err := CheckToZero(tx); err != nil {
 		return err
 	}
@@ -76,6 +85,7 @@ func checkNormalTx(tx *meta.Transaction) error {
 	if err := checkUnCoinBaseTx(tx); err != nil {
 		return err
 	}
+
 	return tx.Verify()
 }
 

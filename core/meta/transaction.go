@@ -15,10 +15,6 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-const (
-	TransactionSizeLimit = 100 * 1024 * 8 // 100KB
-)
-
 type Ticket struct {
 	Txid  TxID   `json:"txid"`
 	Index uint32 `json:"index"`
@@ -456,15 +452,6 @@ func (tx *Transaction) GetToValue() *Amount {
 }
 
 func (tx *Transaction) Verify() error {
-	// verify transaction size
-	size, err := tx.Size()
-	if err != nil {
-		return err
-	}
-	if size > TransactionSizeLimit {
-		return errors.New("oversized transaction")
-	}
-
 	if len(tx.From.Coins) != len(tx.Sign) {
 		return errors.New("tx from count must be equal to sign count in tx verify")
 	}

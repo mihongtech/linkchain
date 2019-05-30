@@ -11,9 +11,14 @@ import (
 	"github.com/mihongtech/linkchain/common/serialize"
 	"github.com/mihongtech/linkchain/common/trie"
 	"github.com/mihongtech/linkchain/common/util/log"
+	"github.com/mihongtech/linkchain/config"
 	"github.com/mihongtech/linkchain/protobuf"
 
 	"github.com/golang/protobuf/proto"
+)
+
+var (
+	BlockOversizeErr = errors.New("block oversized")
 )
 
 type Block struct {
@@ -166,6 +171,18 @@ func (b *Block) Size() (int, error) {
 }
 
 func (b *Block) Verify() error {
+	return nil
+}
+
+// verify block size
+func (b *Block) VerifySize() error {
+	size, err := b.Size()
+	if err != nil {
+		return err
+	}
+	if size > config.BlockSizeLimit {
+		return BlockOversizeErr
+	}
 	return nil
 }
 
