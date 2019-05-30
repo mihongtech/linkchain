@@ -30,6 +30,8 @@ const (
 	MaxTimespan    = 1 * time.Minute
 	MinTimespan    = 5 * time.Second
 	PowLimitBits   = 0x0100ffff
+
+	BlockSizeLimit = 2 * 1024 * 1024 * 8
 )
 
 var (

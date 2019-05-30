@@ -43,6 +43,15 @@ func (n *Interpreter) ValidateBlockBody(txValidator interpreter.TransactionValid
 		return err
 	}
 
+	// verify block size
+	size, err := block.Size()
+	if err != nil {
+		return err
+	}
+	if size > config.BlockSizeLimit {
+		return errors.New("block oversized")
+	}
+
 	croot := block.CalculateTxTreeRoot()
 	if !block.GetMerkleRoot().IsEqual(&croot) {
 		log.Error("POA checkBlock", "check merkle root", false)

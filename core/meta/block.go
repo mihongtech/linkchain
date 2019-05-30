@@ -16,14 +16,6 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-const (
-	BlockSizeLimit = 2 * 1024 * 1024 * 8 // block size limit. 2MB
-)
-
-var (
-	BlockOversizeErr = errors.New("block oversized")
-)
-
 type Block struct {
 	Header BlockHeader   `json:"header"`
 	TXs    []Transaction `json:"txs"`
@@ -174,22 +166,6 @@ func (b *Block) Size() (int, error) {
 }
 
 func (b *Block) Verify() error {
-	if err := b.VerifySize(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// verify block size
-func (b *Block) VerifySize() error {
-	size, err := b.Size()
-	if err != nil {
-		return err
-	}
-	if size > BlockSizeLimit {
-		return BlockOversizeErr
-	}
 	return nil
 }
 
