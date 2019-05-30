@@ -1,13 +1,15 @@
 package pool
 
 import (
+	"errors"
+	"github.com/mihongtech/linkchain/common/util/log"
 	"github.com/mihongtech/linkchain/interpreter"
 	"sync"
 
 	"github.com/mihongtech/linkchain/core/meta"
 )
 
-type TxPool struct {
+type TxImpl struct {
 	txPool       []meta.Transaction
 	validatorAPI interpreter.Validator
 
@@ -16,28 +18,28 @@ type TxPool struct {
 	MainChainCh chan meta.ChainEvent
 }
 
-func NewTxPool(validatorApI interpreter.Validator) *TxPool {
-	return &TxPool{
+func NewTxPool(validatorApI interpreter.Validator) *TxImpl {
+	return &TxImpl{
 		txPool:       make([]meta.Transaction, 0),
 		validatorAPI: validatorApI,
 		MainChainCh:  make(chan meta.ChainEvent, 10),
 	}
 }
 
-func (t *TxPool) SetUp(i interface{}) bool {
+func (t *TxImpl) SetUp(i interface{}) bool {
 	return true
 }
 
-func (t *TxPool) Start() bool {
+func (t *TxImpl) Start() bool {
 	go t.updateTxLoop()
 	return true
 }
 
-func (t *TxPool) Stop() {
+func (t *TxImpl) Stop() {
 
 }
 
-func (t *TxPool) updateTxLoop() {
+func (t *TxImpl) updateTxLoop() {
 	for {
 		select {
 		case ev := <-t.MainChainCh:
@@ -46,14 +48,14 @@ func (t *TxPool) updateTxLoop() {
 	}
 }
 
-func (t *TxPool) updateTransaction(block *meta.Block) {
+func (t *TxImpl) updateTransaction(block *meta.Block) {
 	txs := block.GetTxs()
 	for i := range txs {
-		t.removeTransaction(*txs[i].GetTxID())
+		t.RemoveTransaction(*txs[i].GetTxID())
 	}
 }
 
-func (t *TxPool) addTransaction(tx *meta.Transaction) error {
+func (t *TxImpl) AddTransaction(tx *meta.Transaction) error {
 	t.txPollMtx.Lock()
 	defer t.txPollMtx.Unlock()
 	newTx := *tx
@@ -61,7 +63,7 @@ func (t *TxPool) addTransaction(tx *meta.Transaction) error {
 	return nil
 }
 
-func (t *TxPool) getAllTransaction() []meta.Transaction {
+func (t *TxImpl) GetAllTransaction() []meta.Transaction {
 	t.txPollMtx.RLock()
 	defer t.txPollMtx.RUnlock()
 	txs := make([]meta.Transaction, 0)
@@ -71,7 +73,7 @@ func (t *TxPool) getAllTransaction() []meta.Transaction {
 	return txs
 }
 
-func (t *TxPool) removeTransaction(txID meta.TxID) error {
+func (t *TxImpl) RemoveTransaction(txID meta.TxID) error {
 	t.txPollMtx.Lock()
 	defer t.txPollMtx.Unlock()
 
@@ -85,5 +87,28 @@ func (t *TxPool) removeTransaction(txID meta.TxID) error {
 		}
 	}
 
+	return nil
+}
+
+func (t *TxImpl) CheckTx(tx *meta.Transaction) error {
+	err := t.validatorAPI.CheckTx(tx)
+	if err != nil {
+		return errors.New("CheckTx" + "\ttx:" + tx.GetTxID().String() + "\nerror:" + err.Error())
+	}
+	return err
+}
+
+func (t *TxImpl) ProcessTx(tx *meta.Transaction) error {
+	log.Info("ProcessTx ...")
+	//1.checkTx
+	if err := t.CheckTx(tx); err != nil {
+		return err
+	}
+	//2.push Tx into storage
+	err := t.AddTransaction(tx)
+	if err != nil {
+		return err
+	}
+	log.Info("Add Tranasaction Pool  ...", "txid", tx.GetTxID(), "tx", tx)
 	return nil
 }

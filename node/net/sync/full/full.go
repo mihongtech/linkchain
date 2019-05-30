@@ -4,23 +4,23 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mihongtech/linkchain/node/pool"
+	"github.com/mihongtech/linkchain/common/util/event"
 
 	"math"
 	"sync"
 	"time"
 
-	"github.com/mihongtech/linkchain/common/util/event"
 	"github.com/mihongtech/linkchain/common/util/log"
 	"github.com/mihongtech/linkchain/core/meta"
-	"github.com/mihongtech/linkchain/node"
 	"github.com/mihongtech/linkchain/node/blockchain"
+	node_event "github.com/mihongtech/linkchain/node/event"
 	p2p_node "github.com/mihongtech/linkchain/node/net/p2p/discover"
 	"github.com/mihongtech/linkchain/node/net/p2p/message"
 	p2p_peer "github.com/mihongtech/linkchain/node/net/p2p/peer"
 	"github.com/mihongtech/linkchain/node/net/p2p/peer_error"
 	"github.com/mihongtech/linkchain/node/net/sync/full/downloader"
 	"github.com/mihongtech/linkchain/node/net/sync/full/fetcher"
+	"github.com/mihongtech/linkchain/node/pool"
 	"github.com/mihongtech/linkchain/protobuf"
 )
 
@@ -44,7 +44,7 @@ type ProtocolManager struct {
 	eventMux      *event.TypeMux
 	eventTx       *event.Feed
 	scope         event.SubscriptionScope
-	txCh          chan node.TxEvent
+	txCh          chan node_event.TxEvent
 	txSub         event.Subscription
 	minedBlockSub *event.TypeMuxSubscription
 
@@ -130,12 +130,12 @@ func NewProtocolManager(chain blockchain.Chain, txPool pool.TxPool, networkId ui
 
 func (pm *ProtocolManager) Start() bool {
 	// broadcast transactions
-	pm.txCh = make(chan node.TxEvent, txChanSize)
+	pm.txCh = make(chan node_event.TxEvent, txChanSize)
 	pm.txSub = pm.scope.Track(pm.eventTx.Subscribe(pm.txCh))
 	go pm.txBroadcastLoop()
 	//
 	//	 broadcast mined blocks
-	pm.minedBlockSub = pm.eventMux.Subscribe(node.NewMinedBlockEvent{})
+	pm.minedBlockSub = pm.eventMux.Subscribe(node_event.NewMinedBlockEvent{})
 	go pm.minedBroadcastLoop()
 	//
 	//	 start sync handlers
@@ -438,7 +438,7 @@ func (pm *ProtocolManager) minedBroadcastLoop() {
 	// automatically stops if unsubscribe
 	for obj := range pm.minedBlockSub.Chan() {
 		switch ev := obj.Data.(type) {
-		case node.NewMinedBlockEvent:
+		case node_event.NewMinedBlockEvent:
 			pm.BroadcastBlock(ev.Block, true)  // First propagate block to peers
 			pm.BroadcastBlock(ev.Block, false) // Only then announce to the rest
 		}

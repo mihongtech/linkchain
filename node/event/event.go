@@ -1,4 +1,4 @@
-package node
+package event
 
 import "github.com/mihongtech/linkchain/core/meta"
 

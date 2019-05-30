@@ -3,8 +3,6 @@ package node
 import (
 	"encoding/json"
 	"errors"
-	"github.com/mihongtech/linkchain/node/blockchain"
-	"github.com/mihongtech/linkchain/node/pool"
 	"os"
 	"sync"
 
@@ -15,12 +13,14 @@ import (
 	"github.com/mihongtech/linkchain/common/util/log"
 	"github.com/mihongtech/linkchain/core/meta"
 	"github.com/mihongtech/linkchain/interpreter"
+	"github.com/mihongtech/linkchain/node/blockchain"
 	"github.com/mihongtech/linkchain/node/blockchain/genesis"
 	"github.com/mihongtech/linkchain/node/config"
 	"github.com/mihongtech/linkchain/node/consensus"
 	"github.com/mihongtech/linkchain/node/consensus/poa"
 	"github.com/mihongtech/linkchain/node/net"
 	"github.com/mihongtech/linkchain/node/net/p2p"
+	"github.com/mihongtech/linkchain/node/pool"
 	"github.com/mihongtech/linkchain/storage"
 )
 
@@ -30,7 +30,7 @@ type Config struct {
 
 type Node struct {
 	//transaction
-	txPool *TxPool
+	txPool *pool.TxImpl
 
 	//consensus
 	engine consensus.Engine
@@ -41,19 +41,15 @@ type Node struct {
 
 	//chain
 	chainMtx   sync.RWMutex
-	blockchain blockchain.Chain
+	blockchain *blockchain.BlockChain
 	db         lcdb.Database
 
 	//net p2p
 	p2pSvc net.Net
 
 	//event
-	newBlockEvent   *event.TypeMux
-	newAccountEvent *event.TypeMux
-	newTxEvent      *event.Feed
-
-	// offchain
-	offchain interpreter.OffChain
+	newBlockEvent *event.TypeMux
+	newTxEvent    *event.Feed
 
 	updateMainState event.Subscription
 	updateSideState event.Subscription
@@ -75,7 +71,6 @@ func (n *Node) Setup(i interface{}) bool {
 
 	//Event
 	n.newBlockEvent = new(event.TypeMux)
-	n.newAccountEvent = new(event.TypeMux)
 	n.newTxEvent = new(event.Feed)
 
 	s := storage.NewStrorage(globalConfig.DataDir)
@@ -90,15 +85,12 @@ func (n *Node) Setup(i interface{}) bool {
 	n.engine = poa.NewPoa(chainCfg, s.GetDB())
 	n.validatorAPI = i.(*context.Context).InterpreterAPI
 	n.interpreterAPI = i.(*context.Context).InterpreterAPI
-	n.offchain = n.interpreterAPI.CreateOffChain(n.db)
 
-	n.blockchain, err = blockchain.NewBlockChain(s.GetDB(), genesisHash, nil, config, n.interpreterAPI, n.engine)
+	n.blockchain, err = blockchain.NewBlockChain(s.GetDB(), genesisHash, nil, chainCfg, n.interpreterAPI, n.engine)
 	if err != nil {
 		log.Error("init blockchain failed", "err", err)
 		return false
 	}
-
-	n.offchain.Setup(i)
 
 	n.txPool = pool.NewTxPool(n.validatorAPI)
 	n.txPool.SetUp(i)
@@ -147,9 +139,7 @@ func (n *Node) Start() bool {
 	//n.offchain.SetSubscription(n.blockchain.SubscribeChainEvent(n.offchain.MainChainCh), n.blockchain.SubscribeChainSideEvent(n.offchain.SideChainCh))
 	n.updateMainState = n.blockchain.SubscribeChainEvent(n.MainChainCh)
 	n.updateSideState = n.blockchain.SubscribeChainSideEvent(n.SideChainCh)
-	if !n.offchain.Start() {
-		return false
-	}
+
 	if !n.txPool.Start() {
 		return false
 	}
@@ -164,18 +154,15 @@ func (n *Node) Start() bool {
 func (n *Node) updateState() {
 	for {
 		select {
-		case ev := <-n.MainChainCh:
-			n.offchain.UpdateMainChain(ev)
+		case ev := <-n.MainChainCh: //the signal of MainChain update
 			n.txPool.MainChainCh <- ev
-			n.newAccountEvent.Post(AccountEvent{IsUpdate: true})
-		case ev := <-n.SideChainCh:
-			n.offchain.UpdateSideChain(ev)
+
+			//case ev := <-n.SideChainCh: //the signal of SideChain update
 		}
 	}
 }
 func (n *Node) Stop() {
 	log.Info("Stop node...")
-	n.offchain.Stop()
 	n.txPool.Stop()
 }
 
