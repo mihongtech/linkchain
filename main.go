@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/mihongtech/linkchain/app"
 	"github.com/mihongtech/linkchain/common/util/log"
@@ -15,6 +16,8 @@ func main() {
 	var (
 		logLevel    = flag.Int("loglevel", 3, "log level")
 		listenPort  = flag.Int("port", 40000, "linkchain listen port")
+		rpcIp       = flag.String("rpcip", "127.0.0.1", "linkchain rpc ip")
+		rpcPort     = flag.Int("rpcport", 8082, "linkchain rpc port")
 		dataDir     = flag.String("datadir", config.DefaultDataDir(), "linkchain data dir")
 		console     = flag.Bool("console", false, "log out put console(default=false).")
 		nodiscovery = flag.Bool("nodiscovery", false, "default = false means use discovery protocol")
@@ -37,7 +40,7 @@ func main() {
 	globalConfig.NoDiscovery = *nodiscovery
 	globalConfig.BootstrapNodes = *bootnodes
 	globalConfig.InterpreterAPI = *interpreter
-
+	globalConfig.RpcAddr = *rpcIp + ":" + strconv.Itoa(*rpcPort)
 	// start node
 	if !app.Setup(globalConfig) {
 		log.Error("app setup failed, exit")

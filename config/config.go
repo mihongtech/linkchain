@@ -34,6 +34,8 @@ type LinkChainConfig struct {
 	NoDiscovery    bool
 	BootstrapNodes string
 	InterpreterAPI string
+	//Rpc
+	RpcAddr string
 }
 
 // DefaultDataDir is the default data directory to use for the databases and other
