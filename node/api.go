@@ -86,11 +86,6 @@ func (a *PublicNodeAPI) CheckBlock(block *meta.Block) error {
 	return a.n.checkBlock(block)
 }
 
-//account
-func (a *PublicNodeAPI) GetAccount(id meta.AccountID) (meta.Account, error) {
-	return a.n.getAccount(id)
-}
-
 //chain
 func (a *PublicNodeAPI) GetBlockChainInfo() interface{} {
 	// TODO: implement me

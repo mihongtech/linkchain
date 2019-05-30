@@ -28,9 +28,6 @@ type Node struct {
 	//transaction
 	txPool *TxPool
 
-	//account state
-	accountMtx sync.RWMutex
-
 	//engine
 	engine         consensus.Engine
 	validatorAPI   interpreter.Validator

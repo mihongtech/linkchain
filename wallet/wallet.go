@@ -77,7 +77,7 @@ func (w *Wallet) reScanAllAccount() {
 	newWas := make([]meta.Account, 0)
 	for key := range w.accounts {
 		wa := w.accounts[key]
-		newWa, err := w.nodeAPI.GetAccount(wa.Id)
+		newWa, err := w.queryAccount(wa.Id)
 		if err != nil {
 			continue
 		}
@@ -133,9 +133,22 @@ func (w *Wallet) GetAccount(key string) (*meta.Account, error) {
 		if err != nil {
 			return nil, err
 		}
-		newWa, err := w.nodeAPI.GetAccount(id)
+		newWa, err := w.queryAccount(id)
 		return &newWa, err
 	}
+}
+
+func (w *Wallet) queryAccount(id meta.AccountID) (meta.Account, error) {
+	stateDB, err := w.nodeAPI.StateAt(w.nodeAPI.GetBestBlock().Header.Status)
+	if err != nil {
+		return meta.Account{}, err
+	}
+
+	stateObject := stateDB.GetObject(meta.GetAccountHash(id))
+	if stateObject == nil {
+		return meta.Account{}, errors.New("can not find IAccount")
+	}
+	return *stateObject.GetAccount(), nil
 }
 
 func (w *Wallet) SignTransaction(tx meta.Transaction) (*meta.Transaction, error) {
