@@ -5,7 +5,7 @@ import (
 	"reflect"
 
 	"github.com/mihongtech/linkchain/common/util/log"
-	p2p_node "github.com/mihongtech/linkchain/p2p/discover"
+	p2p_node "github.com/mihongtech/linkchain/node/net/p2p/discover"
 	"github.com/mihongtech/linkchain/rpc/rpcobject"
 )
 

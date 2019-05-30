@@ -16,8 +16,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/mihongtech/linkchain/common"
-	"github.com/mihongtech/linkchain/consensus/poa"
 	"github.com/mihongtech/linkchain/helper"
+	"github.com/mihongtech/linkchain/node/consensus/poa"
 )
 
 var (

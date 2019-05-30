@@ -6,10 +6,10 @@ import (
 	"github.com/mihongtech/linkchain/common/math"
 	"github.com/mihongtech/linkchain/common/util/log"
 	"github.com/mihongtech/linkchain/config"
-	"github.com/mihongtech/linkchain/consensus"
 	"github.com/mihongtech/linkchain/core"
 	"github.com/mihongtech/linkchain/core/meta"
 	"github.com/mihongtech/linkchain/interpreter"
+	"github.com/mihongtech/linkchain/node/consensus"
 )
 
 func (n *Interpreter) ValidateBlockHeader(engine consensus.Engine, chain core.Chain, block *meta.Block) error {

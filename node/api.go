@@ -5,11 +5,11 @@ import (
 	"github.com/mihongtech/linkchain/common/math"
 	"github.com/mihongtech/linkchain/common/util/event"
 	"github.com/mihongtech/linkchain/common/util/log"
-	"github.com/mihongtech/linkchain/config"
-	"github.com/mihongtech/linkchain/consensus"
 	"github.com/mihongtech/linkchain/core"
 	"github.com/mihongtech/linkchain/core/meta"
 	"github.com/mihongtech/linkchain/interpreter"
+	"github.com/mihongtech/linkchain/node/config"
+	"github.com/mihongtech/linkchain/node/consensus"
 	"github.com/mihongtech/linkchain/storage/state"
 )
 
@@ -51,7 +51,7 @@ func (a *PublicNodeAPI) GetTxEvent() *event.Feed {
 
 //block
 func (a *PublicNodeAPI) GetBestBlock() *meta.Block {
-	return a.n.blockchain.CurrentBlock()
+	return a.n.blockchain.GetBestBlock()
 }
 
 func (a *PublicNodeAPI) HasBlock(hash meta.BlockID) bool {
@@ -75,21 +75,17 @@ func (a *PublicNodeAPI) GetBlockByHeight(height uint32) (*meta.Block, error) {
 }
 
 func (a *PublicNodeAPI) GetChainConfig() *config.ChainConfig {
-	return a.n.blockchain.Config()
+	return a.n.blockchain.GetChainConfig()
 }
 
 func (a *PublicNodeAPI) ProcessBlock(block *meta.Block) error {
 	return a.n.blockchain.ProcessBlock(block)
 }
 
-func (a *PublicNodeAPI) CheckBlock(block *meta.Block) error {
-	return a.n.checkBlock(block)
-}
-
 //chain
 func (a *PublicNodeAPI) GetBlockChainInfo() interface{} {
 	// TODO: implement me
-	block := a.n.blockchain.CurrentBlock()
+	block := a.n.blockchain.GetBestBlock()
 	info := &meta.ChainInfo{
 		BestHeight: block.GetHeight(),
 		BestHash:   block.GetBlockID().GetString(),

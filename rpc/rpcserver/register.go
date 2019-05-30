@@ -5,7 +5,7 @@ import (
 
 	"github.com/mihongtech/linkchain/miner"
 	"github.com/mihongtech/linkchain/node"
-	"github.com/mihongtech/linkchain/p2p"
+	"github.com/mihongtech/linkchain/node/net/p2p"
 	"github.com/mihongtech/linkchain/rpc/rpcobject"
 	"github.com/mihongtech/linkchain/wallet"
 )

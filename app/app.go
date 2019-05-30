@@ -10,8 +10,8 @@ import (
 	"github.com/mihongtech/linkchain/interpreter"
 	"github.com/mihongtech/linkchain/miner"
 	"github.com/mihongtech/linkchain/node"
+	"github.com/mihongtech/linkchain/node/net/p2p"
 	"github.com/mihongtech/linkchain/normal"
-	"github.com/mihongtech/linkchain/p2p"
 	"github.com/mihongtech/linkchain/rpc/rpcserver"
 	"github.com/mihongtech/linkchain/wallet"
 )
@@ -19,7 +19,6 @@ import (
 var (
 	appContext context.Context
 	nodeSvc    *node.Node
-	p2pSvc     *p2p.Service
 	minerSvc   *miner.Miner
 	walletSvc  *wallet.Wallet
 )
@@ -36,7 +35,6 @@ func Setup(globalConfig *config.LinkChainConfig) bool {
 	//create service
 	nodeSvc = node.NewNode()
 
-	p2pSvc = p2p.NewP2P()
 	minerSvc = miner.NewMiner()
 	walletSvc = wallet.NewWallet()
 
@@ -47,14 +45,6 @@ func Setup(globalConfig *config.LinkChainConfig) bool {
 
 	//consensus api init
 	appContext.NodeAPI = node.NewPublicNodeAPI(nodeSvc)
-
-	//p2p init
-	if !p2pSvc.Setup(&appContext) {
-		return false
-	}
-
-	//p2p api init
-	appContext.P2PAPI = p2pSvc
 
 	//wallet init
 	if !walletSvc.Setup(&appContext) {
@@ -76,7 +66,6 @@ func Setup(globalConfig *config.LinkChainConfig) bool {
 func Run() {
 	//start all service
 	nodeSvc.Start()
-	p2pSvc.Start()
 	walletSvc.Start()
 
 	//start rpc

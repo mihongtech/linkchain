@@ -3,8 +3,8 @@ package core
 import (
 	"github.com/mihongtech/linkchain/common/math"
 	"github.com/mihongtech/linkchain/config"
-	"github.com/mihongtech/linkchain/consensus"
 	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/node/consensus"
 )
 
 type Chain interface {

@@ -3,7 +3,8 @@ package node
 import (
 	"encoding/json"
 	"errors"
-	"github.com/mihongtech/linkchain/interpreter"
+	"github.com/mihongtech/linkchain/node/blockchain"
+	"github.com/mihongtech/linkchain/node/pool"
 	"os"
 	"sync"
 
@@ -12,35 +13,39 @@ import (
 	"github.com/mihongtech/linkchain/common/math"
 	"github.com/mihongtech/linkchain/common/util/event"
 	"github.com/mihongtech/linkchain/common/util/log"
-	"github.com/mihongtech/linkchain/config"
-	"github.com/mihongtech/linkchain/consensus"
-	"github.com/mihongtech/linkchain/consensus/poa"
 	"github.com/mihongtech/linkchain/core/meta"
-	"github.com/mihongtech/linkchain/genesis"
+	"github.com/mihongtech/linkchain/interpreter"
+	"github.com/mihongtech/linkchain/node/blockchain/genesis"
+	"github.com/mihongtech/linkchain/node/config"
+	"github.com/mihongtech/linkchain/node/consensus"
+	"github.com/mihongtech/linkchain/node/consensus/poa"
+	"github.com/mihongtech/linkchain/node/net"
+	"github.com/mihongtech/linkchain/node/net/p2p"
 	"github.com/mihongtech/linkchain/storage"
 )
 
-var (
-	globalConfig config.LinkChainConfig
-)
+type Config struct {
+	config.BaseConfig
+}
 
 type Node struct {
 	//transaction
 	txPool *TxPool
 
-	//engine
-	engine         consensus.Engine
+	//consensus
+	engine consensus.Engine
+
+	//BCSI
 	validatorAPI   interpreter.Validator
 	interpreterAPI interpreter.Interpreter
 
-	//block
-	blockMtx            sync.RWMutex
-	mapBlockIndexByHash map[math.Hash]meta.Block
-
 	//chain
 	chainMtx   sync.RWMutex
-	blockchain *BlockChain
+	blockchain blockchain.Chain
 	db         lcdb.Database
+
+	//net p2p
+	p2pSvc net.Net
 
 	//event
 	newBlockEvent   *event.TypeMux
@@ -56,20 +61,22 @@ type Node struct {
 	SideChainCh     chan meta.ChainSideEvent
 }
 
-func NewNode() *Node {
-	return &Node{MainChainCh: make(chan meta.ChainEvent, 10), SideChainCh: make(chan meta.ChainSideEvent, 10)}
+func NewNode(cfg config.BaseConfig) *Node {
+
+	return &Node{
+		p2pSvc:      p2p.NewP2P(cfg),
+		MainChainCh: make(chan meta.ChainEvent, 10),
+		SideChainCh: make(chan meta.ChainSideEvent, 10)}
 }
 
 func (n *Node) Setup(i interface{}) bool {
 	globalConfig := i.(*context.Context).Config
 	log.Info("Manage init...")
 
+	//Event
 	n.newBlockEvent = new(event.TypeMux)
 	n.newAccountEvent = new(event.TypeMux)
 	n.newTxEvent = new(event.Feed)
-	n.mapBlockIndexByHash = make(map[math.Hash]meta.Block)
-
-	n.initAccountManager()
 
 	s := storage.NewStrorage(globalConfig.DataDir)
 	if s == nil {
@@ -78,14 +85,14 @@ func (n *Node) Setup(i interface{}) bool {
 	}
 	n.db = s.GetDB()
 
-	config, genesisHash, err := n.initGenesis(n.db, globalConfig.GenesisPath)
+	chainCfg, genesisHash, err := n.initGenesis(n.db, globalConfig.GenesisPath)
 
-	n.engine = poa.NewPoa(config, s.GetDB())
+	n.engine = poa.NewPoa(chainCfg, s.GetDB())
 	n.validatorAPI = i.(*context.Context).InterpreterAPI
 	n.interpreterAPI = i.(*context.Context).InterpreterAPI
 	n.offchain = n.interpreterAPI.CreateOffChain(n.db)
 
-	n.blockchain, err = NewBlockChain(s.GetDB(), genesisHash, nil, config, n.interpreterAPI, n.engine)
+	n.blockchain, err = blockchain.NewBlockChain(s.GetDB(), genesisHash, nil, config, n.interpreterAPI, n.engine)
 	if err != nil {
 		log.Error("init blockchain failed", "err", err)
 		return false
@@ -93,8 +100,15 @@ func (n *Node) Setup(i interface{}) bool {
 
 	n.offchain.Setup(i)
 
-	n.txPool = NewTxPool(n.validatorAPI)
+	n.txPool = pool.NewTxPool(n.validatorAPI)
 	n.txPool.SetUp(i)
+
+	//p2p init
+
+	p2pCfg := p2p.NewConfig(n.blockchain, n.txPool, 0, n.newBlockEvent, n.newTxEvent)
+	if !n.p2pSvc.Setup(p2pCfg) {
+		return false
+	}
 
 	return true
 }
@@ -137,6 +151,9 @@ func (n *Node) Start() bool {
 		return false
 	}
 	if !n.txPool.Start() {
+		return false
+	}
+	if !n.p2pSvc.Start() {
 		return false
 	}
 
