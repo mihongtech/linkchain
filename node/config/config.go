@@ -22,10 +22,10 @@ type BaseConfig struct {
 	DataDir     string
 	GenesisPath string
 	//NodeService 	  common.Service
-	ListenAddress  string
-	NoDiscovery    bool
-	BootstrapNodes string
-	InterpreterAPI string
+	ListenAddress      string
+	NoDiscovery        bool
+	BootstrapNodes     string
+	InterpreterAPIType string
 	//Rpc
 	RpcAddr string
 }

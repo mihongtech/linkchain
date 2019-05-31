@@ -12,7 +12,7 @@ import (
 
 	"github.com/mihongtech/linkchain/common/util/log"
 	"github.com/mihongtech/linkchain/core/meta"
-	"github.com/mihongtech/linkchain/node/blockchain"
+	"github.com/mihongtech/linkchain/node/chain"
 	node_event "github.com/mihongtech/linkchain/node/event"
 	p2p_node "github.com/mihongtech/linkchain/node/net/p2p/discover"
 	"github.com/mihongtech/linkchain/node/net/p2p/message"
@@ -48,7 +48,7 @@ type ProtocolManager struct {
 	txSub         event.Subscription
 	minedBlockSub *event.TypeMuxSubscription
 
-	chain  blockchain.Chain
+	chain  chain.Chain
 	txPool pool.TxPool
 
 	// channels for fetcher, syncer, txsyncLoop
@@ -64,7 +64,7 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new linkchain sub protocol manager. The Linkchain sub protocol manages peers capable
 // with the linkchain network.
-func NewProtocolManager(chain blockchain.Chain, txPool pool.TxPool, networkId uint64, mux *event.TypeMux, tx *event.Feed) (*ProtocolManager, error) {
+func NewProtocolManager(chain chain.Chain, txPool pool.TxPool, networkId uint64, mux *event.TypeMux, tx *event.Feed) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,

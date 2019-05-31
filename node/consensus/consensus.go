@@ -24,8 +24,6 @@ var (
 	ErrInvalidNumber = errors.New("invalid block number")
 )
 
-type Verifier func(chain meta.ChainReader, block *meta.Block) error
-
 // Engine is an algorithm agnostic consensus engine.
 type Engine interface {
 	// Author retrieves the Rollchain address of the account that minted the given
@@ -36,12 +34,4 @@ type Engine interface {
 	// VerifyHeader checks whether a block conforms to the consensus rules of a
 	// given engine.
 	VerifyBlock(chain meta.ChainReader, block *meta.Block) error
-
-	// VerifySeal checks whether the crypto seal on a header is valid according to
-	// the consensus rules of the given engine.
-	VerifySeal(chain meta.ChainReader, block *meta.Block) error
-
-	// Get the signer of current block
-	// ,return signer publicKey string.
-	GetBlockSigner(header *meta.BlockHeader) string
 }

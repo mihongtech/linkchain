@@ -4,7 +4,7 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"github.com/mihongtech/linkchain/node/blockchain"
+	"github.com/mihongtech/linkchain/node/chain"
 	"github.com/mihongtech/linkchain/node/pool"
 	"net"
 	"path/filepath"
@@ -104,7 +104,7 @@ type Config struct {
 	Logger log.Logger `toml:",omitempty"`
 }
 
-func NewConfig(chain blockchain.Chain, txPool pool.TxPool, networkId uint64, mux *event.TypeMux, tx *event.Feed) *Config {
+func NewConfig(chain chain.Chain, txPool pool.TxPool, networkId uint64, mux *event.TypeMux, tx *event.Feed) *Config {
 	return &Config{Config: data_sync.Config{Chain: chain, TxPool: txPool, NetworkId: networkId, EventMux: mux, EventTx: tx}}
 }
 

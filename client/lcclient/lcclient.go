@@ -92,7 +92,7 @@ func (ec *Client) TransactionReceipt(ctx context.Context, txHash math.Hash) (*co
 }
 
 // CallContract executes a message call transaction, which is directly executed in the VM
-// of the node, but never mined into the blockchain.
+// of the node, but never mined into the chain.
 //
 // blockNumber selects the block height at which the call runs. It can be nil, in which
 // case the code is taken from the latest known block. Note that state from very old

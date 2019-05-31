@@ -212,7 +212,7 @@ func GetEVM(msg contract.Message, state *contract.StateAdapter, header *meta.Blo
 }
 
 // Call executes the given transaction on the state for the given block number.
-// It doesn't make and changes in the state/blockchain and is useful to execute and retrieve values.
+// It doesn't make and changes in the state/chain and is useful to execute and retrieve values.
 func call(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c, ok := cmd.(*rpcobject.CallCmd)
 	if !ok {

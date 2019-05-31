@@ -2,7 +2,7 @@ package sync
 
 import (
 	"github.com/mihongtech/linkchain/common/util/event"
-	"github.com/mihongtech/linkchain/node/blockchain"
+	"github.com/mihongtech/linkchain/node/chain"
 	"github.com/mihongtech/linkchain/node/net/sync/full"
 	"github.com/mihongtech/linkchain/node/pool"
 
@@ -16,7 +16,7 @@ type Service struct {
 }
 
 type Config struct {
-	Chain     blockchain.Chain
+	Chain     chain.Chain
 	TxPool    pool.TxPool
 	EventMux  *event.TypeMux
 	EventTx   *event.Feed

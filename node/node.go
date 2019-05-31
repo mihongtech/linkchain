@@ -3,18 +3,18 @@ package node
 import (
 	"encoding/json"
 	"errors"
+	"github.com/mihongtech/linkchain/node/bcsi"
 	"os"
 	"sync"
 
-	"github.com/mihongtech/linkchain/app/context"
 	"github.com/mihongtech/linkchain/common/lcdb"
 	"github.com/mihongtech/linkchain/common/math"
 	"github.com/mihongtech/linkchain/common/util/event"
 	"github.com/mihongtech/linkchain/common/util/log"
 	"github.com/mihongtech/linkchain/core/meta"
 	"github.com/mihongtech/linkchain/interpreter"
-	"github.com/mihongtech/linkchain/node/blockchain"
-	"github.com/mihongtech/linkchain/node/blockchain/genesis"
+	"github.com/mihongtech/linkchain/node/chain"
+	"github.com/mihongtech/linkchain/node/chain/genesis"
 	"github.com/mihongtech/linkchain/node/config"
 	"github.com/mihongtech/linkchain/node/consensus"
 	"github.com/mihongtech/linkchain/node/consensus/poa"
@@ -26,22 +26,24 @@ import (
 
 type Config struct {
 	config.BaseConfig
+	InterpreterAPI interpreter.Interpreter
 }
 
 type Node struct {
-	//transaction
+	//txPool
 	txPool *pool.TxImpl
 
 	//consensus
 	engine consensus.Engine
 
 	//BCSI
+	bcsiAPI        bcsi.Processor
 	validatorAPI   interpreter.Validator
 	interpreterAPI interpreter.Interpreter
 
 	//chain
 	chainMtx   sync.RWMutex
-	blockchain *blockchain.BlockChain
+	blockchain *chain.ChainImpl
 	db         lcdb.Database
 
 	//net p2p
@@ -58,21 +60,22 @@ type Node struct {
 }
 
 func NewNode(cfg config.BaseConfig) *Node {
-
 	return &Node{
 		p2pSvc:      p2p.NewP2P(cfg),
 		MainChainCh: make(chan meta.ChainEvent, 10),
 		SideChainCh: make(chan meta.ChainSideEvent, 10)}
 }
 
+//Setup is prepared to init node.
 func (n *Node) Setup(i interface{}) bool {
-	globalConfig := i.(*context.Context).Config
+	globalConfig := i.(*Config)
 	log.Info("Manage init...")
 
 	//Event
 	n.newBlockEvent = new(event.TypeMux)
 	n.newTxEvent = new(event.Feed)
 
+	//DB
 	s := storage.NewStrorage(globalConfig.DataDir)
 	if s == nil {
 		log.Error("init storage failed")
@@ -82,21 +85,25 @@ func (n *Node) Setup(i interface{}) bool {
 
 	chainCfg, genesisHash, err := n.initGenesis(n.db, globalConfig.GenesisPath)
 
+	//consensus
 	n.engine = poa.NewPoa(chainCfg, s.GetDB())
-	n.validatorAPI = i.(*context.Context).InterpreterAPI
-	n.interpreterAPI = i.(*context.Context).InterpreterAPI
 
-	n.blockchain, err = blockchain.NewBlockChain(s.GetDB(), genesisHash, nil, chainCfg, n.interpreterAPI, n.engine)
+	//BCSI
+	n.validatorAPI = i.(*Config).InterpreterAPI
+	n.interpreterAPI = i.(*Config).InterpreterAPI
+
+	//chain
+	n.blockchain, err = chain.NewBlockChain(s.GetDB(), genesisHash, nil, chainCfg, n.interpreterAPI, n.engine)
 	if err != nil {
-		log.Error("init blockchain failed", "err", err)
+		log.Error("init chain failed", "err", err)
 		return false
 	}
 
+	//tx pool
 	n.txPool = pool.NewTxPool(n.validatorAPI)
 	n.txPool.SetUp(i)
 
 	//p2p init
-
 	p2pCfg := p2p.NewConfig(n.blockchain, n.txPool, 0, n.newBlockEvent, n.newTxEvent)
 	if !n.p2pSvc.Setup(p2pCfg) {
 		return false
@@ -105,6 +112,7 @@ func (n *Node) Setup(i interface{}) bool {
 	return true
 }
 
+//initGeneisis() init gensisBlock config form gensis.json
 func (n *Node) initGenesis(db lcdb.Database, genesisPath string) (*config.ChainConfig, math.Hash, error) {
 	if len(genesisPath) == 0 {
 		return nil, math.Hash{}, errors.New("genesis file is nil")
@@ -136,7 +144,7 @@ func (n *Node) initGenesis(db lcdb.Database, genesisPath string) (*config.ChainC
 
 func (n *Node) Start() bool {
 	log.Info("Node is start...")
-	//n.offchain.SetSubscription(n.blockchain.SubscribeChainEvent(n.offchain.MainChainCh), n.blockchain.SubscribeChainSideEvent(n.offchain.SideChainCh))
+	//n.offchain.SetSubscription(n.chain.SubscribeChainEvent(n.offchain.MainChainCh), n.chain.SubscribeChainSideEvent(n.offchain.SideChainCh))
 	n.updateMainState = n.blockchain.SubscribeChainEvent(n.MainChainCh)
 	n.updateSideState = n.blockchain.SubscribeChainSideEvent(n.SideChainCh)
 
@@ -165,11 +173,3 @@ func (n *Node) Stop() {
 	log.Info("Stop node...")
 	n.txPool.Stop()
 }
-
-//func (n *Node) getBlockEvent() *event.TypeMux {
-//	return n.newBlockEvent
-//}
-//
-//func (n *Node) getTxEvent() *event.Feed {
-//	return n.newTxEvent
-//}

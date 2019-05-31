@@ -8,9 +8,8 @@ import (
 	"github.com/mihongtech/linkchain/common/math"
 	"github.com/mihongtech/linkchain/common/util/log"
 	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/node/chain/storage"
 	"github.com/mihongtech/linkchain/node/config"
-	"github.com/mihongtech/linkchain/storage"
-	"github.com/mihongtech/linkchain/storage/state"
 	"time"
 )
 
@@ -129,15 +128,15 @@ func (g *Genesis) configOrDefault(ghash math.Hash) *config.ChainConfig {
 	}
 }
 
-// ToBlock creates the genesis block and writes state of a genesis specification
+// ToBlock creates the genesis block
 // to the given database (or discards it if nil).
 func (g *Genesis) ToBlock(db lcdb.Database) *meta.Block {
 	if db == nil {
 		db, _ = lcdb.NewMemDatabase()
 	}
-	statedb, _ := state.New(math.Hash{}, db)
+
 	// TODO: add tx to account
-	root, _ := statedb.Commit()
+
 	head := meta.BlockHeader{
 		Version:    g.Version,
 		Height:     g.Height,
@@ -146,7 +145,7 @@ func (g *Genesis) ToBlock(db lcdb.Database) *meta.Block {
 		Data:       g.Data,
 		Nonce:      config.DefaultNounce,
 		TxRoot:     math.Hash{},
-		Status:     root,
+		Status:     math.Hash{},
 		Difficulty: g.Difficulty,
 	}
 
@@ -157,7 +156,7 @@ func (g *Genesis) ToBlock(db lcdb.Database) *meta.Block {
 	return block
 }
 
-// Commit writes the block and state of a genesis specification to the database.
+// Commit writes the block to the database.
 // The block is committed as the canonical head block.
 func (g *Genesis) Commit(db lcdb.Database) (*meta.Block, error) {
 	block := g.ToBlock(db)
@@ -169,7 +168,6 @@ func (g *Genesis) Commit(db lcdb.Database) (*meta.Block, error) {
 		log.Info("Commit", "err", err)
 		return nil, err
 	}
-	storage.WriteReceipts(db, *block.GetBlockID(), uint64(block.GetHeight()), nil)
 
 	if err := storage.WriteCanonicalHash(db, *block.GetBlockID(), uint64(block.GetHeight())); err != nil {
 		return nil, err

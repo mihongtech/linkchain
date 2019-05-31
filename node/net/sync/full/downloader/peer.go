@@ -173,7 +173,7 @@ func (p *peerConnection) MarkLacking(hash meta.BlockID) {
 	p.lacking[hash] = struct{}{}
 }
 
-// Lacks retrieves whether the hash of a blockchain item is on the peers lacking
+// Lacks retrieves whether the hash of a chain item is on the peers lacking
 // list (i.e. whether we know that the peer does not have it).
 func (p *peerConnection) Lacks(hash meta.BlockID) bool {
 	p.lock.RLock()

@@ -23,7 +23,7 @@ import (
 	"github.com/mihongtech/linkchain/contract/vm"
 	"github.com/mihongtech/linkchain/contract/vm/runtime"
 	"github.com/mihongtech/linkchain/core/meta"
-	"github.com/mihongtech/linkchain/node/blockchain/genesis"
+	"github.com/mihongtech/linkchain/node/chain/genesis"
 	"github.com/mihongtech/linkchain/storage/state"
 
 	cli "gopkg.in/urfave/cli.v1"

@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 
-	"sync"
-
 	"github.com/mihongtech/linkchain/common/btcec"
 	"github.com/mihongtech/linkchain/common/lcdb"
 	"github.com/mihongtech/linkchain/common/math"
+	"github.com/mihongtech/linkchain/common/util/log"
 	"github.com/mihongtech/linkchain/core/meta"
 	"github.com/mihongtech/linkchain/node/config"
+	"sync"
 )
 
 // SignerFn is a signer callback function to request a hash to be signed by a
@@ -55,10 +55,38 @@ func (p *Poa) Author(header *meta.BlockHeader) ([]byte, error) {
 }
 
 func (p *Poa) VerifyBlock(chain meta.ChainReader, block *meta.Block) error {
-	return nil
+	prevBlock, err := chain.GetBlockByID(*block.GetPrevBlockID())
+
+	if err != nil {
+		log.Error("BlockManage", "checkBlock", err)
+		return err
+	}
+
+	if prevBlock.GetHeight()+1 != block.GetHeight() {
+		log.Error("BlockManage", "checkBlock", "current block height is error")
+		return errors.New("Check block height failed")
+	}
+
+	croot := block.CalculateTxTreeRoot()
+	if !block.GetMerkleRoot().IsEqual(&croot) {
+		log.Error("POA checkBlock", "check merkle root", false)
+		return errors.New("Check block merkle root failed")
+	}
+
+	//check txs have the same tx
+	txs := block.GetTxs()
+	txCount := len(txs)
+	for i := 0; i < txCount; i++ {
+		for j := i + 1; j < txCount; j++ {
+			if txs[i].GetTxID().IsEqual(txs[j].GetTxID()) {
+				return errors.New("the block have two same tx")
+			}
+		}
+	}
+	return p.verifySeal(block)
 }
 
-func (p *Poa) VerifySeal(chain meta.ChainReader, block *meta.Block) error {
+func (p *Poa) verifySeal(block *meta.Block) error {
 	signerIndex := block.GetHeight() % uint32(len(config.SignMiners))
 	miner, err := hex.DecodeString(config.SignMiners[signerIndex])
 	if err != nil {
@@ -75,9 +103,4 @@ func (p *Poa) VerifySeal(chain meta.ChainReader, block *meta.Block) error {
 	}
 
 	return errors.New(fmt.Sprintf("Verify seal failed %s\n, want %s\n", accountID.String(), meta.BytesToAccountID(miner).String()))
-}
-
-func (p *Poa) GetBlockSigner(header *meta.BlockHeader) string {
-	signerIndex := header.Height % uint32(len(config.SignMiners))
-	return config.SignMiners[signerIndex]
 }

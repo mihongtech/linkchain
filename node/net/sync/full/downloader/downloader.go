@@ -12,7 +12,7 @@ import (
 	"github.com/mihongtech/linkchain/common/util/event"
 	"github.com/mihongtech/linkchain/common/util/log"
 	"github.com/mihongtech/linkchain/core/meta"
-	"github.com/mihongtech/linkchain/node/blockchain"
+	"github.com/mihongtech/linkchain/node/chain"
 )
 
 var (
@@ -63,7 +63,7 @@ type Downloader struct {
 	rttEstimate   uint64 // Round trip time to target for download requests
 	rttConfidence uint64 // Confidence in the estimated RTT (unit: millionths to allow atomic ops)
 
-	chain blockchain.Chain
+	chain chain.Chain
 
 	// Callbacks
 	dropPeer peerDropFn // Drops a peer for misbehaving
@@ -87,7 +87,7 @@ type Downloader struct {
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
-func New(mux *event.TypeMux, chain blockchain.Chain, dropPeer peerDropFn) *Downloader {
+func New(mux *event.TypeMux, chain chain.Chain, dropPeer peerDropFn) *Downloader {
 
 	dl := &Downloader{
 		mode:          FullSync,
@@ -375,7 +375,7 @@ func (d *Downloader) fetchHeight(p *peerConnection) (*meta.Block, error) {
 }
 
 // findAncestor tries to locate the common ancestor link of the local chain and
-// a remote peers blockchain. In the general case when our node was in sync and
+// a remote peers chain. In the general case when our node was in sync and
 // on the correct chain, checking the top N links should already get us a match.
 // In the rare scenario when we ended up on a long reorganisation (i.e. none of
 // the head links match), we do a binary search to find the common ancestor.
