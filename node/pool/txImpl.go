@@ -2,23 +2,23 @@ package pool
 
 import (
 	"errors"
-	"github.com/mihongtech/linkchain/common/util/log"
-	"github.com/mihongtech/linkchain/interpreter"
 	"sync"
 
+	"github.com/mihongtech/linkchain/common/util/log"
 	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/node/bcsi"
 )
 
 type TxImpl struct {
 	txPool       []meta.Transaction
-	validatorAPI interpreter.Validator
+	validatorAPI bcsi.Validator
 
 	txPollMtx sync.RWMutex
 
 	MainChainCh chan meta.ChainEvent
 }
 
-func NewTxPool(validatorApI interpreter.Validator) *TxImpl {
+func NewTxPool(validatorApI bcsi.Validator) *TxImpl {
 	return &TxImpl{
 		txPool:       make([]meta.Transaction, 0),
 		validatorAPI: validatorApI,
@@ -91,7 +91,7 @@ func (t *TxImpl) RemoveTransaction(txID meta.TxID) error {
 }
 
 func (t *TxImpl) CheckTx(tx *meta.Transaction) error {
-	err := t.validatorAPI.CheckTx(tx)
+	err := t.validatorAPI.CheckTx(*tx)
 	if err != nil {
 		return errors.New("CheckTx" + "\ttx:" + tx.GetTxID().String() + "\nerror:" + err.Error())
 	}

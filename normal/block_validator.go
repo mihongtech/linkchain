@@ -24,16 +24,6 @@ func (n *Interpreter) ValidateBlockHeader(engine consensus.Engine, chain core.Ch
 		log.Error("BlockManage", "checkBlock", "current block height is error")
 		return errors.New("Check block height failed")
 	}
-
-	if err = engine.VerifyBlock(chain, block); err != nil {
-		log.Error("Verify block failed", "err", err)
-		return err
-	}
-
-	if err = engine.VerifySeal(chain, block); err != nil {
-		log.Error("Verify Seal failed", "err", err)
-		return err
-	}
 	return err
 }
 

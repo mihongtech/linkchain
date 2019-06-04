@@ -31,7 +31,10 @@ type Engine interface {
 	// engine is based on signatures.
 	Author(header *meta.BlockHeader) ([]byte, error)
 
-	// VerifyHeader checks whether a block conforms to the consensus rules of a
+	// CheckBlock checks whether a block conforms to the consensus rules of a
 	// given engine.
-	VerifyBlock(chain meta.ChainReader, block *meta.Block) error
+	CheckBlock(block *meta.Block) error
+
+	//ProcessBlock process block to consensus for verify block
+	ProcessBlock(block *meta.Block) error
 }

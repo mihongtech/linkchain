@@ -37,7 +37,7 @@ type Node struct {
 	engine consensus.Engine
 
 	//BCSI
-	bcsiAPI        bcsi.Processor
+	bcsiAPI        bcsi.BCSI
 	validatorAPI   interpreter.Validator
 	interpreterAPI interpreter.Interpreter
 

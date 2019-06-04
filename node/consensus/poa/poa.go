@@ -10,6 +10,7 @@ import (
 	"github.com/mihongtech/linkchain/common/math"
 	"github.com/mihongtech/linkchain/common/util/log"
 	"github.com/mihongtech/linkchain/core/meta"
+	"github.com/mihongtech/linkchain/node/chain"
 	"github.com/mihongtech/linkchain/node/config"
 	"sync"
 )
@@ -22,8 +23,8 @@ type SignerFn func(meta.Account, []byte) ([]byte, error)
 type Poa struct {
 	chainConfig *config.ChainConfig // Consensus engine configuration parameters
 	db          lcdb.Database       // Database to store and retrieve snapshot checkpoints
-
-	proposals map[math.Hash]bool // Current list of proposals we are pushing
+	chain       chain.ChainReader
+	proposals   map[math.Hash]bool // Current list of proposals we are pushing
 
 	signer math.Hash    // address of the signing key
 	signFn SignerFn     // Signer function to authorize hashes with
@@ -54,19 +55,8 @@ func (p *Poa) Author(header *meta.BlockHeader) ([]byte, error) {
 	return id.CloneBytes(), nil
 }
 
-func (p *Poa) VerifyBlock(chain meta.ChainReader, block *meta.Block) error {
-	prevBlock, err := chain.GetBlockByID(*block.GetPrevBlockID())
-
-	if err != nil {
-		log.Error("BlockManage", "checkBlock", err)
-		return err
-	}
-
-	if prevBlock.GetHeight()+1 != block.GetHeight() {
-		log.Error("BlockManage", "checkBlock", "current block height is error")
-		return errors.New("Check block height failed")
-	}
-
+//CheckBlock checkBlock by block data.
+func (p *Poa) CheckBlock(block *meta.Block) error {
 	croot := block.CalculateTxTreeRoot()
 	if !block.GetMerkleRoot().IsEqual(&croot) {
 		log.Error("POA checkBlock", "check merkle root", false)
@@ -83,10 +73,11 @@ func (p *Poa) VerifyBlock(chain meta.ChainReader, block *meta.Block) error {
 			}
 		}
 	}
-	return p.verifySeal(block)
+	return nil
 }
 
-func (p *Poa) verifySeal(block *meta.Block) error {
+//ProcessBlock Verify Block with POA.Block
+func (p *Poa) ProcessBlock(block *meta.Block) error {
 	signerIndex := block.GetHeight() % uint32(len(config.SignMiners))
 	miner, err := hex.DecodeString(config.SignMiners[signerIndex])
 	if err != nil {

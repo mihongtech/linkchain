@@ -96,7 +96,7 @@ type ChainImpl struct {
 	procInterrupt int32          // interrupt signaler for block processing
 	wg            sync.WaitGroup // chain processing wait group for shutting down
 
-	bcsiAPI bcsi.Processor //bcsi API
+	bcsiAPI bcsi.BCSI //bcsi API
 
 	badBlocks *lru.Cache // Bad block cache
 
@@ -106,7 +106,7 @@ type ChainImpl struct {
 // NewBlockChain returns a fully initialised block chain using information
 // available in the database. It initialises the default Ethereum Validator and
 // Processor.
-func NewBlockChain(db lcdb.Database, genesisHash math.Hash, cacheConfig *CacheConfig, chainConfig *config.ChainConfig, bcsiAPI bcsi.Processor, engine consensus.Engine) (*ChainImpl, error) {
+func NewBlockChain(db lcdb.Database, genesisHash math.Hash, cacheConfig *CacheConfig, chainConfig *config.ChainConfig, bcsiAPI bcsi.BCSI, engine consensus.Engine) (*ChainImpl, error) {
 	if cacheConfig == nil {
 		cacheConfig = &CacheConfig{
 			TrieNodeLimit: 256 * 1024 * 1024,
@@ -185,6 +185,11 @@ func (bc *ChainImpl) loadLastChain() error {
 	// Issue a status log for the user
 	// currentFastBlock := bc.CurrentFastBlock()
 	log.Info("Loaded most recent local full block", "number", currentBlock.GetHeight(), "hash", currentBlock.GetBlockID())
+
+	//TODO the core best block should not be influence app best status.
+	if err := bc.bcsiAPI.UpdateChain(currentBlock); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -356,7 +361,11 @@ func (bc *ChainImpl) GetBlock(hash math.Hash, number uint64) *meta.Block {
 
 // GetBlockByHash retrieves a block from the database by hash, caching it if found.
 func (bc *ChainImpl) GetBlockByID(hash meta.BlockID) (*meta.Block, error) {
-	return bc.GetBlock(hash, bc.GetBlockNumber(hash)), nil
+	block := bc.GetBlock(hash, bc.GetBlockNumber(hash))
+	if block == nil {
+		return block, errors.New("GetBlockByID:block not found")
+	}
+	return block, nil
 }
 
 func (bc *ChainImpl) GetBlockNumber(hash math.Hash) uint64 {
@@ -475,7 +484,10 @@ func (bc *ChainImpl) WriteBlockWithState(block *meta.Block) (status WriteStatus,
 	if err := storage.WriteBlock(batch, block); err != nil {
 		return NonStatTy, err
 	}
-	//TODO BCSI :Commit Block
+
+	if err := bc.bcsiAPI.Commit(*block.GetBlockID()); err != nil {
+		return NonStatTy, err
+	}
 
 	// If the externHeight is higher than our known, add it to the canonical chain
 	reorg := externHeight > localHeight
@@ -520,6 +532,10 @@ func (bc *ChainImpl) ProcessBlock(chain *meta.Block) error {
 		return nil
 	}
 
+	if err := bc.engine.ProcessBlock(chain); err != nil {
+		return err
+	}
+
 	events, err := bc.insertChain(chain)
 	bc.PostChainEvents(events)
 	return err
@@ -544,7 +560,7 @@ func (bc *ChainImpl) insertChain(chain *meta.Block) ([]interface{}, error) {
 		lastCanon *meta.Block
 	)
 
-	err := bc.bcsiAPI.CheckBlock(chain)
+	err := bc.CheckBlock(chain)
 	if err != nil {
 		return events, err
 	}
@@ -554,8 +570,7 @@ func (bc *ChainImpl) insertChain(chain *meta.Block) ([]interface{}, error) {
 		log.Debug("Premature abort during blocks processing")
 		return events, nil
 	}
-	bstart := time.Now()
-	err = bc.validator.ValidateBlockBody(bc.validator, bc, chain)
+	err = bc.CheckBlock(chain)
 	switch {
 	case err == consensus.ErrFutureBlock:
 		// Allow up to MaxFuture second in the future blocks. If this limit is exceeded
@@ -600,12 +615,11 @@ func (bc *ChainImpl) insertChain(chain *meta.Block) ([]interface{}, error) {
 	}
 
 	// BCSI:Process block to app
-	err, results := bc.processor.ProcessBlockState(chain, state, bc, bc.validator)
-	if err != nil {
+
+	if err = bc.bcsiAPI.ProcessBlock(chain); err != nil {
 		bc.reportBlock(chain, err)
 		return events, err
 	}
-	proctime := time.Since(bstart)
 	// Write the block to the chain and get the status.
 	status, err := bc.WriteBlockWithState(chain)
 	if err != nil {
@@ -620,7 +634,6 @@ func (bc *ChainImpl) insertChain(chain *meta.Block) ([]interface{}, error) {
 		lastCanon = chain
 
 		// Only count canonical blocks for GC processing time
-		bc.gcproc += proctime
 
 	case SideStatTy:
 		log.Info("Inserted forked block", "number", chain.GetHeight(), "hash", chain.GetBlockID(),
@@ -777,17 +790,30 @@ func (bc *ChainImpl) GetBestBlock() *meta.Block {
 	return bc.CurrentBlock()
 }
 
+//CheckBlock Check block consensus,chain,app
 func (bc *ChainImpl) CheckBlock(block *meta.Block) error {
 	//log.Info("POA checkBlock ...")
 
-	if err := bc.validator.ValidateBlockHeader(bc.engine, bc, block); err != nil {
-		log.Error("Verify poa Block header failed")
+	//Consensus
+	if err := bc.engine.CheckBlock(block); err != nil {
 		return err
 	}
 
-	if err := bc.validator.ValidateBlockBody(bc.validator, bc, block); err != nil {
-		log.Error("Verify poa Block failed")
+	//App
+	if err := bc.bcsiAPI.CheckBlock(block); err != nil {
 		return err
+	}
+
+	prevBlock, err := bc.GetBlockByID(*block.GetPrevBlockID())
+
+	if err != nil {
+		log.Error("BlockManage", "checkBlock", err)
+		return err
+	}
+
+	if prevBlock.GetHeight()+1 != block.GetHeight() {
+		log.Error("BlockManage", "checkBlock", "current block height is error")
+		return errors.New("Check block height failed")
 	}
 
 	return nil

@@ -10,10 +10,13 @@ type Querier interface {
 
 //app provide to core for notifying app to update app state
 type Processor interface {
-	InitChain() error
+	UpdateChain(head *meta.Block) error
 	ProcessBlock(block *meta.Block) error
-	CheckBlock(block *meta.Block) error
 	Commit(id meta.BlockID) error
+}
+
+type Validator interface {
+	CheckBlock(block *meta.Block) error
 	CheckTx(transaction meta.Transaction) error
 }
 
@@ -23,5 +26,6 @@ type Configurator interface {
 type BCSI interface {
 	Querier
 	Processor
+	Validator
 	Configurator
 }
