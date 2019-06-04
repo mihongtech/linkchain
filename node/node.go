@@ -93,14 +93,14 @@ func (n *Node) Setup(i interface{}) bool {
 	n.interpreterAPI = i.(*Config).InterpreterAPI
 
 	//chain
-	n.blockchain, err = chain.NewBlockChain(s.GetDB(), genesisHash, nil, chainCfg, n.interpreterAPI, n.engine)
+	n.blockchain, err = chain.NewBlockChain(s.GetDB(), genesisHash, nil, chainCfg, n.bcsiAPI, n.engine)
 	if err != nil {
 		log.Error("init chain failed", "err", err)
 		return false
 	}
 
 	//tx pool
-	n.txPool = pool.NewTxPool(n.validatorAPI)
+	n.txPool = pool.NewTxPool(n.bcsiAPI)
 	n.txPool.SetUp(i)
 
 	//p2p init

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bitbucket.org/rollchain/miner"
 	"time"
 
 	"github.com/mihongtech/linkchain/app/context"
@@ -8,7 +9,6 @@ import (
 	"github.com/mihongtech/linkchain/config"
 	"github.com/mihongtech/linkchain/contract"
 	"github.com/mihongtech/linkchain/interpreter"
-	"github.com/mihongtech/linkchain/miner"
 	"github.com/mihongtech/linkchain/node"
 	"github.com/mihongtech/linkchain/node/net/p2p"
 	"github.com/mihongtech/linkchain/normal"
@@ -19,7 +19,6 @@ import (
 var (
 	appContext context.Context
 	nodeSvc    *node.Node
-	minerSvc   *miner.Miner
 	walletSvc  *wallet.Wallet
 )
 

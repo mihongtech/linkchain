@@ -3,9 +3,6 @@ package rpcserver
 import (
 	"reflect"
 
-	"github.com/mihongtech/linkchain/miner"
-	"github.com/mihongtech/linkchain/node"
-	"github.com/mihongtech/linkchain/node/net/p2p"
 	"github.com/mihongtech/linkchain/rpc/rpcobject"
 	"github.com/mihongtech/linkchain/wallet"
 )
@@ -78,18 +75,6 @@ var cmdPool = map[string]reflect.Type{
 	"call":               reflect.TypeOf((*rpcobject.CallCmd)(nil)),
 	"getCode":            reflect.TypeOf((*rpcobject.GetCodeCmd)(nil)),
 	"transactionReceipt": reflect.TypeOf((*rpcobject.GetTransactionReceiptCmd)(nil)),
-}
-
-func GetNodeAPI(s *Server) *node.PublicNodeAPI {
-	return s.appContext.NodeAPI.(*node.PublicNodeAPI)
-}
-
-func GetP2PAPI(s *Server) *p2p.Service {
-	return s.appContext.P2PAPI.(*p2p.Service)
-}
-
-func GetMinerAPI(s *Server) *miner.Miner {
-	return s.appContext.MinerAPI.(*miner.Miner)
 }
 
 func GetWalletAPI(s *Server) *wallet.Wallet {

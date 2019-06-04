@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/mihongtech/linkchain/common/btcec"
 	"github.com/mihongtech/linkchain/common/lcdb"
@@ -12,7 +13,6 @@ import (
 	"github.com/mihongtech/linkchain/core/meta"
 	"github.com/mihongtech/linkchain/node/chain"
 	"github.com/mihongtech/linkchain/node/config"
-	"sync"
 )
 
 // SignerFn is a signer callback function to request a hash to be signed by a
@@ -94,4 +94,10 @@ func (p *Poa) ProcessBlock(block *meta.Block) error {
 	}
 
 	return errors.New(fmt.Sprintf("Verify seal failed %s\n, want %s\n", accountID.String(), meta.BytesToAccountID(miner).String()))
+}
+
+func (p *Poa) getBlockSigner(block *meta.Block) meta.AccountID {
+	signerIndex := block.GetHeight() % uint32(len(config.SignMiners))
+	signer, _ := hex.DecodeString(config.SignMiners[signerIndex])
+	return meta.BytesToAccountID(signer)
 }

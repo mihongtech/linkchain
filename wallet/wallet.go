@@ -18,12 +18,12 @@ import (
 )
 
 type Wallet struct {
-	keystore         *keystore.KeyStore
-	password         string
-	Name             string
-	DataDir          string
-	accounts         map[string]meta.Account
-	nodeAPI          *node.PublicNodeAPI
+	keystore *keystore.KeyStore
+	password string
+	Name     string
+	DataDir  string
+	accounts map[string]meta.Account
+
 	updateAccountSub *event.TypeMuxSubscription
 }
 
@@ -35,11 +35,11 @@ func NewWallet() *Wallet {
 
 func (w *Wallet) Setup(i interface{}) bool {
 	globalConfig := i.(*context.Context).Config
-	w.nodeAPI = i.(*context.Context).NodeAPI.(*node.PublicNodeAPI)
+
 	w.DataDir = globalConfig.DataDir
 	path := w.instanceDir(w.DataDir)
 	w.keystore = keystore.NewKeyStore(path, keystore.StandardScryptN, keystore.StandardScryptP)
-	w.nodeAPI = i.(*context.Context).NodeAPI.(*node.PublicNodeAPI)
+
 	return true
 }
 
