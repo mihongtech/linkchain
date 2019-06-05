@@ -1,14 +1,11 @@
 package bcsi
 
-import "github.com/mihongtech/linkchain/core/meta"
+import (
+	"github.com/mihongtech/linkchain/core/meta"
+)
 
-//core provide to app for querying information
+//app provide to core for querying information
 type Querier interface {
-
-	//core provide
-	meta.ChainReader
-	GetTx(id meta.TxID) meta.Transaction
-
 	//app provide
 	GetBlockState(id meta.BlockID) meta.TreeID
 }
@@ -20,12 +17,14 @@ type Processor interface {
 	Commit(id meta.BlockID) error
 }
 
+//app provide to core for validating data
 type Validator interface {
 	CheckBlock(block *meta.Block) error
 	CheckTx(transaction meta.Transaction) error
 	FilterTx(txs []meta.Transaction) []meta.Transaction
 }
 
+//app provide to core for setting core option
 type Configurator interface {
 }
 
