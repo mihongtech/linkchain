@@ -26,18 +26,20 @@ type Miner struct {
 func NewMiner(poa *Poa) *Miner {
 	return &Miner{isMining: false, poa: poa}
 }
-func (m *Miner) Setup(i interface{}) bool {
 
+func (m *Miner) Setup(i interface{}) bool {
 	return true
 }
 
 func (m *Miner) Start() bool {
 	log.Info("Miner start...")
+	go m.StartMine()
 	return true
 }
 
 func (m *Miner) Stop() {
 	log.Info("Miner stop...")
+	go m.StopMine()
 }
 
 func (m *Miner) MineBlock() (*meta.Block, error) {

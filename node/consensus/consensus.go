@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"errors"
+	"github.com/mihongtech/linkchain/core"
 
 	"github.com/mihongtech/linkchain/core/meta"
 )
@@ -26,6 +27,7 @@ var (
 
 // Engine is an algorithm agnostic consensus engine.
 type Engine interface {
+	core.Service
 	// Author retrieves the Rollchain address of the account that minted the given
 	// block, which may be different from the header's coinbase if a consensus
 	// engine is based on signatures.

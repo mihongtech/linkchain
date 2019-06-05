@@ -3,7 +3,6 @@ package node
 import (
 	"encoding/json"
 	"errors"
-	"github.com/mihongtech/linkchain/node/bcsi"
 	"os"
 	"sync"
 
@@ -12,7 +11,7 @@ import (
 	"github.com/mihongtech/linkchain/common/util/event"
 	"github.com/mihongtech/linkchain/common/util/log"
 	"github.com/mihongtech/linkchain/core/meta"
-	"github.com/mihongtech/linkchain/interpreter"
+	"github.com/mihongtech/linkchain/node/bcsi"
 	"github.com/mihongtech/linkchain/node/chain"
 	"github.com/mihongtech/linkchain/node/chain/genesis"
 	"github.com/mihongtech/linkchain/node/config"
@@ -26,7 +25,7 @@ import (
 
 type Config struct {
 	config.BaseConfig
-	InterpreterAPI interpreter.Interpreter
+	bcsiAPI bcsi.BCSI
 }
 
 type Node struct {
@@ -37,9 +36,7 @@ type Node struct {
 	engine consensus.Engine
 
 	//BCSI
-	bcsiAPI        bcsi.BCSI
-	validatorAPI   interpreter.Validator
-	interpreterAPI interpreter.Interpreter
+	bcsiAPI bcsi.BCSI
 
 	//chain
 	chainMtx   sync.RWMutex
@@ -57,6 +54,8 @@ type Node struct {
 	updateSideState event.Subscription
 	MainChainCh     chan meta.ChainEvent
 	SideChainCh     chan meta.ChainSideEvent
+
+	cfg *Config
 }
 
 func NewNode(cfg config.BaseConfig) *Node {
@@ -68,7 +67,7 @@ func NewNode(cfg config.BaseConfig) *Node {
 
 //Setup is prepared to init node.
 func (n *Node) Setup(i interface{}) bool {
-	globalConfig := i.(*Config)
+	n.cfg = i.(*Config)
 	log.Info("Manage init...")
 
 	//Event
@@ -76,22 +75,20 @@ func (n *Node) Setup(i interface{}) bool {
 	n.newTxEvent = new(event.Feed)
 
 	//DB
-	s := storage.NewStrorage(globalConfig.DataDir)
+	s := storage.NewStrorage(n.cfg.DataDir)
 	if s == nil {
 		log.Error("init storage failed")
 		return false
 	}
 	n.db = s.GetDB()
 
-	chainCfg, genesisHash, err := n.initGenesis(n.db, globalConfig.GenesisPath)
+	chainCfg, genesisHash, err := n.initGenesis(n.db, n.cfg.GenesisPath)
 
 	//consensus
 	n.engine = poa.NewPoa(chainCfg, s.GetDB())
 
 	//BCSI
-	n.validatorAPI = i.(*Config).InterpreterAPI
-	n.interpreterAPI = i.(*Config).InterpreterAPI
-
+	n.bcsiAPI = n.cfg.bcsiAPI
 	//chain
 	n.blockchain, err = chain.NewBlockChain(s.GetDB(), genesisHash, nil, chainCfg, n.bcsiAPI, n.engine)
 	if err != nil {
@@ -151,6 +148,11 @@ func (n *Node) Start() bool {
 	if !n.txPool.Start() {
 		return false
 	}
+
+	if !n.engine.Start() {
+		return false
+	}
+
 	if !n.p2pSvc.Start() {
 		return false
 	}
@@ -172,4 +174,6 @@ func (n *Node) updateState() {
 func (n *Node) Stop() {
 	log.Info("Stop node...")
 	n.txPool.Stop()
+	n.engine.Stop()
+	n.blockchain.Stop()
 }
