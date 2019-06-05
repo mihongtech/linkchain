@@ -1,7 +1,6 @@
 package app
 
 import (
-	"bitbucket.org/rollchain/miner"
 	"time"
 
 	"github.com/mihongtech/linkchain/app/context"
@@ -10,7 +9,7 @@ import (
 	"github.com/mihongtech/linkchain/contract"
 	"github.com/mihongtech/linkchain/interpreter"
 	"github.com/mihongtech/linkchain/node"
-	"github.com/mihongtech/linkchain/node/net/p2p"
+	config2 "github.com/mihongtech/linkchain/node/config"
 	"github.com/mihongtech/linkchain/normal"
 	"github.com/mihongtech/linkchain/rpc/rpcserver"
 	"github.com/mihongtech/linkchain/wallet"
@@ -32,18 +31,27 @@ func Setup(globalConfig *config.LinkChainConfig) bool {
 	appContext.InterpreterAPI = chooseInterpreterAPI(globalConfig.InterpreterAPI)
 
 	//create service
-	nodeSvc = node.NewNode()
+	nodecfg := node.Config{BaseConfig: config2.BaseConfig{
+		DataDir:            globalConfig.DataDir,
+		GenesisPath:        globalConfig.GenesisPath,
+		ListenAddress:      globalConfig.ListenAddress,
+		NoDiscovery:        globalConfig.NoDiscovery,
+		BootstrapNodes:     globalConfig.BootstrapNodes,
+		InterpreterAPIType: globalConfig.InterpreterAPI,
+		RpcAddr:            globalConfig.RpcAddr,
+	},
+		BcsiAPI: nil,
+	}
+	nodeSvc = node.NewNode(nodecfg.BaseConfig)
 
-	minerSvc = miner.NewMiner()
 	walletSvc = wallet.NewWallet()
 
 	//node init
-	if !nodeSvc.Setup(&appContext) {
+	if !nodeSvc.Setup(&nodecfg) {
 		return false
 	}
-
 	//consensus api init
-	appContext.NodeAPI = node.NewPublicNodeAPI(nodeSvc)
+	appContext.NodeAPI = node.NewPublicCoreAPI(nodeSvc)
 
 	//wallet init
 	if !walletSvc.Setup(&appContext) {
@@ -51,13 +59,6 @@ func Setup(globalConfig *config.LinkChainConfig) bool {
 	}
 	//wallet api init
 	appContext.WalletAPI = walletSvc
-
-	//miner init
-	if !minerSvc.Setup(&appContext) {
-		return false
-	}
-	//miner api init
-	appContext.MinerAPI = minerSvc
 
 	return true
 }
@@ -81,7 +82,6 @@ func Run() {
 func Stop() {
 	log.Info("Stopping app...")
 	walletSvc.Stop()
-	p2pSvc.Stop()
 	nodeSvc.Stop()
 	log.Info("App exit")
 }
@@ -90,20 +90,8 @@ func GetAppContext() *context.Context {
 	return &appContext
 }
 
-func GetNodeAPI() *node.PublicNodeAPI {
-	return appContext.NodeAPI.(*node.PublicNodeAPI)
-}
-
-func GetP2PAPI() *p2p.Service {
-	return p2pSvc
-}
-
-func GetMinerAPI() *miner.Miner {
-	return minerSvc
-}
-
-func GetWalletAPI() *wallet.Wallet {
-	return walletSvc
+func GetNodeAPI() *node.CoreAPI {
+	return appContext.NodeAPI
 }
 
 func startRPC() {

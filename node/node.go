@@ -25,7 +25,7 @@ import (
 
 type Config struct {
 	config.BaseConfig
-	bcsiAPI bcsi.BCSI
+	BcsiAPI bcsi.BCSI
 }
 
 type Node struct {
@@ -59,20 +59,22 @@ type Node struct {
 }
 
 func NewNode(cfg config.BaseConfig) *Node {
-	return &Node{
+	n := &Node{
 		p2pSvc:      p2p.NewP2P(cfg),
 		MainChainCh: make(chan meta.ChainEvent, 10),
 		SideChainCh: make(chan meta.ChainSideEvent, 10)}
+	//Event
+	n.newBlockEvent = new(event.TypeMux)
+	n.newTxEvent = new(event.Feed)
+
+	return n
+
 }
 
 //Setup is prepared to init node.
 func (n *Node) Setup(i interface{}) bool {
 	n.cfg = i.(*Config)
 	log.Info("Manage init...")
-
-	//Event
-	n.newBlockEvent = new(event.TypeMux)
-	n.newTxEvent = new(event.Feed)
 
 	//DB
 	s := storage.NewStrorage(n.cfg.DataDir)
