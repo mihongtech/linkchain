@@ -2,13 +2,12 @@ package poa
 
 import (
 	"errors"
+	"github.com/mihongtech/linkchain/node/config"
 	"sync"
 	"time"
 
 	"github.com/mihongtech/linkchain/common/util/log"
-	"github.com/mihongtech/linkchain/config"
 	"github.com/mihongtech/linkchain/core/meta"
-	"github.com/mihongtech/linkchain/helper"
 	"github.com/mihongtech/linkchain/node/bcsi"
 	"github.com/mihongtech/linkchain/node/chain"
 	"github.com/mihongtech/linkchain/node/pool"
@@ -44,14 +43,14 @@ func (m *Miner) Stop() {
 
 func (m *Miner) MineBlock() (*meta.Block, error) {
 	best := m.chain.GetBestBlock()
-	block, err := helper.CreateBlock(best.GetHeight(), *best.GetBlockID())
+	block, err := CreateBlock(best.GetHeight(), *best.GetBlockID())
 	if err != nil {
 		log.Error("Miner", "New Block error", err)
 		return nil, err
 	}
 	signer := m.poa.getBlockSigner(block)
-	coinbase := helper.CreateCoinBaseTx(signer, meta.NewAmount(config.DefaultBlockReward), block.GetHeight())
-	block.SetTx(*coinbase)
+	//coinbase := CreateCoinBaseTx(signer, meta.NewAmount(config.DefaultBlockReward), block.GetHeight())
+	//block.SetTx(*coinbase)
 
 	txs := m.txPool.GetAllTransaction()
 	txs = m.bcsiAPI.FilterTx(txs)
@@ -64,7 +63,7 @@ func (m *Miner) MineBlock() (*meta.Block, error) {
 
 	block.Header.Status = m.bcsiAPI.GetBlockState(*best.GetBlockID()) //The block status is prev block status
 
-	block, err = helper.RebuildBlock(block)
+	block, err = RebuildBlock(block)
 	if err != nil {
 		log.Error("Miner", "Rebuild Block error", err)
 		m.removeBlockTxs(block)
@@ -88,7 +87,7 @@ func (m *Miner) MineBlock() (*meta.Block, error) {
 	return block, nil
 }
 
-func (m *Miner) signBlock(signer meta.AccountID, block *meta.Block) error {
+func (m *Miner) signBlock(signer meta.Address, block *meta.Block) error {
 	//TODO need to add poa sign
 	//sign, err := m.walletAPI.SignMessage(signer, block.GetBlockID().CloneBytes())
 	//if err != nil {
@@ -132,8 +131,8 @@ func (m *Miner) GetInfo() bool {
 }
 
 func (m *Miner) removeBlockTxs(block *meta.Block) {
-	for index := range block.TXs {
-		m.txPool.RemoveTransaction(*block.TXs[index].GetTxID())
+	for index := range block.TXs.Txs {
+		m.txPool.RemoveTransaction(*block.TXs.Txs[index].GetTxID())
 	}
 }
 

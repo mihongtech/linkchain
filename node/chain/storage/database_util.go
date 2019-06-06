@@ -171,11 +171,11 @@ func GetTransaction(db DatabaseReader, hash math.Hash) (*meta.Transaction, math.
 	// log.Info("get tx id", "blockHash", blockHash)
 	if !blockHash.IsEmpty() {
 		block := GetBlock(db, blockHash, blockNumber)
-		if block == nil || len(block.TXs) <= int(txIndex) {
+		if block == nil || len(block.TXs.Txs) <= int(txIndex) {
 			log.Error("Transaction referenced missing", "number", blockNumber, "hash", blockHash, "index", txIndex)
 			return nil, math.Hash{}, 0, 0
 		}
-		return &block.TXs[txIndex], blockHash, blockNumber, txIndex
+		return &block.TXs.Txs[txIndex], blockHash, blockNumber, txIndex
 	} else {
 		log.Error("Transaction not found", "hash", hash)
 		return nil, math.Hash{}, 0, 0
@@ -237,7 +237,7 @@ func WriteBlock(db lcdb.Putter, block *meta.Block) error {
 func WriteTxLookupEntries(db lcdb.Putter, block *meta.Block) error {
 
 	// Iterate over each transaction and encode its metadata
-	for i, tx := range block.TXs {
+	for i, tx := range block.TXs.Txs {
 		entry := TxLookupEntry{
 			BlockHash:  block.GetBlockID().String(),
 			BlockIndex: uint64(block.GetHeight()),

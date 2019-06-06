@@ -1,5 +1,6 @@
 syntax = "proto2";
 
+import "protobuf/common.proto";
 import "protobuf/transaction.proto";
 
 package protobuf;
@@ -21,7 +22,7 @@ message BlockHeader {
 
 message Block {
     required BlockHeader header = 1;
-    optional Transactions txList = 2;
+    required Transactions txList = 2;
 }
 
 message Blocks {

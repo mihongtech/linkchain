@@ -90,7 +90,7 @@ func (n *Node) Setup(i interface{}) bool {
 	n.engine = poa.NewPoa(chainCfg, s.GetDB())
 
 	//BCSI
-	n.bcsiAPI = n.cfg.bcsiAPI
+	n.bcsiAPI = n.cfg.BcsiAPI
 	//chain
 	n.blockchain, err = chain.NewBlockChain(s.GetDB(), genesisHash, nil, chainCfg, n.bcsiAPI, n.engine)
 	if err != nil {

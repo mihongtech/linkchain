@@ -1,0 +1,15 @@
+syntax = "proto2";
+
+package protobuf;
+
+message Address {
+    required bytes data = 1;
+}
+
+message Signature {
+    optional bytes code = 1;
+}
+
+message Hash {
+    required bytes data = 1;
+}

@@ -3,6 +3,7 @@ package genesis
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/mihongtech/linkchain/common/lcdb"
 	"github.com/mihongtech/linkchain/common/math"
@@ -10,7 +11,6 @@ import (
 	"github.com/mihongtech/linkchain/core/meta"
 	"github.com/mihongtech/linkchain/node/chain/storage"
 	"github.com/mihongtech/linkchain/node/config"
-	"time"
 )
 
 var errGenesisNoConfig = errors.New("genesis has no chain configuration")

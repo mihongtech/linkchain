@@ -16,7 +16,7 @@ import (
 
 // SignerFn is a signer callback function to request a hash to be signed by a
 // backing account.
-type SignerFn func(meta.Account, []byte) ([]byte, error)
+type SignerFn func(meta.Address, []byte) ([]byte, error)
 
 // Poa is the proof-of-authority consensus engine proposed
 type Poa struct {
@@ -69,7 +69,7 @@ func (p *Poa) Author(header *meta.BlockHeader) ([]byte, error) {
 		return nil, err
 	}
 
-	id := meta.NewAccountId(pub)
+	id := meta.NewAddress(pub)
 
 	return id.CloneBytes(), nil
 }
@@ -107,8 +107,8 @@ func (p *Poa) ProcessBlock(block *meta.Block) error {
 		return err
 	}
 
-	accountID := meta.NewAccountId(pubkey)
-	if accountID.IsEqual(meta.BytesToAccountID(miner)) {
+	accountID := meta.NewAddress(pubkey)
+	if accountID.IsEqual(meta.BytesToAddress(miner)) {
 		return nil
 	}
 
@@ -117,8 +117,8 @@ func (p *Poa) ProcessBlock(block *meta.Block) error {
 	//return errors.New(fmt.Sprintf("Verify seal failed %s\n, want %s\n", accountID.String(), meta.BytesToAccountID(miner).String()))
 }
 
-func (p *Poa) getBlockSigner(block *meta.Block) meta.AccountID {
+func (p *Poa) getBlockSigner(block *meta.Block) meta.Address {
 	signerIndex := block.GetHeight() % uint32(len(config.SignMiners))
 	signer, _ := hex.DecodeString(config.SignMiners[signerIndex])
-	return meta.BytesToAccountID(signer)
+	return meta.BytesToAddress(signer)
 }

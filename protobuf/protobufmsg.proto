@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-import "protobuf/transaction.proto";
+import "protobuf/common.proto";
 
 package protobuf;
 

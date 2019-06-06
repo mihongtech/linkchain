@@ -2,60 +2,10 @@ syntax = "proto2";
 
 package protobuf;
 
-message Transactions {
-    repeated Transaction txs = 1;
-}
-
 message Transaction {
-    required uint32 version = 1;
-    required uint32 type = 2;
-    required TransactionFrom from = 3;
-    required TransactionTo to = 4;
-    repeated Signature sign = 5;
-    optional bytes data = 6;
-
-}
-
-message FromCoin {
-    required AccountID id = 1;
-    repeated Ticket ticket = 2 ;
-}
-
-message TransactionFrom {
-    repeated FromCoin coins = 1;
-}
-
-message ToCoin {
-    required AccountID id = 1;
-    required bytes value = 2;
-}
-
-message TransactionTo {
-    repeated ToCoin coins = 1;
-}
-
-message Ticket {
-    required Hash txid = 1;
-	required uint32 index = 2;
-}
-
-message AccountID {
-    required bytes id = 1;
-}
-
-message Signature {
-    optional bytes code = 1;
-}
-
-message Hash {
     required bytes data = 1;
 }
 
-message CreateInsurance {
-    required int64 time = 1;
-    required AccountID security = 2;
-}
-
-message SetClearTimeData {
-    required int64 time = 1;
+message Transactions {
+    repeated Transaction txs = 1;
 }

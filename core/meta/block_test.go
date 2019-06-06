@@ -6,17 +6,21 @@ import (
 	"time"
 
 	"github.com/mihongtech/linkchain/common/math"
-	"github.com/mihongtech/linkchain/config"
 	"github.com/mihongtech/linkchain/protobuf"
 	"github.com/mihongtech/linkchain/unittest"
 
 	"github.com/golang/protobuf/proto"
 )
 
+func getTestTransaction() Transaction {
+	buffer, _ := hex.DecodeString("ae619e6eff98ef61079be51c6e1bfb0bb6b0015737a21339d7e1cb416a06b548")
+	return Transaction{Data: buffer}
+}
+
 func getTestBlock() *Block {
 	hash, _ := math.NewHashFromStr("ae619e6eff98ef61079be51c6e1bfb0bb6b0015737a21339d7e1cb416a06b548")
 	var txs = make([]Transaction, 0)
-	header := NewBlockHeader(config.DefaultBlockVersion, 10, time.Unix(1487780010, 0), config.DefaultNounce, config.DefaultDifficulty, *hash, *hash, *hash, Signature{Code: make([]byte, 0)}, nil)
+	header := NewBlockHeader(0, 10, time.Unix(1487780010, 0), 0, 0, *hash, *hash, *hash, Signature{Code: make([]byte, 0)}, nil)
 	return NewBlock(*header, txs)
 }
 
@@ -47,17 +51,19 @@ func TestBlock_Deserialize_Without_Tx(t *testing.T) {
 func TestBlock_Serialize(t *testing.T) {
 	block := getTestBlock()
 	tx := getTestTransaction()
-	block.SetTx(*tx)
+	block.SetTx(tx)
+	block.SetTx(tx)
+	block.SetTx(tx)
 	s := block.Serialize()
 
-	_, err := proto.Marshal(s)
+	buffer, err := proto.Marshal(s)
 	unittest.NotError(t, err)
-	//t.Log("block Serialize", "block hash->", block.GetBlockID().GetString(), "buffer->", hex.EncodeToString(buffer))
+	t.Log("block Serialize", "block hash->", block.GetBlockID().GetString(), "buffer->", hex.EncodeToString(buffer))
 }
 
 func TestBlock_Deserialize(t *testing.T) {
-	hash, _ := math.NewHashFromStr("86909d3cc0598cd2ce02c605303ef0db66c8e09c18c18b24d88c110794365581")
-	str := "0a82010801100a18aaf1b6c505200028ffffffff0f32220a2048b5066a41cbe1d73913a2375701b0b60bfb1b6e1ce59b0761ef98ff6e9e61ae3a220a2048b5066a41cbe1d73913a2375701b0b60bfb1b6e1ce59b0761ef98ff6e9e61ae42220a2048b5066a41cbe1d73913a2375701b0b60bfb1b6e1ce59b0761ef98ff6e9e61ae4a020a001200"
+	hash, _ := math.NewHashFromStr("d98887e2c0e0984fec3617470d0287c0087daa14f222278dffae581869962c24")
+	str := "0a7e0800100a18aaf1b6c5052000280032220a2048b5066a41cbe1d73913a2375701b0b60bfb1b6e1ce59b0761ef98ff6e9e61ae3a220a207116a734bc83401b5e771373a1f6ab31250d056508cc4eade49add372b569aa742220a2048b5066a41cbe1d73913a2375701b0b60bfb1b6e1ce59b0761ef98ff6e9e61ae4a020a00126c0a220a20ae619e6eff98ef61079be51c6e1bfb0bb6b0015737a21339d7e1cb416a06b5480a220a20ae619e6eff98ef61079be51c6e1bfb0bb6b0015737a21339d7e1cb416a06b5480a220a20ae619e6eff98ef61079be51c6e1bfb0bb6b0015737a21339d7e1cb416a06b548"
 	buffer, _ := hex.DecodeString(str)
 	block := &protobuf.Block{}
 
@@ -73,7 +79,7 @@ func TestBlock_Deserialize(t *testing.T) {
 func TestBlock_CalculateTxTreeRoot(t *testing.T) {
 	block := getTestBlock()
 	tx := getTestTransaction()
-	block.SetTx(*tx)
+	block.SetTx(tx)
 	txid, _ := math.NewHashFromStr("3361426edc0980b83404e2f5927d6579040fa26958d77cd5e35bc1fd1e084cf5")
 
 	root := block.CalculateTxTreeRoot()
@@ -111,7 +117,7 @@ func TestBlock_IsGensis(t *testing.T) {
 func TestBlock_GetTx(t *testing.T) {
 	block := getTestBlock()
 	tx := getTestTransaction()
-	block.SetTx(*tx)
+	block.SetTx(tx)
 	txid, _ := math.NewHashFromStr("3361426edc0980b83404e2f5927d6579040fa26958d77cd5e35bc1fd1e084cf5")
 
 	_, err := block.GetTx(*txid)
@@ -121,7 +127,7 @@ func TestBlock_GetTx(t *testing.T) {
 func TestBlock_GetTx_Error(t *testing.T) {
 	block := getTestBlock()
 	tx := getTestTransaction()
-	block.SetTx(*tx)
+	block.SetTx(tx)
 	txid, _ := math.NewHashFromStr("86909d3cc0598cd2ce02c605303ef0db66c8e09c18c18b24d88c110794365581")
 
 	_, err := block.GetTx(*txid)

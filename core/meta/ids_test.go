@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/mihongtech/linkchain/common/math"
-	"github.com/mihongtech/linkchain/config"
+	"github.com/mihongtech/linkchain/node/config"
 	"github.com/mihongtech/linkchain/unittest"
 
 	"github.com/golang/protobuf/proto"

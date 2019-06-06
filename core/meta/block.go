@@ -2,7 +2,6 @@ package meta
 
 import (
 	"encoding/json"
-	"errors"
 	"sort"
 	"time"
 
@@ -16,24 +15,21 @@ import (
 )
 
 type Block struct {
-	Header BlockHeader   `json:"header"`
-	TXs    []Transaction `json:"txs"`
+	Header BlockHeader  `json:"header"`
+	TXs    Transactions `json:"txs"`
 }
 
 func NewBlock(header BlockHeader, txs []Transaction) *Block {
-	ntxs := make([]Transaction, 0)
-	for _, tx := range txs {
-		ntxs = append(ntxs, tx)
-	}
+
 	return &Block{
 		Header: header,
-		TXs:    ntxs,
+		TXs:    *NewTransactions(txs...),
 	}
 }
 
 func (b *Block) SetTx(newTXs ...Transaction) error {
-	for _, tx := range newTXs {
-		b.TXs = append(b.TXs, tx)
+	if err := b.TXs.SetTx(newTXs...); err != nil {
+		return err
 	}
 	b.Header.SetMerkleRoot(b.CalculateTxTreeRoot()) //calculate merkle root
 
@@ -72,18 +68,9 @@ func (b *Block) GetMerkleRoot() *TreeID {
 func (b *Block) Serialize() serialize.SerializeStream {
 	header := b.Header.Serialize().(*protobuf.BlockHeader)
 
-	txs := make([]*protobuf.Transaction, 0)
-	for _, transaction := range b.TXs {
-		txs = append(txs, transaction.Serialize().(*protobuf.Transaction))
-	}
-
-	txlist := protobuf.Transactions{
-		Txs: txs,
-	}
-
 	block := protobuf.Block{
 		Header: header,
-		TxList: &txlist,
+		TxList: b.TXs.Serialize().(*protobuf.Transactions),
 	}
 
 	return &block
@@ -95,16 +82,8 @@ func (b *Block) Deserialize(s serialize.SerializeStream) error {
 	if err != nil {
 		return err
 	}
-	b.TXs = b.TXs[:0] // transaction clear
-	for _, transaction := range data.TxList.Txs {
-		newTx := Transaction{}
-		err = newTx.Deserialize(transaction)
-		if err != nil {
-			return err
-		}
-		b.TXs = append(b.TXs, newTx)
-	}
-	return nil
+
+	return b.TXs.Deserialize(data.TxList)
 }
 
 func (b *Block) String() string {
@@ -116,22 +95,17 @@ func (b *Block) String() string {
 }
 
 func (b *Block) GetTxs() []Transaction {
-	return b.TXs
+	return b.TXs.Txs
 }
 
 func (b *Block) GetTx(id TxID) (*Transaction, error) {
-	for i, _ := range b.TXs {
-		if b.TXs[i].txid.IsEqual(&id) {
-			return &b.TXs[i], nil
-		}
-	}
-	return nil, errors.New("can not fin tx in block")
+	return b.TXs.GetTx(id)
 }
+
 func (b *Block) CalculateTxTreeRoot() TreeID {
 	transactions := make(map[math.Hash][]byte)
-	for index, _ := range b.TXs {
-		txbuff, _ := proto.Marshal(b.TXs[index].Serialize())
-		transactions[*b.TXs[index].GetTxID()] = txbuff
+	for index, t := range b.TXs.Txs {
+		transactions[*b.TXs.Txs[index].GetTxID()] = t.Data
 	}
 	hash, _ := GetMakeTreeID(transactions)
 	return hash

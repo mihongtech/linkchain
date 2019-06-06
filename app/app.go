@@ -3,13 +3,14 @@ package app
 import (
 	"time"
 
+	"github.com/mihongtech/linkchain/node"
+	core_config "github.com/mihongtech/linkchain/node/config"
+
 	"github.com/mihongtech/linkchain/app/context"
 	"github.com/mihongtech/linkchain/common/util/log"
 	"github.com/mihongtech/linkchain/config"
 	"github.com/mihongtech/linkchain/contract"
 	"github.com/mihongtech/linkchain/interpreter"
-	"github.com/mihongtech/linkchain/node"
-	config2 "github.com/mihongtech/linkchain/node/config"
 	"github.com/mihongtech/linkchain/normal"
 	"github.com/mihongtech/linkchain/rpc/rpcserver"
 	"github.com/mihongtech/linkchain/wallet"
@@ -31,7 +32,7 @@ func Setup(globalConfig *config.LinkChainConfig) bool {
 	appContext.InterpreterAPI = chooseInterpreterAPI(globalConfig.InterpreterAPI)
 
 	//create service
-	nodecfg := node.Config{BaseConfig: config2.BaseConfig{
+	nodecfg := node.Config{BaseConfig: core_config.BaseConfig{
 		DataDir:            globalConfig.DataDir,
 		GenesisPath:        globalConfig.GenesisPath,
 		ListenAddress:      globalConfig.ListenAddress,
